@@ -3,8 +3,8 @@
 
 ![](images/Mark-Dunning.jpg)
 
-twitter: [@DrMarkDunning](https://twitter.com/DrMarkDunning)
-orcid: [0000-0002-8853-9435](https://orcid.org/0000-0002-8853-9435)
+- twitter: [@DrMarkDunning](https://twitter.com/DrMarkDunning)
+- orcid: [0000-0002-8853-9435](https://orcid.org/0000-0002-8853-9435)
 
 ## About me
 
@@ -16,7 +16,7 @@ I obtained my PhD in the Statistics and Computational Biology group of [Simon Ta
 
 ## Moving on
 
-![](https://upload.wikimedia.org/wikipedia/commons/9/90/FlagOfYorkshire.svg)
-
 I'm delighted to announce that from October 2017 I will be returning to Yorkshire to take up the position of Bioinformatcs Core Director :tada: You can follow updates on the [Sheffield Bioinformatics Core](https://sheffield-bioinformatics-core.github.io/) website.
+
+
 
