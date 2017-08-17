@@ -16,5 +16,7 @@ I obtained my PhD in the Statistics and Computational Biology group of [Simon Ta
 
 ## Moving on
 
-I'm delighted to announce that from October 2017 I will be returning to Yorkshire to take up the position of Bioinformatcs Core Director :tada: You can follow updates on the [Sheffield Bioinformatics Core)(https://sheffield-bioinformatics-core.github.io/) website.
+![](https://upload.wikimedia.org/wikipedia/commons/9/90/FlagOfYorkshire.svg)
+
+I'm delighted to announce that from October 2017 I will be returning to Yorkshire to take up the position of Bioinformatcs Core Director :tada: You can follow updates on the [Sheffield Bioinformatics Core](https://sheffield-bioinformatics-core.github.io/) website.
 
