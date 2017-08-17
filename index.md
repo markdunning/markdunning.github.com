@@ -3,7 +3,8 @@
 
 ![](images/Mark-Dunning.jpg)
 
-twitter: @DrMarkDunning
+twitter: [@DrMarkDunning](https://twitter.com/DrMarkDunning)
+orcid: [0000-0002-8853-9435](https://orcid.org/0000-0002-8853-9435)
 
 ## About me
 
@@ -11,9 +12,9 @@ My job title is "*Bioinformatics Training Coordinator*" and I work in the Bioinf
 
 Previously, I worked as a Bioinformatics Analyst within the Bioinformatics Core; consulting on, and assisting in, the analysis on all types of high-throughput datasets. During this time I worked on studies to define subtypes of [Breast](http://www.nature.com/nature/journal/v486/n7403/full/nature10983.html) and [Prostate](http://www.sciencedirect.com/science/article/pii/S2352396415300712) cancer and established pipelines for analysis whole-genome and exome resequencing data.
 
-I obtained my PhD in the Statistics and Computational Biology group of [Simon Tavare](http://www.compbio.group.cam.ac.uk/) at the University of Cambridge. During this time, I developed the once-popular [beadarray](http://www.bioconductor.org/packages/release/bioc/html/beadarray.html) Bioconductor package for the analysis of Illumina microarray data. My PhD thesis is available [online](https://www.repository.cam.ac.uk/handle/1810/218542), should you be interested.
+I obtained my PhD in the Statistics and Computational Biology group of [Simon Tavare](http://www.compbio.group.cam.ac.uk/) at the University of Cambridge. During this time, I developed the [beadarray](http://www.bioconductor.org/packages/release/bioc/html/beadarray.html) Bioconductor package for the analysis of Illumina microarray data. My PhD thesis is available [online](https://www.repository.cam.ac.uk/handle/1810/218542), should you be interested.
 
+## Moving on
 
-## More
+I'm delighted to announce that from October 2017 I will be returning to Yorkshire to take up the position of Bioinformatcs Core Director :tada: You can follow updates on the [Sheffield Bioinformatics Core)(https://sheffield-bioinformatics-core.github.io/) website.
 
-You can find me on twitter as `@DrMarkDunning' or on [github](https://github.com/markdunning)
