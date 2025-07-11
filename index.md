@@ -14,7 +14,7 @@ I obtained my PhD in the Statistics and Computational Biology group of [Simon Ta
 
 After my PhD, I worked as a Bioinformatics Analyst within the Bioinformatics Core; consulting on, and assisting in, the analysis on all types of high-throughput datasets. During this time I worked on studies to define subtypes of [Breast](http://www.nature.com/nature/journal/v486/n7403/full/nature10983.html) and [Prostate](http://www.sciencedirect.com/science/article/pii/S2352396415300712) cancer and established pipelines for analysis whole-genome and exome resequencing data.
 
-I held the role of "*Bioinformatics Training Coordinator*" in the Bioinformatics Core of [Cancer Research Uk Cambridge Institute](http://www.cruk.cam.ac.uk/). I organised, developed and facilitated [Bioinformatics training courses](http://www.cruk.cam.ac.uk/core-facilities/bioinformatics-core/training) to teach computational and analytical skills to wet-lab biologists. All courses that I develop are available through [github](https://github.com/bioinformatics-core-shared-training) and I have collaborations with Thomas Carroll at the [Bioinformatics Core, MRC Clinical Sciences Centre](http://mrccsc.github.io/) and [Bioinformatics Training Facility](http://bioinfotraining.bio.cam.ac.uk/about) at the Univesity of Cambridge. 
+I held the role of "*Bioinformatics Training Coordinator*" in the Bioinformatics Core of [Cancer Research Uk Cambridge Institute](http://www.cruk.cam.ac.uk/). I organised, developed and facilitated [Bioinformatics training courses](http://www.cruk.cam.ac.uk/core-facilities/bioinformatics-core/training) to teach computational and analytical skills to wet-lab biologists. 
 
 From October 2017 I established the Bioinformatics Core at The University of Sheffield. 
 
