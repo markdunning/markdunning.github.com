@@ -5,7 +5,7 @@
 
 - twitter: [@DrMarkDunning](https://twitter.com/DrMarkDunning)
 - [orcid](https://orcid.org/0000-0002-8853-9435)
-- [linkedin](https://www.linkedin.com/in/drmarkdunning/](https://www.linkedin.com/in/drmarkdunning/)
+- [linkedin](https://www.linkedin.com/in/drmarkdunning/)
 - [google scholar](https://scholar.google.com/citations?user=Dbx6pGUAAAAJ&hl=en)
 
 ## About me
