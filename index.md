@@ -1,10 +1,12 @@
 # Mark Dunning
-## Bioinformatics Training Coordinator @ Cancer Research Uk Cambridge Institute
+## Bioinformatics Analyst / Trainer
 
 ![](images/Mark-Dunning.jpg)
 
 - twitter: [@DrMarkDunning](https://twitter.com/DrMarkDunning)
-- orcid: [0000-0002-8853-9435](https://orcid.org/0000-0002-8853-9435)
+- [orcid](https://orcid.org/0000-0002-8853-9435)
+- [linkedin](https://www.linkedin.com/in/drmarkdunning/](https://www.linkedin.com/in/drmarkdunning/)
+- [google scholar](https://scholar.google.com/citations?user=Dbx6pGUAAAAJ&hl=en)
 
 ## About me
 
@@ -14,9 +16,8 @@ Previously, I worked as a Bioinformatics Analyst within the Bioinformatics Core;
 
 I obtained my PhD in the Statistics and Computational Biology group of [Simon Tavare](http://www.compbio.group.cam.ac.uk/) at the University of Cambridge. During this time, I developed the [beadarray](http://www.bioconductor.org/packages/release/bioc/html/beadarray.html) Bioconductor package for the analysis of Illumina microarray data. My PhD thesis is available [online](https://www.repository.cam.ac.uk/handle/1810/218542), should you be interested.
 
-## Moving on
+From October 2017 I established the Bioinformatics Core at The University of Sheffield. 
 
-I'm delighted to announce that from October 2017 I will be returning to Yorkshire to take up the position of Bioinformatcs Core Director at [The University of Sheffield}(https://www.sheffield.ac.uk/) :tada: You can follow updates on the [Sheffield Bioinformatics Core](https://sheffield-bioinformatics-core.github.io/) website.
+## Teaching
 
-
-
+Aside from collaborating and assisting academic colleagues, I also have an active interest in teaching and training of Bioinformatics and Data Sceince. I have training qualifications from [thecarpentries](https://carpentries.org/) and [AdvanceHE](https://advance-he.ac.uk/) (FHEA)
