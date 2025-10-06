@@ -1,0 +1,23 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Dr. Mark Dunning",
+    "section": "",
+    "text": "I obtained my PhD in the Statistics and Computational Biology group of Simon Tavare at the University of Cambridge. During this time, I developed the beadarray Bioconductor package for the analysis of Illumina microarray data. My PhD thesis is available online, should you be interested.\nAfter my PhD, I worked as a Bioinformatics Analyst within the Bioinformatics Core; consulting on, and assisting in, the analysis on all types of high-throughput datasets. During this time I worked on studies to define subtypes of Breast and Prostate cancer and established pipelines for analysis whole-genome and exome resequencing data.\nI held the role of “Bioinformatics Training Coordinator” in the Bioinformatics Core of Cancer Research Uk Cambridge Institute. I organised, developed and facilitated Bioinformatics training courses to teach computational and analytical skills to wet-lab biologists.\nFrom October 2017 I established the Bioinformatics Core at The University of Sheffield.\nI have training qualifications from thecarpentries and AdvanceHE (FHEA)"
+  },
+  {
+    "objectID": "cv.html",
+    "href": "cv.html",
+    "title": "CV",
+    "section": "",
+    "text": "Download PDF file."
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this site\n\n1 + 1\n\n[1] 2"
+  }
+]
