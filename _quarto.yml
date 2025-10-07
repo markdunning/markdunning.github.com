@@ -10,7 +10,7 @@ website:
       - href: cv.qmd
         text: CV
       - href: training.qmd
-        text: training
+        text: Training
 
 
 format:

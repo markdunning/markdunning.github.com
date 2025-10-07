@@ -6,8 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Mark Dunning">
+<meta name="dcterms.date" content="2025-10-07">
 
-<title>Dr.&nbsp;Mark Dunning – Dr. Mark Dunning - Bioinformatician / Data Scientist</title>
+<title>Introduction to R – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,25 +22,61 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<script src="site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-dfb324f25d9b1687192fa8be62ac8f9c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-dfb324f25d9b1687192fa8be62ac8f9c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -68,17 +106,17 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
 
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="../../styles.css">
 </head>
 
-<body class="nav-fixed fullcontent quarto-light">
+<body class="nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</span>
     </a>
   </div>
@@ -89,16 +127,16 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="../../index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./cv.html"> 
+    <a class="nav-link" href="../../cv.html"> 
 <span class="menu-text">CV</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./training.html"> 
-<span class="menu-text">Training</span></a>
+    <a class="nav-link" href="../../training.html"> 
+<span class="menu-text">training</span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -111,41 +149,136 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#disclaimer" id="toc-disclaimer" class="nav-link active" data-scroll-target="#disclaimer">Disclaimer</a></li>
+  <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">Setup</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<div class="quarto-about-jolla">
-  <img src="files/Mark-Dunning.jpg" class="about-image
-  round " style="height: 15em; width: 15em;">
- <header id="title-block-header" class="quarto-title-block default">
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Dr.&nbsp;Mark Dunning</h1>
+<h1 class="title">Introduction to R</h1>
 </div>
+
+
+
 <div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Mark Dunning </p>
+          </div>
   </div>
-</header><main class="content" id="quarto-document-content">
-<p>I’m a Bioinformatician with a background in Mathematics and Computer Science with over 20 years of experience. I specialise in the visualisation and interpretation of complex data and have a wealth of experience in making results accessible and easy to interrogate for wet-lab biologists. I also have a track-record in developing and delivering training courses and workships, along with formal teaching.</p>
-<p>I obtained my PhD in the Statistics and Computational Biology group of <a href="http://www.compbio.group.cam.ac.uk/">Simon Tavare</a> at the University of Cambridge. During this time, I developed the <a href="http://www.bioconductor.org/packages/release/bioc/html/beadarray.html">beadarray</a> Bioconductor package for the analysis of Illumina microarray data. My PhD thesis is available <a href="https://www.repository.cam.ac.uk/handle/1810/218542">online</a>, should you be interested.</p>
-<p>After my PhD, I worked as a Bioinformatics Analyst within the Bioinformatics Core; consulting on, and assisting in, the analysis on all types of high-throughput datasets. During this time I worked on studies to define subtypes of <a href="http://www.nature.com/nature/journal/v486/n7403/full/nature10983.html">Breast</a> and <a href="http://www.sciencedirect.com/science/article/pii/S2352396415300712">Prostate</a> cancer and established pipelines for analysis whole-genome and exome resequencing data.</p>
-<p>I held the role of “<em>Bioinformatics Training Coordinator</em>” in the Bioinformatics Core of <a href="http://www.cruk.cam.ac.uk/">Cancer Research Uk Cambridge Institute</a>. I organised, developed and facilitated <a href="http://www.cruk.cam.ac.uk/core-facilities/bioinformatics-core/training">Bioinformatics training courses</a> to teach computational and analytical skills to wet-lab biologists.</p>
-<p>From October 2017 I established the <a href="https://sbc.shef.ac.uk">Bioinformatics Core at The University of Sheffield</a> which ran until August 2025. Along with supporting clinicians and researchers across campus, I also contributed to various MSC and undergraduate programs as well as obtaining training / teaching qualifications from <a href="https://carpentries.org/">thecarpentries</a> and <a href="https://advance-he.ac.uk/">AdvanceHE</a> (FHEA)</p>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">October 7, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
 
 
-</main> 
-  <hr class="about-sep">
-   <div class="about-links">
-  <a href="mailto:mark.dunning@gmail.com" class="about-link" rel="" target="">
-    <i class="bi bi-envelope"></i>
-     <span class="about-link-text"></span>
-  </a>
-  <a href="https://www.linkedin.com/in/drmarkdunning/" class="about-link" rel="" target="">
-    <i class="bi bi-linkedin"></i>
-     <span class="about-link-text"></span>
-  </a>
+</header>
+
+
+<section id="disclaimer" class="level1">
+<h1>Disclaimer</h1>
+<div class="warning">
+<p>Although R is well-regarded as a tool for performing statistical analysis, this workshop will not explicitly teach stats. Instead we give introduce the tools that we allow you to manipulate and interrogate your data into a form with which you can execute statistical tests.</p>
+</div>
+</section>
+<section id="setup" class="level1">
+<h1>Setup</h1>
+<p>If you are following these notes independently (outside one of our workshops)</p>
+<p>From the RStudio menus, Choose the <strong>File</strong> -&gt; <strong>New Project</strong> option and select New Directory from the new window</p>
+<p><img src="../..\files/training/r/new_proj1.png" class="img-fluid"></p>
+<p>Then for the <strong>Project Type</strong> pick New Project.</p>
+<p><img src="../..\files/training/r/new_proj2.png" class="img-fluid"></p>
+<p>It will ask you to pick a new Directory name, and where to create that directory (e.g.&nbsp;your Home directory or directory where you usually save your work)</p>
+<p><img src="../..\files/training/r/images/new_proj3.png" class="img-fluid"></p>
+<p>RStudio should now refresh itself. You can now download the data required for the workshop by copying and pasting the following into the R console (as shown in the screenshot)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://github.com/sheffield-bioinformatics-core/r-online/raw/master/CourseData.zip"</span>, <span class="at">destfile =</span> <span class="st">"CourseData.zip"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><img src="../..\files/training/r/data_download.png" class="img-fluid"> The files from the zip file can be extracted using the command:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>(<span class="st">"CourseData.zip"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Your RStudio screen should look like:-</p>
+<p><img src="../..\files/training/r/data_download_2.png" class="img-fluid"></p>
+<p>You will need to install some R packages and download some data before you start. You can install the packages by copying and pasting the following into an R console and pressing ENTER</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"dplyr"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"ggplot2"</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"readr"</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"rmarkdown"</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"tidyr"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You can check that this worked by copying and pasting the following:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"https://raw.githubusercontent.com/sheffield-bioinformatics-core/r-online/master/check_packages.R"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The dplyr package has been installed</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The ggplot2 package has been installed</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The readr package has been installed</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The rmarkdown package has been installed</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The tidyr package has been installed</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>You have successfully installed all the packages required for the course</code></pre>
 </div>
 </div>
- <!-- /main -->
+<p>If you want to follow along with the R code on this webpage, you can open the file <code>part1.Rmd</code> from the bottom-right corner of RStudio</p>
+<p><img src="images/find_markdown.png" class="img-fluid"></p>
+<p>There are equivalent markdown files (<code>part2.Rmd</code>, <code>part3.Rmd</code>) for the other sections of the course. Enjoy!</p>
+
+
+</section>
+
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
     const isCodeAnnotation = (el) => {
       for (const clz of el.classList) {
         if (clz.startsWith('code-annotation-')) {                     
