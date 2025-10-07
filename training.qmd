@@ -1,0 +1,6 @@
+---
+title: "Training Materials"
+listing:
+  contents: training  # <-- the sub-directory with blog content
+  type: grid          # <-- my preferred layout type
+---
