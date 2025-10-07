@@ -154,8 +154,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#disclaimer" id="toc-disclaimer" class="nav-link active" data-scroll-target="#disclaimer">Disclaimer</a></li>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a>
+  <ul class="collapse">
+  <li><a href="#topics-covered" id="toc-topics-covered" class="nav-link" data-scroll-target="#topics-covered">Topics Covered</a></li>
+  </ul></li>
   <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">Setup</a></li>
+  <li><a href="#entering-commands-in-r" id="toc-entering-commands-in-r" class="nav-link" data-scroll-target="#entering-commands-in-r">Entering commands in R</a>
+  <ul class="collapse">
+  <li><a href="#variables" id="toc-variables" class="nav-link" data-scroll-target="#variables">Variables</a></li>
+  <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
+  <ul class="collapse">
+  <li><a href="#exercise" id="toc-exercise" class="nav-link" data-scroll-target="#exercise">Exercise</a></li>
+  </ul></li>
+  <li><a href="#saving-your-notebook" id="toc-saving-your-notebook" class="nav-link" data-scroll-target="#saving-your-notebook">Saving your notebook</a></li>
+  <li><a href="#packages-in-r" id="toc-packages-in-r" class="nav-link" data-scroll-target="#packages-in-r">Packages in R</a></li>
+  </ul></li>
+  <li><a href="#dealing-with-data" id="toc-dealing-with-data" class="nav-link" data-scroll-target="#dealing-with-data">Dealing with data</a>
+  <ul class="collapse">
+  <li><a href="#reading-in-data" id="toc-reading-in-data" class="nav-link" data-scroll-target="#reading-in-data">Reading in data</a></li>
+  <li><a href="#accessing-data-in-columns" id="toc-accessing-data-in-columns" class="nav-link" data-scroll-target="#accessing-data-in-columns">Accessing data in columns</a></li>
+  <li><a href="#creating-a-new-r-notebook" id="toc-creating-a-new-r-notebook" class="nav-link" data-scroll-target="#creating-a-new-r-notebook">Creating a new R notebook</a>
+  <ul class="collapse">
+  <li><a href="#exercise-before-the-next-session" id="toc-exercise-before-the-next-session" class="nav-link" data-scroll-target="#exercise-before-the-next-session">Exercise before the next session</a></li>
+  </ul></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -193,11 +215,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="disclaimer" class="level1">
-<h1>Disclaimer</h1>
+<section id="overview" class="level1">
+<h1>Overview</h1>
 <div class="warning">
-<p>Although R is well-regarded as a tool for performing statistical analysis, this workshop will not explicitly teach stats. Instead we give introduce the tools that we allow you to manipulate and interrogate your data into a form with which you can execute statistical tests.</p>
+<p>In these materials, we explore fundamental operations of R and load some example data</p>
 </div>
+<section id="topics-covered" class="level2">
+<h2 class="anchored" data-anchor-id="topics-covered">Topics Covered</h2>
+<ul>
+<li>Basic calculations in R</li>
+<li>Using functions</li>
+<li>Getting help</li>
+<li>Saving data using variables</li>
+<li>Reading a spreadsheet into R</li>
+</ul>
+</section>
 </section>
 <section id="setup" class="level1">
 <h1>Setup</h1>
@@ -210,25 +242,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><img src="../..\files/training/r/new_proj3.png" class="img-fluid"></p>
 <p>RStudio should now refresh itself. You can now download the data required for the workshop by copying and pasting the following into the R console (as shown in the screenshot)</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://github.com/sheffield-bioinformatics-core/r-online/raw/master/CourseData.zip"</span>, <span class="at">destfile =</span> <span class="st">"CourseData.zip"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"raw_data/"</span>,<span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/r/raw_data/gapminder.csv"</span>, <span class="at">destfile =</span> <span class="st">"raw_data/gapminder.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p><img src="../..\files/training/r/data_download.png" class="img-fluid"> The files from the zip file can be extracted using the command:-</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>(<span class="st">"CourseData.zip"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Your RStudio screen should look like:-</p>
-<p><img src="../..\files/training/r/data_download_2.png" class="img-fluid"></p>
 <p>You will need to install some R packages and download some data before you start. You can install the packages by copying and pasting the following into an R console and pressing ENTER</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"dplyr"</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"ggplot2"</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"readr"</span>)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"rmarkdown"</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"tidyr"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"dplyr"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"ggplot2"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"readr"</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"rmarkdown"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"tidyr"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>You can check that this worked by copying and pasting the following:-</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"https://raw.githubusercontent.com/sheffield-bioinformatics-core/r-online/master/check_packages.R"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/r/check_packages.R"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>
 Attaching package: 'dplyr'</code></pre>
@@ -262,8 +289,517 @@ Attaching package: 'dplyr'</code></pre>
 <pre><code>You have successfully installed all the packages required for the course</code></pre>
 </div>
 </div>
+<p>We will not be working with the datasets of packages we downloaded just yet, as we need to cover some fundamentals first</p>
+</section>
+<section id="entering-commands-in-r" class="level1">
+<h1>Entering commands in R</h1>
+<p>The traditional way to enter R commands is via the Terminal, or using the console in RStudio (bottom-left panel when RStudio opens for first time). This doesn’t automatically keep track of the steps you did.</p>
+<p>We’ll be working in an <a href="https://bookdown.org/yihui/rmarkdown/notebook.html"><strong>R Notebook</strong></a>. These file are an <a href="https://bookdown.org/yihui/rmarkdown/">R Markdown</a> document type, which allow us to <strong>combine R code with</strong> <a href="https://pandoc.org/MANUAL.html#pandocs-markdown">markdown</a>, <strong>a documentation language</strong>, providing a framework for <a href="https://en.wikipedia.org/wiki/Literate_programming">literate programming</a>. In an R Notebook, R code chunks can be executed independently and interactively, with output visible immediately beneath the input.</p>
+<p>Let’s try this now!</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">"Hello World"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Hello World"</code></pre>
+</div>
+</div>
+<p>R can be used as a calculator to compute simple sums</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span> <span class="sc">+</span> <span class="dv">2</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 4</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span> <span class="sc">-</span> <span class="dv">2</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="dv">4</span> <span class="sc">*</span> <span class="dv">3</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 12</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="dv">10</span> <span class="sc">/</span> <span class="dv">2</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 5</code></pre>
+</div>
+</div>
+<p>The answer is displayed at the console with a <code>[1]</code> in front of it. The <code>1</code> inside the square brackets is a place-holder to signify how many values were in the answer (in this case only one). We will talk about dealing with lists of numbers shortly…</p>
+<p>In the case of expressions involving multiple operations, R respects the <a href="https://en.wikipedia.org/wiki/Order_of_operations#Mnemonics">BODMAS</a> system to decide the order in which operations should be performed.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span> <span class="sc">+</span> <span class="dv">2</span> <span class="sc">*</span><span class="dv">3</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 8</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span> <span class="sc">+</span> (<span class="dv">2</span> <span class="sc">*</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 8</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>(<span class="dv">2</span> <span class="sc">+</span> <span class="dv">2</span>) <span class="sc">*</span> <span class="dv">3</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 12</code></pre>
+</div>
+</div>
+<p>R is capable of more complicated arithmetic such as trigonometry and logarithms; like you would find on a fancy scientific calculator. Of course, R also has a plethora of statistical operations as we will see.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>pi</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 3.141593</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sin</span> (pi<span class="sc">/</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cos</span>(pi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tan</span>(<span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -2.18504</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">log</span>(<span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0</code></pre>
+</div>
+</div>
+<p>We can only go so far with performing simple calculations like this. Eventually we will need to store our results for later use. For this, we need to make use of <em>variables</em>.</p>
+<section id="variables" class="level2">
+<h2 class="anchored" data-anchor-id="variables">Variables</h2>
+<p>A variable is a letter or word which takes (or contains) a value. We use the assignment ‘operator’, <code>&lt;-</code> to create a variable and store some value in it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>x</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 10</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>myNumber <span class="ot">&lt;-</span> <span class="dv">25</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>myNumber</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 25</code></pre>
+</div>
+</div>
+<p>We also can perform arithmetic on variables using functions:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sqrt</span>(myNumber)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 5</code></pre>
+</div>
+</div>
+<p>We can add variables together:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>x <span class="sc">+</span> myNumber</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 35</code></pre>
+</div>
+</div>
+<p>We can change the value of an existing variable:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">21</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>x</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 21</code></pre>
+</div>
+</div>
+<p>We can set one variable to equal the value of another variable:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> myNumber</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>x</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 25</code></pre>
+</div>
+</div>
+<p>When we are feeling lazy we might give our variables short names (<code>x</code>, <code>y</code>, <code>i</code>…etc), but a better practice would be to give them meaningful names. There are some restrictions on creating variable names. They cannot start with a number or contain characters such as <code>.</code> and ‘-’. Naming variables the same as in-built functions in R, such as <code>c</code>, <code>T</code>, <code>mean</code> should also be avoided.</p>
+<p>Naming variables is a matter of taste. Some <a href="http://adv-r.had.co.nz/Style.html">conventions</a> exist such as a separating words with <code>-</code> or using <em>c</em>amel<em>C</em>aps. Whatever convention you decided, stick with it!</p>
+</section>
+<section id="functions" class="level2">
+<h2 class="anchored" data-anchor-id="functions">Functions</h2>
+<p><strong>Functions</strong> in R perform operations on <strong>arguments</strong> (the inputs(s) to the function). We have already used:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sin</span>(x)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -0.1323518</code></pre>
+</div>
+</div>
+<p>this returns the sine of x. In this case the function has one argument: <strong>x</strong>. Arguments are always contained in parentheses – curved brackets, <strong>()</strong> – separated by commas.</p>
+<p>Arguments can be named or unnamed, but if they are unnamed they must be ordered (we will see later how to find the right order). The names of the arguments are determined by the author of the function and can be found in the help page for the function. When testing code, it is easier and safer to name the arguments. <code>seq</code> is a function for generating a numeric sequence <em>from</em> and <em>to</em> particular numbers. Type <code>?seq</code> to get the help page for this function.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">seq</span>(<span class="at">from =</span> <span class="dv">3</span>, <span class="at">to =</span> <span class="dv">20</span>, <span class="at">by =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  3  7 11 15 19</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">seq</span>(<span class="dv">3</span>, <span class="dv">20</span>, <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  3  7 11 15 19</code></pre>
+</div>
+</div>
+<p>Arguments can have <em>default</em> values, meaning we do not need to specify values for these in order to run the function.</p>
+<p><code>rnorm</code> is a function that will generate a series of values from a <em>normal distribution</em>. In order to use the function, we need to tell R how many values we want</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="do">## this will produce a random set of numbers, so everyone will get a different set of numbers</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rnorm</span>(<span class="at">n=</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1]  0.806381254  0.009572724  0.256176545 -0.799478449 -0.031209190
+ [6] -0.990047320 -0.009628842  1.015338023 -1.219448901 -0.429035831</code></pre>
+</div>
+</div>
+<p>The normal distribution is defined by a <em>mean</em> (average) and <em>standard deviation</em> (spread). However, in the above example we didn’t tell R what mean and standard deviation we wanted. So how does R know what to do? All arguments to a function and their default values are listed in the help page</p>
+<p>(<em>N.B sometimes help pages can describe more than one function</em>)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>?rnorm</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>starting httpd help server ... done</code></pre>
+</div>
+</div>
+<p>In this case, we see that the defaults for mean and standard deviation are 0 and 1. We can change the function to generate values from a distribution with a different mean and standard deviation using the <code>mean</code> and <code>sd</code> <em>arguments</em>. It is important that we get the spelling of these arguments exactly right, otherwise R will an error message, or (worse?) do something unexpected.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rnorm</span>(<span class="at">n=</span><span class="dv">10</span>, <span class="at">mean=</span><span class="dv">2</span>,<span class="at">sd=</span><span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 3.8553415 2.7540968 1.3562094 2.0327935 0.4864066 4.3596440 2.4811970
+ [8] 2.9498503 4.4261048 4.2233657</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rnorm</span>(<span class="dv">10</span>, <span class="dv">2</span>, <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1]  3.641949  7.289001  2.534070  2.755773  3.350632  3.668333 -3.623158
+ [8] -3.688888 -1.346465  1.470321</code></pre>
+</div>
+</div>
+<p>In the examples above, <code>seq</code> and <code>rnorm</code> were both outputting a series of numbers, which is called a <em>vector</em> in R and is the most-fundamental data-type.</p>
+<p>Just as we can save single numbers as a variable, we can also save a vector. In fact a single number is still a vector.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>my_seq <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="at">from =</span> <span class="dv">3</span>, <span class="at">to =</span> <span class="dv">20</span>, <span class="at">by =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The arithmetic operations we have seen can be applied to these vectors; exactly the same as a single number.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>my_seq <span class="sc">+</span> <span class="dv">2</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  5  9 13 17 21</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>my_seq <span class="sc">*</span> <span class="dv">2</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  6 14 22 30 38</code></pre>
+</div>
+</div>
+<hr>
+<hr>
+<hr>
+<section id="exercise" class="level3">
+<h3 class="anchored" data-anchor-id="exercise">Exercise</h3>
+<div class="exercise">
+<ul>
+<li>What is the value of <code>pi</code> to 3 decimal places?
+<ul>
+<li>see the help for <code>round</code> <code>?round</code></li>
+</ul></li>
+<li>How can we a create a sequence from 2 to 20 comprised of 5 equally-spaced numbers?
+<ul>
+<li>i.e.&nbsp;not specifying the <code>by</code> argument and getting R to work-out the intervals</li>
+<li>check the help page for seq <code>?seq</code></li>
+</ul></li>
+<li>Create a <em>variable</em> containing 1000 random numbers with a <em>mean</em> of 2 and a <em>standard deviation</em> of 3
+<ul>
+<li>what is the maximum and minimum of these numbers?</li>
+<li>what is the average?</li>
+<li>HINT: see the help pages for functions <code>min</code>, <code>max</code> and <code>mean</code></li>
+</ul></li>
+</ul>
+</div>
+<hr>
+<hr>
+<hr>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Solutions
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(pi,<span class="at">digits =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 3.142</code></pre>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="saving-your-notebook" class="level2">
+<h2 class="anchored" data-anchor-id="saving-your-notebook">Saving your notebook</h2>
+<p>If you want to re-visit your code at any point, you will need to save a copy.</p>
+<div class="information">
+<p><strong>File &gt; Save &gt; </strong></p>
+</div>
+</section>
+<section id="packages-in-r" class="level2">
+<h2 class="anchored" data-anchor-id="packages-in-r">Packages in R</h2>
+<p>So far we have used functions that are available with the <em>base</em> distribution of R; the functions you get with a clean install of R. The open-source nature of R encourages others to write their own functions for their particular data-type or analyses.</p>
+<p>Packages are distributed through <em>repositories</em>. The most-common ones are CRAN and Bioconductor. CRAN alone has many thousands of packages.</p>
+<div class="information">
+<ul>
+<li>The <a href="https://www.r-pkg.org/">meta cran</a> website can be used to browse packages available in CRAN</li>
+<li>Bioconductor packages can be browsed <a href="http://bioconductor.org/packages/release/BiocViews.html#___Software">here</a></li>
+</ul>
+</div>
+<p>CRAN and Bioconductor have some level of curation so should be the first place to look. Researchers sometimes make their packages available on <a href="www.github.com">github</a>. However, there is no straightforward way of searching github for a particular package and no guarentee of quality.</p>
+<p>The <strong>Packages</strong> tab in the bottom-right panel of RStudio lists all packages that you currently have installed. Clicking on a package name will show a list of functions that available once that package has been loaded.</p>
+<p>There are functions for installing packages within R. If your package is part of the main <strong>CRAN</strong> repository, you can use <code>install.packages</code>.</p>
+<p>We will be using a set of <code>tidyverse</code> R packages in this practical. To install them, we would do.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="do">## You should already have installed these as part of the course setup</span></span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"readr"</span>)</span>
+<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"ggplot2"</span>)</span>
+<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"dplyr"</span>)</span>
+<span id="cb72-6"><a href="#cb72-6" aria-hidden="true" tabindex="-1"></a><span class="co"># to install the entire set of tidyverse packages, we can do install.packages("tidyverse"). But this will take some time</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A package may have several <em>dependencies</em>; other R packages from which it uses functions or data types (re-using code from other packages is strongly-encouraged). If this is the case, the other R packages will be located and installed too.</p>
+<p><strong>So long as you stick with the same version of R, you won’t need to repeat this install process.</strong></p>
+<p>Once a package is installed, the <code>library</code> function is used to load a package and make it’s functions / data available in your current R session. <em>You need to do this every time you load a new RStudio session</em>. Let’s go ahead and load the <code>readr</code> so we can import some data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="do">## readr is a packages to import spreadsheets into R</span></span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="dealing-with-data" class="level1">
+<h1>Dealing with data</h1>
+<p>The <a href="https://www.tidyverse.org/"><strong><em>tidyverse</em></strong></a> is an eco-system of packages that provides a consistent, intuitive system for data manipulation and visualisation in R.</p>
+<p><img src="https://aberdeenstudygroup.github.io/studyGroup/lessons/SG-T2-JointWorkshop/tidyverse.png" class="img-fluid"> <em>Image Credit:</em> <a href="https://aberdeenstudygroup.github.io/studyGroup/lessons/SG-T2-JointWorkshop/PopulationChangeSpeciesOccurrence/"><strong><em>Aberdeen Study Group</em></strong></a></p>
+<p>We are going to explore some of the basic features of the <code>tidyverse</code> using data from the <a href="https://www.gapminder.org/data/">gapminder</a> project, which have been bundled into an <a href="https://github.com/jennybc/gapminder">R package</a>. These data give various indicator variables for different countries around the world (life expectancy, population and Gross Domestic Product). We have saved these data as a <code>.csv</code> file called <code>gapminder.csv</code> in a sub-directory called <code>raw_data/</code> to demonstrate how to import data into R.</p>
+<section id="reading-in-data" class="level2">
+<h2 class="anchored" data-anchor-id="reading-in-data">Reading in data</h2>
+<p>Any <code>.csv</code> file can be imported into R by supplying the path to the file to <code>readr</code> function <code>read_csv</code> and assigning it to a new object to store the result. A useful sanity check is the <code>file.exists</code> function which will print <code>TRUE</code> is the file can be found in the working directory.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="fu">getwd</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "C:/work/personal_development/markdunning.github.com/training/r_part1"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>gapminder_path <span class="ot">&lt;-</span> <span class="st">"raw_data/gapminder.csv"</span></span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a><span class="fu">file.exists</span>(gapminder_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+</div>
+<p>Assuming the file can be found, we can use <code>read_csv</code> to import. Other functions can be used to read tab-delimited files (<code>read_delim</code>) or a generic <code>read.table</code> function. A data frame object is created.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a>gapminder_path <span class="ot">&lt;-</span> <span class="st">"raw_data/gapminder.csv"</span></span>
+<span id="cb78-3"><a href="#cb78-3" aria-hidden="true" tabindex="-1"></a>gapminder <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(gapminder_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 1704 Columns: 6
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (2): country, continent
+dbl (4): year, lifeExp, pop, gdpPercap
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Pay Attention
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Why would specifying <code>gapminder_path</code> as </strong> <code>Users/mark/Documents/workflows/workshops/r-crash-course/raw_data/gapminder.csv</code> <strong>be a bad idea?</strong> Would you be able to re-run the analysis on another machine?</p>
+</div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Reading from Excel (xls/xlsx) files
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You can also read excel (<code>.xls</code> or <code>.xlsx</code>) files into R, but you will have to use the <code>readxl</code> package instead.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"readxl"</span>)</span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
+<span id="cb80-3"><a href="#cb80-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Replace PATH_TO_MY_XLS with the name of the file you want to read</span></span>
+<span id="cb80-4"><a href="#cb80-4" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read_xls</span>(PATH_TO_MY_XLS)</span>
+<span id="cb80-5"><a href="#cb80-5" aria-hidden="true" tabindex="-1"></a><span class="do">## Replace PATH_TO_MY_XLSX with the name of the file you want to read</span></span>
+<span id="cb80-6"><a href="#cb80-6" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read_xlsx</span>(PATH_TO_MY_XLSX)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>If you get <em>really</em> stuck importing data, there is a File -&gt; Import Dataset option that should guide you through the process. It will also show the corresponding R code that you can use in future.</p>
+</div>
+</div>
+</div>
+<p>The data frame object in R allows us to work with <strong>“tabular” data</strong>, like we might be used to dealing with in Excel, where our data can be thought of having <strong>rows and columns</strong>. The values in <strong>each column</strong> have to all be of the <strong>same type</strong> (i.e.&nbsp;all numbers or all text).</p>
+<p>In Rstudio, you can <strong>view the contents of the data frame</strong> we have just created using function <code>View()</code>. This is useful for interactive exploration of the data, but not so useful for automation, scripting and analyses.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Make sure that you use a capital letter V</span></span>
+<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a><span class="fu">View</span>(gapminder)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 6
+   country     continent  year lifeExp      pop gdpPercap
+   &lt;chr&gt;       &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Afghanistan Asia       1952    28.8  8425333      779.
+ 2 Afghanistan Asia       1957    30.3  9240934      821.
+ 3 Afghanistan Asia       1962    32.0 10267083      853.
+ 4 Afghanistan Asia       1967    34.0 11537966      836.
+ 5 Afghanistan Asia       1972    36.1 13079460      740.
+ 6 Afghanistan Asia       1977    38.4 14880372      786.
+ 7 Afghanistan Asia       1982    39.9 12881816      978.
+ 8 Afghanistan Asia       1987    40.8 13867957      852.
+ 9 Afghanistan Asia       1992    41.7 16317921      649.
+10 Afghanistan Asia       1997    41.8 22227415      635.
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+<p>We should <strong>always check the data frame that we have created</strong>. Sometimes R will happily read data using an inappropriate function and create an object without raising an error. However, the data might be unusable. Consider:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">read_table</span>(gapminder_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+── Column specification ────────────────────────────────────────────────────────
+cols(
+  `"country","continent","year","lifeExp","pop","gdpPercap"` = col_character()
+)</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: 324 parsing failures.
+row col  expected    actual                     file
+145  -- 1 columns 3 columns 'raw_data/gapminder.csv'
+146  -- 1 columns 3 columns 'raw_data/gapminder.csv'
+147  -- 1 columns 3 columns 'raw_data/gapminder.csv'
+148  -- 1 columns 3 columns 'raw_data/gapminder.csv'
+149  -- 1 columns 3 columns 'raw_data/gapminder.csv'
+... ... ......... ......... ........................
+See problems(...) for more details.</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a><span class="fu">View</span>(test)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 1
+   `"country","continent","year","lifeExp","pop","gdpPercap"` 
+   &lt;chr&gt;                                                      
+ 1 "\"Afghanistan\",\"Asia\",1952,28.801,8425333,779.4453145" 
+ 2 "\"Afghanistan\",\"Asia\",1957,30.332,9240934,820.8530296" 
+ 3 "\"Afghanistan\",\"Asia\",1962,31.997,10267083,853.10071"  
+ 4 "\"Afghanistan\",\"Asia\",1967,34.02,11537966,836.1971382" 
+ 5 "\"Afghanistan\",\"Asia\",1972,36.088,13079460,739.9811058"
+ 6 "\"Afghanistan\",\"Asia\",1977,38.438,14880372,786.11336"  
+ 7 "\"Afghanistan\",\"Asia\",1982,39.854,12881816,978.0114388"
+ 8 "\"Afghanistan\",\"Asia\",1987,40.822,13867957,852.3959448"
+ 9 "\"Afghanistan\",\"Asia\",1992,41.674,16317921,649.3413952"
+10 "\"Afghanistan\",\"Asia\",1997,41.763,22227415,635.341351" 
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+<p>Quick sanity checks can also be performed by inspecting details in the environment tab. A useful check in RStudio is to use the <code>head</code> function, which prints the first 6 rows of the data frame to the screen.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(gapminder)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 6
+  country     continent  year lifeExp      pop gdpPercap
+  &lt;chr&gt;       &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+1 Afghanistan Asia       1952    28.8  8425333      779.
+2 Afghanistan Asia       1957    30.3  9240934      821.
+3 Afghanistan Asia       1962    32.0 10267083      853.
+4 Afghanistan Asia       1967    34.0 11537966      836.
+5 Afghanistan Asia       1972    36.1 13079460      740.
+6 Afghanistan Asia       1977    38.4 14880372      786.</code></pre>
+</div>
+</div>
+<div class="warning">
+<p>We have used a nice, clean, dataset as our example for the workshop. Other datasets out in the wild might not be so ameanable for analysis in R. If your data look like this, you might have problems:- <img src="https://datacarpentry.org/2015-05-29-great-plains/spreadsheet-ecology/fig/2_datasheet_example.jpg"></p>
+<p>We recommend the Data Carpentry materials on spreadsheet organisation for an overview of common pitfalls - and how to address them</p>
+<ul>
+<li>https://datacarpentry.org/spreadsheet-ecology-lesson/</li>
+</ul>
+</div>
+</section>
+<section id="accessing-data-in-columns" class="level2">
+<h2 class="anchored" data-anchor-id="accessing-data-in-columns">Accessing data in columns</h2>
+<p>In the next section we will explore in more detail how to control the columns and rows from a data frame that are displayed in RStudio. For now, accessing all the observations from a particular column can be achieved by typing the <code>$</code> symbol after the name of the data frame followed by the name of a column you are interested in.</p>
+<p>RStudio is able to <em>“tab-complete”</em> the column name, so typing the following and pressing the <strong>TAB</strong> key will bring-up a list of possible columns. The contents of the column that you select are then printed to the screen.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a>gapminder<span class="sc">$</span>c</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Rather than merely printing to the screen we can also create a variable</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb91"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> gapminder<span class="sc">$</span>year</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can then use some of the functions we have seen before</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a><span class="fu">min</span>(years)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1952</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(years)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2007</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a><span class="fu">median</span>(years)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1979.5</code></pre>
+</div>
+</div>
+<p>Although we don’t have to save the values in the column as a variable first</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a><span class="fu">min</span>(gapminder<span class="sc">$</span>year)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1952</code></pre>
+</div>
+</div>
+</section>
+<section id="creating-a-new-r-notebook" class="level2">
+<h2 class="anchored" data-anchor-id="creating-a-new-r-notebook">Creating a new R notebook</h2>
+<p>You will probably want to create a new <em>R notebook</em> file to perform your analysis. This can be done by following the menus:-</p>
+<div class="information">
+<p><strong>File -&gt; New File -&gt; R notebook</strong></p>
+</div>
+<p>A new pane should open that includes some example code. You can delete everything <strong>apart from lines 1 to 4</strong></p>
+<p><img src="../..\files/training/r/blank_notebook.PNG" class="img-fluid"></p>
+<p>You can now insert R code chunks using the insert menu.</p>
+<p>Before generating a report you will need to save the file with the menu <strong>File -&gt; Save</strong>. You will then be able to create a report using the Preview button. N.B. you may need to install extra software before doing this.</p>
+<hr>
+<hr>
+<hr>
+<section id="exercise-before-the-next-session" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-before-the-next-session">Exercise before the next session</h3>
+<div class="exercise">
+<ul>
+<li>Create a new R notebook using the instructions above and create a code chunk to read the <code>gapminder.csv</code> file. Answer the following questions and generate a report
+<ul>
+<li>The function <code>tail</code> is similar to <code>head</code> except it prints the <em>last</em> lines in a file. Use this function to print the last <em>10</em> lines in the data frame (you will have to consult the help on <code>tail</code> to see how to change the default arguments.)</li>
+<li>What is the largest observed population?</li>
+<li>What is the lowest life expectancy</li>
+</ul></li>
+</ul>
+</div>
+<hr>
+<hr>
+<hr>
 
 
+</section>
+</section>
 </section>
 
 </main> <!-- /main -->
