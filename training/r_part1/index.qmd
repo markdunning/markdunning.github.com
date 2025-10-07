@@ -241,24 +241,41 @@ my_seq * 2
 ******
 
 ::: {.callout-tip, collapse = TRUE}
+
 ## Solutions
 ```{r}
+## The digits argument needs to be changed
 round(pi,digits = 3)
+
+## Use the length.out argument
+seq(from = 2, to = 20, length.out = 5)
+
+## Make sure you create a variable
+
+my_numbers <- rnorm(n = 1000, mean = 2, sd = 3)
+
+max(my_numbers)
+
+min(my_numbers)
+
+mean(my_numbers)
+
 ```
-
-
 :::
 
-## Saving your notebook
 
-If you want to re-visit your code at any point, you will need to save a copy.
+::: {.callout-note appearance="simple"}
 
-<div class="information">
+## About random numbers...
 
-**File > Save > ** 
+Sometimes we just want to create some numbers or data that we can play around with. However, most likely we will be concerned about the *reproducibility* of our R code. In circumstances where randomness is involved it is common to set a "seed" which ensures the same random numbers are generated each time.
 
-</div>
+```{r}
+set.seed(123)
+rnorm(10)
 
+```
+:::
 
 ## Packages in R
 
@@ -449,42 +466,14 @@ min(gapminder$year)
 ```
 
 
-## Creating a new R notebook
+## Coming next...
 
-You will probably want to create a new *R notebook* file to perform your analysis. This can be done by following the menus:-
+In [Part 2](/training/part2) we will start to interrogate and visualise the data we have just imported
 
-<div class="information">
-
-**File -> New File -> R notebook** 
-
-</div>
-
-A new pane should open that includes some example code. You can delete everything **apart from lines 1 to 4**
-
-![](/files/training/r/blank_notebook.PNG)
-
-You can now insert R code chunks using the insert menu.
-
-Before generating a report you will need to save the file with the menu **File -> Save**. You will then be able to create a report using the Preview button. N.B. you may need to install extra software before doing this.
-
-******
-******
-******
-
-### Exercise before the next session
-
-<div class="exercise">
-- Create a new R notebook using the instructions above and create a code chunk to read the `gapminder.csv` file. Answer the following questions and generate a report 
-  + The function `tail` is similar to `head` except it prints the *last* lines in a file. Use this function to print the last *10* lines in the data frame (you will have to consult the help on `tail` to see how to change the default arguments.)
-  + What is the largest observed population?
-  + What is the lowest life expectancy
-</div>
-
-
-******
-******
-******
-
-
+- Choosing which columns to show from the data
+- Choosing what rows to keep in the data
+- Adding / altering columns
+- Sorting the rows in our data
+- Introduction to plotting
 
  

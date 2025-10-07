@@ -22,6 +22,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -119,7 +154,37 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#coming-soon." id="toc-coming-soon." class="nav-link active" data-scroll-target="#coming-soon.">Coming Soon….</a></li>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a>
+  <ul class="collapse">
+  <li><a href="#topics-covered" id="toc-topics-covered" class="nav-link" data-scroll-target="#topics-covered">Topics covered</a></li>
+  </ul></li>
+  <li><a href="#data-manipulation" id="toc-data-manipulation" class="nav-link" data-scroll-target="#data-manipulation">Data Manipulation</a>
+  <ul class="collapse">
+  <li><a href="#manipulating-columns" id="toc-manipulating-columns" class="nav-link" data-scroll-target="#manipulating-columns">Manipulating Columns</a></li>
+  <li><a href="#help-with-dplyr-functions" id="toc-help-with-dplyr-functions" class="nav-link" data-scroll-target="#help-with-dplyr-functions">Help with dplyr functions</a>
+  <ul class="collapse">
+  <li><a href="#selecting-columns" id="toc-selecting-columns" class="nav-link" data-scroll-target="#selecting-columns"><code>select</code>ing columns</a></li>
+  </ul></li>
+  <li><a href="#restricting-rows-with-filter" id="toc-restricting-rows-with-filter" class="nav-link" data-scroll-target="#restricting-rows-with-filter">Restricting rows with filter</a>
+  <ul class="collapse">
+  <li><a href="#testing-more-than-one-condition" id="toc-testing-more-than-one-condition" class="nav-link" data-scroll-target="#testing-more-than-one-condition">testing more than one condition</a></li>
+  </ul></li>
+  <li><a href="#exercise" id="toc-exercise" class="nav-link" data-scroll-target="#exercise">Exercise</a></li>
+  <li><a href="#manipulating-the-values-in-a-column-creating-new-columns" id="toc-manipulating-the-values-in-a-column-creating-new-columns" class="nav-link" data-scroll-target="#manipulating-the-values-in-a-column-creating-new-columns">Manipulating the values in a column / creating new columns</a></li>
+  <li><a href="#ordering-sorting" id="toc-ordering-sorting" class="nav-link" data-scroll-target="#ordering-sorting">Ordering / sorting</a></li>
+  <li><a href="#saving-data-frames" id="toc-saving-data-frames" class="nav-link" data-scroll-target="#saving-data-frames">Saving data frames</a></li>
+  <li><a href="#exercise-1" id="toc-exercise-1" class="nav-link" data-scroll-target="#exercise-1">Exercise</a></li>
+  <li><a href="#piping" id="toc-piping" class="nav-link" data-scroll-target="#piping">“Piping”</a></li>
+  </ul></li>
+  <li><a href="#plotting" id="toc-plotting" class="nav-link" data-scroll-target="#plotting">Plotting</a>
+  <ul class="collapse">
+  <li><a href="#why-use-ggplot2" id="toc-why-use-ggplot2" class="nav-link" data-scroll-target="#why-use-ggplot2">Why use ggplot2?</a></li>
+  <li><a href="#basic-plot-types" id="toc-basic-plot-types" class="nav-link" data-scroll-target="#basic-plot-types">Basic plot types</a>
+  <ul class="collapse">
+  <li><a href="#exercises" id="toc-exercises" class="nav-link" data-scroll-target="#exercises">Exercises</a></li>
+  </ul></li>
+  <li><a href="#customising-the-plot-appearance" id="toc-customising-the-plot-appearance" class="nav-link" data-scroll-target="#customising-the-plot-appearance">Customising the plot appearance</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -157,10 +222,907 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="coming-soon." class="level1">
-<h1>Coming Soon….</h1>
+<section id="overview" class="level1">
+<h1>Overview</h1>
+<p>Starting to play with data with the <code>dplyr</code> and <code>ggplot2</code> packages</p>
+<section id="topics-covered" class="level2">
+<h2 class="anchored" data-anchor-id="topics-covered">Topics covered</h2>
+<ul>
+<li>Choosing which columns to show from the data</li>
+<li>Choosing what rows to keep in the data</li>
+<li>Adding / altering columns</li>
+<li>Sorting the rows in our data</li>
+<li>Introduction to plotting</li>
+</ul>
+</section>
+</section>
+<section id="data-manipulation" class="level1">
+<h1>Data Manipulation</h1>
+<p>If you followed the first part, you should already have some example data downloaded. The command to do this is repeated below.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Checks if the required file is present, and downloads if not</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"raw_data/gapminder.csv"</span>)) <span class="fu">dir.create</span>(<span class="st">"raw_data/"</span>,<span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/r/raw_data/gapminder.csv"</span>, <span class="at">destfile =</span> <span class="st">"raw_data/gapminder.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We also discussed in the previous part how to read the example dataset into R.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>gapminder <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/gapminder.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="manipulating-columns" class="level2">
+<h2 class="anchored" data-anchor-id="manipulating-columns">Manipulating Columns</h2>
+<p>We are going to use functions from the <strong><code>dplyr</code></strong> package to <strong>manipulate the data frame</strong> we have just created. It is perfectly possible to work with data frames using the functions provided as part of “<em>base R</em>”. However, many find it easy to read and write code using <code>dplyr</code>.</p>
+<p>There are <strong>many more functions available in <code>dplyr</code></strong> than we will cover today. An overview of all functions is given in a cheatsheet.</p>
+<p>::: {.callout-tip, collapse = TRUE}</p>
+</section>
+<section id="help-with-dplyr-functions" class="level2">
+<h2 class="anchored" data-anchor-id="help-with-dplyr-functions">Help with dplyr functions</h2>
+<ul>
+<li><a href="https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf">dplyr cheatsheet</a>. The cheatsheet is also available through the RStudio Help menu.</li>
+</ul>
+<p>:::</p>
+<p>Before using any of these functions, we need to load the library:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="selecting-columns" class="level3">
+<h3 class="anchored" data-anchor-id="selecting-columns"><code>select</code>ing columns</h3>
+<p>We can <strong>access the columns</strong> of a data frame using the <code>select</code> function.</p>
+<section id="by-name" class="level4">
+<h4 class="anchored" data-anchor-id="by-name">by name</h4>
+<p>Firstly, we can select column by name, by adding bare column names (i.e.&nbsp;not requiring quote marks around the name) after the name of the data frame, separated by a <code>,</code> .</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(gapminder, country, continent)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 2
+   country     continent
+   &lt;chr&gt;       &lt;chr&gt;    
+ 1 Afghanistan Asia     
+ 2 Afghanistan Asia     
+ 3 Afghanistan Asia     
+ 4 Afghanistan Asia     
+ 5 Afghanistan Asia     
+ 6 Afghanistan Asia     
+ 7 Afghanistan Asia     
+ 8 Afghanistan Asia     
+ 9 Afghanistan Asia     
+10 Afghanistan Asia     
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+<p>We can also omit columns from the ouput by putting a minus (<code>-</code>) in front of the column name. Note that this is not the same as removing the column from the data permanently.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(gapminder, <span class="sc">-</span>country)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 5
+   continent  year lifeExp      pop gdpPercap
+   &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Asia       1952    28.8  8425333      779.
+ 2 Asia       1957    30.3  9240934      821.
+ 3 Asia       1962    32.0 10267083      853.
+ 4 Asia       1967    34.0 11537966      836.
+ 5 Asia       1972    36.1 13079460      740.
+ 6 Asia       1977    38.4 14880372      786.
+ 7 Asia       1982    39.9 12881816      978.
+ 8 Asia       1987    40.8 13867957      852.
+ 9 Asia       1992    41.7 16317921      649.
+10 Asia       1997    41.8 22227415      635.
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="range-of-columns" class="level4">
+<h4 class="anchored" data-anchor-id="range-of-columns">range of columns</h4>
+<p>A range of columns can be selected by the <code>:</code> operator.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(gapminder, lifeExp<span class="sc">:</span>gdpPercap)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 3
+   lifeExp      pop gdpPercap
+     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+ 1    28.8  8425333      779.
+ 2    30.3  9240934      821.
+ 3    32.0 10267083      853.
+ 4    34.0 11537966      836.
+ 5    36.1 13079460      740.
+ 6    38.4 14880372      786.
+ 7    39.9 12881816      978.
+ 8    40.8 13867957      852.
+ 9    41.7 16317921      649.
+10    41.8 22227415      635.
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="helper-functions" class="level4">
+<h4 class="anchored" data-anchor-id="helper-functions">helper functions</h4>
+<p>There are a number of helper functions can be employed if we are unsure about the exact name of the column.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(gapminder, <span class="fu">starts_with</span>(<span class="st">"co"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 2
+   country     continent
+   &lt;chr&gt;       &lt;chr&gt;    
+ 1 Afghanistan Asia     
+ 2 Afghanistan Asia     
+ 3 Afghanistan Asia     
+ 4 Afghanistan Asia     
+ 5 Afghanistan Asia     
+ 6 Afghanistan Asia     
+ 7 Afghanistan Asia     
+ 8 Afghanistan Asia     
+ 9 Afghanistan Asia     
+10 Afghanistan Asia     
+# ℹ 1,694 more rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(gapminder, <span class="fu">contains</span>(<span class="st">"life"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 1
+   lifeExp
+     &lt;dbl&gt;
+ 1    28.8
+ 2    30.3
+ 3    32.0
+ 4    34.0
+ 5    36.1
+ 6    38.4
+ 7    39.9
+ 8    40.8
+ 9    41.7
+10    41.8
+# ℹ 1,694 more rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># selecting the last and penultimate columns</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(gapminder, <span class="fu">last_col</span>(<span class="dv">1</span>),<span class="fu">last_col</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 2
+        pop gdpPercap
+      &lt;dbl&gt;     &lt;dbl&gt;
+ 1  8425333      779.
+ 2  9240934      821.
+ 3 10267083      853.
+ 4 11537966      836.
+ 5 13079460      740.
+ 6 14880372      786.
+ 7 12881816      978.
+ 8 13867957      852.
+ 9 16317921      649.
+10 22227415      635.
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+<p>It is also possible to use the column number in the selection.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(gapminder, <span class="dv">4</span><span class="sc">:</span><span class="dv">6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 3
+   lifeExp      pop gdpPercap
+     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+ 1    28.8  8425333      779.
+ 2    30.3  9240934      821.
+ 3    32.0 10267083      853.
+ 4    34.0 11537966      836.
+ 5    36.1 13079460      740.
+ 6    38.4 14880372      786.
+ 7    39.9 12881816      978.
+ 8    40.8 13867957      852.
+ 9    41.7 16317921      649.
+10    41.8 22227415      635.
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+<div class="exercise">
+<p><strong>Question</strong>: Why might using the number of the column sometimes be problematic? Consider what might happen if you wrote code to select the last column of data from a file using the column number. What would happen if the number of columns in the file was not constant?</p>
+</div>
+<p>The <code>select</code> function can be used with just a single column name - in a similar manner to the <code>$</code> operation we saw last time. However, <code>select</code> always returns a <em>data frame</em> whereas <code>$</code> gives a vector. Compare the output of the following code chunks</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(gapminder, pop)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 1
+        pop
+      &lt;dbl&gt;
+ 1  8425333
+ 2  9240934
+ 3 10267083
+ 4 11537966
+ 5 13079460
+ 6 14880372
+ 7 12881816
+ 8 13867957
+ 9 16317921
+10 22227415
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>gapminder<span class="sc">$</span>pop</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The consequence of this is that you cannot use functions such as <code>mean</code> in combination with <code>select</code></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>pops <span class="ot">&lt;-</span> <span class="fu">select</span>(gapminder, pop)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(pops)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In the next session we will see how to calculate summary statistics on particular columns in our data. For now, a useful function is <code>pull</code> that will return the correct type of data required for a function such as <code>mean</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>pops <span class="ot">&lt;-</span> <span class="fu">pull</span>(gapminder,pop)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(pops)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 29601212</code></pre>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="restricting-rows-with-filter" class="level2">
+<h2 class="anchored" data-anchor-id="restricting-rows-with-filter">Restricting rows with filter</h2>
+<p>So far we have been returning all the rows in the output. We can use what we call a <strong>logical test</strong> to <strong>filter the rows</strong> in a data frame. This logical test will be applied to each row and give either a <code>TRUE</code> or <code>FALSE</code> result. When filtering, <strong>only rows with a <code>TRUE</code> result get returned</strong>.</p>
+<p>For example we filter for rows where the <code>lifeExp</code> variable is less than 40.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, lifeExp <span class="sc">&lt;</span> <span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 124 × 6
+   country     continent  year lifeExp      pop gdpPercap
+   &lt;chr&gt;       &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Afghanistan Asia       1952    28.8  8425333      779.
+ 2 Afghanistan Asia       1957    30.3  9240934      821.
+ 3 Afghanistan Asia       1962    32.0 10267083      853.
+ 4 Afghanistan Asia       1967    34.0 11537966      836.
+ 5 Afghanistan Asia       1972    36.1 13079460      740.
+ 6 Afghanistan Asia       1977    38.4 14880372      786.
+ 7 Afghanistan Asia       1982    39.9 12881816      978.
+ 8 Angola      Africa     1952    30.0  4232095     3521.
+ 9 Angola      Africa     1957    32.0  4561361     3828.
+10 Angola      Africa     1962    34    4826015     4269.
+# ℹ 114 more rows</code></pre>
+</div>
+</div>
+<p>Internally, R creates a <em>vector</em> of <code>TRUE</code> or <code>FALSE</code>; one for each row in the data frame. This is then used to decide which rows to display.</p>
+<p>Testing for equality can be done using <code>==</code>. This will only give <code>TRUE</code> for entries that are <em>exactly</em> the same as the test string.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, country <span class="sc">==</span> <span class="st">"Zambia"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 12 × 6
+   country continent  year lifeExp      pop gdpPercap
+   &lt;chr&gt;   &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Zambia  Africa     1952    42.0  2672000     1147.
+ 2 Zambia  Africa     1957    44.1  3016000     1312.
+ 3 Zambia  Africa     1962    46.0  3421000     1453.
+ 4 Zambia  Africa     1967    47.8  3900000     1777.
+ 5 Zambia  Africa     1972    50.1  4506497     1773.
+ 6 Zambia  Africa     1977    51.4  5216550     1589.
+ 7 Zambia  Africa     1982    51.8  6100407     1409.
+ 8 Zambia  Africa     1987    50.8  7272406     1213.
+ 9 Zambia  Africa     1992    46.1  8381163     1211.
+10 Zambia  Africa     1997    40.2  9417789     1071.
+11 Zambia  Africa     2002    39.2 10595811     1072.
+12 Zambia  Africa     2007    42.4 11746035     1271.</code></pre>
+</div>
+</div>
+<p>N.B. For partial matches, the <code>grepl</code> function and / or <em>regular expressions</em> (if you know them) can be used.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, <span class="fu">grepl</span>(<span class="st">"land"</span>, country))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 108 × 6
+   country continent  year lifeExp     pop gdpPercap
+   &lt;chr&gt;   &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Finland Europe     1952    66.6 4090500     6425.
+ 2 Finland Europe     1957    67.5 4324000     7545.
+ 3 Finland Europe     1962    68.8 4491443     9372.
+ 4 Finland Europe     1967    69.8 4605744    10922.
+ 5 Finland Europe     1972    70.9 4639657    14359.
+ 6 Finland Europe     1977    72.5 4738902    15605.
+ 7 Finland Europe     1982    74.6 4826933    18533.
+ 8 Finland Europe     1987    74.8 4931729    21141.
+ 9 Finland Europe     1992    75.7 5041039    20647.
+10 Finland Europe     1997    77.1 5134406    23724.
+# ℹ 98 more rows</code></pre>
+</div>
+</div>
+<p>We can also test if rows are <em>not</em> equal to a value using <code>!=</code></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, continent <span class="sc">!=</span> <span class="st">"Europe"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,344 × 6
+   country     continent  year lifeExp      pop gdpPercap
+   &lt;chr&gt;       &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Afghanistan Asia       1952    28.8  8425333      779.
+ 2 Afghanistan Asia       1957    30.3  9240934      821.
+ 3 Afghanistan Asia       1962    32.0 10267083      853.
+ 4 Afghanistan Asia       1967    34.0 11537966      836.
+ 5 Afghanistan Asia       1972    36.1 13079460      740.
+ 6 Afghanistan Asia       1977    38.4 14880372      786.
+ 7 Afghanistan Asia       1982    39.9 12881816      978.
+ 8 Afghanistan Asia       1987    40.8 13867957      852.
+ 9 Afghanistan Asia       1992    41.7 16317921      649.
+10 Afghanistan Asia       1997    41.8 22227415      635.
+# ℹ 1,334 more rows</code></pre>
+</div>
+</div>
+<section id="testing-more-than-one-condition" class="level3">
+<h3 class="anchored" data-anchor-id="testing-more-than-one-condition">testing more than one condition</h3>
+<p>There are a couple of ways of testing for more than one pattern. The first uses an <em>or</em> <code>|</code> statement. i.e.&nbsp;testing if the value of <code>country</code> is <code>Zambia</code> <em>or</em> the value is <code>Zimbabwe</code>. Remember to use double <code>=</code> sign to test for string equality; <code>==</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, country <span class="sc">==</span> <span class="st">"Zambia"</span> <span class="sc">|</span> country <span class="sc">==</span> <span class="st">"Zimbabwe"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 24 × 6
+   country continent  year lifeExp     pop gdpPercap
+   &lt;chr&gt;   &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Zambia  Africa     1952    42.0 2672000     1147.
+ 2 Zambia  Africa     1957    44.1 3016000     1312.
+ 3 Zambia  Africa     1962    46.0 3421000     1453.
+ 4 Zambia  Africa     1967    47.8 3900000     1777.
+ 5 Zambia  Africa     1972    50.1 4506497     1773.
+ 6 Zambia  Africa     1977    51.4 5216550     1589.
+ 7 Zambia  Africa     1982    51.8 6100407     1409.
+ 8 Zambia  Africa     1987    50.8 7272406     1213.
+ 9 Zambia  Africa     1992    46.1 8381163     1211.
+10 Zambia  Africa     1997    40.2 9417789     1071.
+# ℹ 14 more rows</code></pre>
+</div>
+</div>
+<p>The <code>%in%</code> function is a convenient function for testing which items in a vector correspond to a defined set of values.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, country <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Zambia"</span>, <span class="st">"Zimbabwe"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 24 × 6
+   country continent  year lifeExp     pop gdpPercap
+   &lt;chr&gt;   &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Zambia  Africa     1952    42.0 2672000     1147.
+ 2 Zambia  Africa     1957    44.1 3016000     1312.
+ 3 Zambia  Africa     1962    46.0 3421000     1453.
+ 4 Zambia  Africa     1967    47.8 3900000     1777.
+ 5 Zambia  Africa     1972    50.1 4506497     1773.
+ 6 Zambia  Africa     1977    51.4 5216550     1589.
+ 7 Zambia  Africa     1982    51.8 6100407     1409.
+ 8 Zambia  Africa     1987    50.8 7272406     1213.
+ 9 Zambia  Africa     1992    46.1 8381163     1211.
+10 Zambia  Africa     1997    40.2 9417789     1071.
+# ℹ 14 more rows</code></pre>
+</div>
+</div>
+<p>We can require that both tests are <code>TRUE</code>, e.g.&nbsp;which years in Zambia had a life expectancy less than 40, by separating conditional statements by a <code>,</code>. This performs an <em>AND</em> test so only rows that meet both conditions are returned.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, country <span class="sc">==</span> <span class="st">"Zambia"</span>, lifeExp <span class="sc">&lt;</span> <span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 6
+  country continent  year lifeExp      pop gdpPercap
+  &lt;chr&gt;   &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+1 Zambia  Africa     2002    39.2 10595811     1072.</code></pre>
+</div>
+</div>
+<div class="information">
+<p>You may have noticed that <code>filter</code> will always output the same number of columns as the input data frame. <code>filter</code> never changes the columns that are displayed. There are ways of using <code>filter</code> in conjunction with <code>select</code> as we will see later.</p>
+</div>
+<hr>
+<hr>
+<hr>
+</section>
+</section>
+<section id="exercise" class="level2">
+<h2 class="anchored" data-anchor-id="exercise">Exercise</h2>
+<div class="exercise">
+<ul>
+<li>Create a subset of the data where the population less than a million in the year 2002</li>
+<li>Create a subset of the data where the life expectancy is greater than 75 in the years prior to 1987</li>
+<li>Create a subset of the European data where the life expectancy is between 75 and 80 in the years 2002 or 2007.</li>
+<li>If you are finished with these, try to explore alternative ways of performing the same filtering</li>
+</ul>
+</div>
+<hr>
+<hr>
+<hr>
+</section>
+<section id="manipulating-the-values-in-a-column-creating-new-columns" class="level2">
+<h2 class="anchored" data-anchor-id="manipulating-the-values-in-a-column-creating-new-columns">Manipulating the values in a column / creating new columns</h2>
+<p>As well as selecting existing columns in the data frame, new columns can be created and existing ones manipulated using the <code>mutate</code> function. Typically a function or mathematical expression is applied to data in existing columns by row, and the result either stored in a new column or reassigned to an existing one. In other words, the number of values returned by the function must be the same as the number of input values. Multiple mutations can be performed in one line of code.</p>
+<p>Here, we create a new column of population in millions (<code>PopInMillions</code>) and round <code>lifeExp</code> to the nearest integer.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mutate</span>(gapminder, <span class="at">PopInMillions =</span> pop <span class="sc">/</span> <span class="fl">1e6</span>,</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">lifeExp =</span> <span class="fu">round</span>(lifeExp))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 7
+   country     continent  year lifeExp      pop gdpPercap PopInMillions
+   &lt;chr&gt;       &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;         &lt;dbl&gt;
+ 1 Afghanistan Asia       1952      29  8425333      779.          8.43
+ 2 Afghanistan Asia       1957      30  9240934      821.          9.24
+ 3 Afghanistan Asia       1962      32 10267083      853.         10.3 
+ 4 Afghanistan Asia       1967      34 11537966      836.         11.5 
+ 5 Afghanistan Asia       1972      36 13079460      740.         13.1 
+ 6 Afghanistan Asia       1977      38 14880372      786.         14.9 
+ 7 Afghanistan Asia       1982      40 12881816      978.         12.9 
+ 8 Afghanistan Asia       1987      41 13867957      852.         13.9 
+ 9 Afghanistan Asia       1992      42 16317921      649.         16.3 
+10 Afghanistan Asia       1997      42 22227415      635.         22.2 
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+<p>Note that we haven’t actually changed our <code>gapminder</code> data frame. If we wanted to make the new columns permanent, we would have to create a new variable.</p>
+<p>If we want to rename existing columns, and not create any extra columns, we can use the <code>rename</code> function.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rename</span>(gapminder, <span class="at">GDP=</span>gdpPercap)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 6
+   country     continent  year lifeExp      pop   GDP
+   &lt;chr&gt;       &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
+ 1 Afghanistan Asia       1952    28.8  8425333  779.
+ 2 Afghanistan Asia       1957    30.3  9240934  821.
+ 3 Afghanistan Asia       1962    32.0 10267083  853.
+ 4 Afghanistan Asia       1967    34.0 11537966  836.
+ 5 Afghanistan Asia       1972    36.1 13079460  740.
+ 6 Afghanistan Asia       1977    38.4 14880372  786.
+ 7 Afghanistan Asia       1982    39.9 12881816  978.
+ 8 Afghanistan Asia       1987    40.8 13867957  852.
+ 9 Afghanistan Asia       1992    41.7 16317921  649.
+10 Afghanistan Asia       1997    41.8 22227415  635.
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="ordering-sorting" class="level2">
+<h2 class="anchored" data-anchor-id="ordering-sorting">Ordering / sorting</h2>
+<p>The whole data frame can be re-ordered according to the values in one column using the <code>arrange</code> function. So to order the table according to population size:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">arrange</span>(gapminder, pop)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 6
+   country               continent  year lifeExp   pop gdpPercap
+   &lt;chr&gt;                 &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Sao Tome and Principe Africa     1952    46.5 60011      880.
+ 2 Sao Tome and Principe Africa     1957    48.9 61325      861.
+ 3 Djibouti              Africa     1952    34.8 63149     2670.
+ 4 Sao Tome and Principe Africa     1962    51.9 65345     1072.
+ 5 Sao Tome and Principe Africa     1967    54.4 70787     1385.
+ 6 Djibouti              Africa     1957    37.3 71851     2865.
+ 7 Sao Tome and Principe Africa     1972    56.5 76595     1533.
+ 8 Sao Tome and Principe Africa     1977    58.6 86796     1738.
+ 9 Djibouti              Africa     1962    39.7 89898     3021.
+10 Sao Tome and Principe Africa     1982    60.4 98593     1890.
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+<p>The default is <code>smallest --&gt; largest</code> but we can change this using the <code>desc</code> function</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">arrange</span>(gapminder, <span class="fu">desc</span>(pop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 6
+   country continent  year lifeExp        pop gdpPercap
+   &lt;chr&gt;   &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;
+ 1 China   Asia       2007    73.0 1318683096     4959.
+ 2 China   Asia       2002    72.0 1280400000     3119.
+ 3 China   Asia       1997    70.4 1230075000     2289.
+ 4 China   Asia       1992    68.7 1164970000     1656.
+ 5 India   Asia       2007    64.7 1110396331     2452.
+ 6 China   Asia       1987    67.3 1084035000     1379.
+ 7 India   Asia       2002    62.9 1034172547     1747.
+ 8 China   Asia       1982    65.5 1000281000      962.
+ 9 India   Asia       1997    61.8  959000000     1459.
+10 China   Asia       1977    64.0  943455000      741.
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+<p><code>arrange</code> also works on character vectors, arrange them alpha-numerically.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">arrange</span>(gapminder, <span class="fu">desc</span>(country))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 6
+   country  continent  year lifeExp      pop gdpPercap
+   &lt;chr&gt;    &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Zimbabwe Africa     1952    48.5  3080907      407.
+ 2 Zimbabwe Africa     1957    50.5  3646340      519.
+ 3 Zimbabwe Africa     1962    52.4  4277736      527.
+ 4 Zimbabwe Africa     1967    54.0  4995432      570.
+ 5 Zimbabwe Africa     1972    55.6  5861135      799.
+ 6 Zimbabwe Africa     1977    57.7  6642107      686.
+ 7 Zimbabwe Africa     1982    60.4  7636524      789.
+ 8 Zimbabwe Africa     1987    62.4  9216418      706.
+ 9 Zimbabwe Africa     1992    60.4 10704340      693.
+10 Zimbabwe Africa     1997    46.8 11404948      792.
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+<p>We can even order by more than one condition</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">arrange</span>(gapminder, year, pop)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 6
+   country               continent  year lifeExp    pop gdpPercap
+   &lt;chr&gt;                 &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Sao Tome and Principe Africa     1952    46.5  60011      880.
+ 2 Djibouti              Africa     1952    34.8  63149     2670.
+ 3 Bahrain               Asia       1952    50.9 120447     9867.
+ 4 Iceland               Europe     1952    72.5 147962     7268.
+ 5 Comoros               Africa     1952    40.7 153936     1103.
+ 6 Kuwait                Asia       1952    55.6 160000   108382.
+ 7 Equatorial Guinea     Africa     1952    34.5 216964      376.
+ 8 Reunion               Africa     1952    52.7 257700     2719.
+ 9 Gambia                Africa     1952    30   284320      485.
+10 Swaziland             Africa     1952    41.4 290243     1148.
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">arrange</span>(gapminder, year, continent, pop)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,704 × 6
+   country               continent  year lifeExp    pop gdpPercap
+   &lt;chr&gt;                 &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Sao Tome and Principe Africa     1952    46.5  60011      880.
+ 2 Djibouti              Africa     1952    34.8  63149     2670.
+ 3 Comoros               Africa     1952    40.7 153936     1103.
+ 4 Equatorial Guinea     Africa     1952    34.5 216964      376.
+ 5 Reunion               Africa     1952    52.7 257700     2719.
+ 6 Gambia                Africa     1952    30   284320      485.
+ 7 Swaziland             Africa     1952    41.4 290243     1148.
+ 8 Gabon                 Africa     1952    37.0 420702     4293.
+ 9 Botswana              Africa     1952    47.6 442308      851.
+10 Namibia               Africa     1952    41.7 485831     2424.
+# ℹ 1,694 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="saving-data-frames" class="level2">
+<h2 class="anchored" data-anchor-id="saving-data-frames">Saving data frames</h2>
+<p>A final point on data frames is that we can write them to disk once we have done our data processing.</p>
+<p>Let’s create a folder in which to store such processed, analysis ready data</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"out_data"</span>,<span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="do">## showWarnings will stop a message from appearing if the directory already exists</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>byWealth <span class="ot">&lt;-</span> <span class="fu">arrange</span>(gapminder, <span class="fu">desc</span>(gdpPercap))</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="co"># check the output before writing</span></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(byWealth)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 6
+  country continent  year lifeExp     pop gdpPercap
+  &lt;chr&gt;   &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;
+1 Kuwait  Asia       1957    58.0  212846   113523.
+2 Kuwait  Asia       1972    67.7  841934   109348.
+3 Kuwait  Asia       1952    55.6  160000   108382.
+4 Kuwait  Asia       1962    60.5  358266    95458.
+5 Kuwait  Asia       1967    64.6  575003    80895.
+6 Kuwait  Asia       1977    69.3 1140357    59265.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(byWealth, <span class="at">file =</span> <span class="st">"out_data/by_wealth.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We will now try an exercise that involves using several steps of these operations</p>
+<hr>
+<hr>
+<hr>
+</section>
+<section id="exercise-1" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-1">Exercise</h2>
+<div class="exercise">
+<ul>
+<li>Filter the data to include just observations from the year 2002</li>
+<li>Re-arrange the table so that the countries from each continent are ordered according to decreasing wealth. i.e.&nbsp;the wealthiest countries first</li>
+<li>Select all the columns apart from year</li>
+<li>Write the data frame out to a file in <code>out_data/</code> folder</li>
+</ul>
+</div>
+<hr>
+<hr>
+<hr>
+</section>
+<section id="piping" class="level2">
+<h2 class="anchored" data-anchor-id="piping">“Piping”</h2>
+<p>As have have just seen, we will often need to perform an analysis, or clean a dataset, using several <code>dplyr</code> functions in sequence. e.g.&nbsp;filtering, mutating, then selecting columns of interest (possibly followed by plotting - see shortly).</p>
+<p>As a small example; if we wanted to filter our results to just Europe the <code>continent</code> column becomes redundant so we might as well remove it.</p>
+<p>The following is perfectly valid R code, but invites the user to make mistakes and copy-and-paste erros when writing it. We also have to create multiple copies of the same data frame.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">filter</span>(gapminder, continent <span class="sc">==</span> <span class="st">"Europe"</span>)</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>tmp2 <span class="ot">&lt;-</span> <span class="fu">select</span>(tmp, <span class="sc">-</span>continent)</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>tmp2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 360 × 5
+   country  year lifeExp     pop gdpPercap
+   &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Albania  1952    55.2 1282697     1601.
+ 2 Albania  1957    59.3 1476505     1942.
+ 3 Albania  1962    64.8 1728137     2313.
+ 4 Albania  1967    66.2 1984060     2760.
+ 5 Albania  1972    67.7 2263554     3313.
+ 6 Albania  1977    68.9 2509048     3533.
+ 7 Albania  1982    70.4 2780097     3631.
+ 8 Albania  1987    72   3075321     3739.
+ 9 Albania  1992    71.6 3326498     2497.
+10 Albania  1997    73.0 3428038     3193.
+# ℹ 350 more rows</code></pre>
+</div>
+</div>
+<p>(Those familiar with Unix may recall that commands can be joined with a pipe; <code>|</code>)</p>
+<p>In R, <code>dplyr</code> commands to be linked together and form a workflow. The symbol <code>%&gt;%</code> is pronounced <strong>then</strong>. With a <code>%&gt;%</code> the input to a function is assumed to be the output of the previous line. All the <code>dplyr</code> functions that we have seen so far take a data frame as an input and return an altered data frame as an output, so are amenable to this type of programming.</p>
+<p>The example we gave of filtering just the European countries and removing the <code>continent</code> column becomes:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, continent<span class="sc">==</span><span class="st">"Europe"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>continent)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 360 × 5
+   country  year lifeExp     pop gdpPercap
+   &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Albania  1952    55.2 1282697     1601.
+ 2 Albania  1957    59.3 1476505     1942.
+ 3 Albania  1962    64.8 1728137     2313.
+ 4 Albania  1967    66.2 1984060     2760.
+ 5 Albania  1972    67.7 2263554     3313.
+ 6 Albania  1977    68.9 2509048     3533.
+ 7 Albania  1982    70.4 2780097     3631.
+ 8 Albania  1987    72   3075321     3739.
+ 9 Albania  1992    71.6 3326498     2497.
+10 Albania  1997    73.0 3428038     3193.
+# ℹ 350 more rows</code></pre>
+</div>
+</div>
+<hr>
+<hr>
+<hr>
+<section id="exercise-2" class="level4">
+<h4 class="anchored" data-anchor-id="exercise-2">Exercise</h4>
+<div class="exercise">
+<ul>
+<li>Re-write your solution to the previous exercise, but using the <code>%&gt;%</code> symbol</li>
+</ul>
+</div>
+<hr>
+<hr>
+<hr>
+</section>
+</section>
+</section>
+<section id="plotting" class="level1">
+<h1>Plotting</h1>
+<p>The R language has extensive graphical capabilities.</p>
+<p>Graphics in R may be created by many different methods including base graphics and more advanced plotting packages such as lattice.</p>
+<p>The <code>ggplot2</code> package was created by Hadley Wickham and provides a intuitive plotting system to rapidly generate publication quality graphics.</p>
+<p><code>ggplot2</code> builds on the concept of the “Grammar of Graphics” (Wilkinson 2005, Bertin 1983) which describes a consistent syntax for the construction of a wide range of complex graphics by a concise description of their components.</p>
+<section id="why-use-ggplot2" class="level2">
+<h2 class="anchored" data-anchor-id="why-use-ggplot2">Why use ggplot2?</h2>
+<p>The structured syntax and high level of abstraction used by ggplot2 should allow for the user to concentrate on the visualisations instead of creating the underlying code.</p>
+<p>On top of this central philosophy ggplot2 has:</p>
+<ul>
+<li>Increased flexibility over many plotting systems.</li>
+<li>An advanced theme system for professional/publication level graphics.</li>
+<li>Large developer base – Many libraries extending its flexibility.</li>
+<li>Large user base – Great documentation and active mailing list.</li>
+</ul>
+<div class="information">
+<p>It is always useful to think about the message you want to convey and the appropriate plot before writing any R code. Resources like <a href="https://www.data-to-viz.com/">data-to-viz.com</a> should help.</p>
+</div>
+<p>With some practice, <code>ggplot2</code> makes it easier to go from the figure you are imagining in our head (or on paper) to a publication-ready image in R.</p>
+<div class="information">
+<p>As with <code>dplyr</code>, we won’t have time to cover all details of <code>ggplot2</code>. This is however a useful <a href="https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-visualization.pdf">cheatsheet</a> that can be printed as a reference. The cheatsheet is also available through the RStudio Help menu.</p>
+</div>
+</section>
+<section id="basic-plot-types" class="level2">
+<h2 class="anchored" data-anchor-id="basic-plot-types">Basic plot types</h2>
+<p>A plot in <code>ggplot2</code> is created with the following type of command</p>
+<pre><code>ggplot(data = &lt;DATA&gt;, mapping = aes(&lt;MAPPINGS&gt;)) +  &lt;GEOM_FUNCTION&gt;()</code></pre>
+<p>So we need to specify</p>
+<ul>
+<li>The data to be used in graph</li>
+<li>Mappings of data to the graph (<em>aesthetic</em> mapping)</li>
+<li>What type of graph we want to use (The <em>geom</em> to use).</li>
+</ul>
+<p>Lets say that we want to explore the relationship between GDP and Life Expectancy. We might start with the hypothesis that richer countries have higher life expectancy. A sensible choice of plot would be a <em>scatter plot</em> with gdp on the x-axis and life expectancy on the y-axis.</p>
+<p>The first stage is to specify our dataset</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> gapminder)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>For the aesthetics, as a bare minimum we will map the <code>gdpPercap</code> and <code>lifeExp</code> to the x- and y-axis of the plot. Some progress is made; we at least get axes</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> gapminder,<span class="fu">aes</span>(<span class="at">x=</span>gdpPercap, <span class="at">y=</span>lifeExp))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-34-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>That created the axes, but we still need to define how to display our points on the plot. As we have continuous data for both the x- and y-axis, <code>geom_point</code> is a good choice.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> gapminder,<span class="fu">aes</span>(<span class="at">x=</span>gdpPercap, <span class="at">y=</span>lifeExp)) <span class="sc">+</span> <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-35-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The <em>geom</em> we use will depend on what kind of data we have (continuous, categorical etc)</p>
+<ul>
+<li><code>geom_point()</code> - Scatter plots</li>
+<li><code>geom_line()</code> - Line plots</li>
+<li><code>geom_smooth()</code> - Fitted line plots</li>
+<li><code>geom_bar()</code> - Bar plots</li>
+<li><code>geom_boxplot()</code> - Boxplots</li>
+<li><code>geom_jitter()</code> - Jitter to plots</li>
+<li><code>geom_histogram()</code> - Histogram plots</li>
+<li><code>geom_density()</code> - Density plots</li>
+<li><code>geom_text()</code> - Text to plots</li>
+<li><code>geom_errorbar()</code> - Errorbars to plots</li>
+<li><code>geom_violin()</code> - Violin plots</li>
+<li><code>geom_tile()</code> - for “heatmap”-like plots</li>
+</ul>
+<p>Boxplots are commonly used to visualise the distributions of continuous data. We have to use a categorical variable on the x-axis such as <code>continent</code> or <code>country</code> (not advisable in this case as there are too many different values).</p>
+<p>The order of the boxes along the x-axis is dictated by the order of categories in the factor; with the default for names being alphabetical order.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x =</span> continent, <span class="at">y=</span>gdpPercap)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-36-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x =</span> gdpPercap)) <span class="sc">+</span> <span class="fu">geom_histogram</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-37-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Producing a barplot of counts only requires an <code>x</code> variable. The counts will be generated by R.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x=</span>continent)) <span class="sc">+</span> <span class="fu">geom_bar</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-38-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The height of the bars can also be mapped directly to numeric variables in the data frame if the <code>geom_col</code> function is used instead.</p>
+<p>In the below plot the axis labels will be messy and difficult to read. This is something that can be customised with some of the <code>ggplot2</code> options we will explore later.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>gapminder2002 <span class="ot">&lt;-</span> <span class="fu">filter</span>(gapminder, year<span class="sc">==</span><span class="dv">2002</span>,continent<span class="sc">==</span><span class="st">"Americas"</span>)</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder2002, <span class="fu">aes</span>(<span class="at">x=</span>country,<span class="at">y=</span>gdpPercap)) <span class="sc">+</span> <span class="fu">geom_col</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-39-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Where appropriate, we can add multiple layers of <code>geom</code>s to the plot. For instance, a criticism of the boxplot is that it does not show all the data. We can rectify this by overlaying the individual points.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x =</span> continent, <span class="at">y=</span>gdpPercap)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>() <span class="sc">+</span> <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-40-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x =</span> continent, <span class="at">y=</span>gdpPercap)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>() <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="at">width=</span><span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-41-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+<hr>
+<hr>
+<section id="exercises" class="level3">
+<h3 class="anchored" data-anchor-id="exercises">Exercises</h3>
+<div class="exercise">
+<ul>
+<li>The violin plot is a popular alternative to the boxplot. Create a violin plot with <code>geom_violin</code> to visualise the differences in GDP between different continents.</li>
+<li>Create a subset of the <code>gapminder</code> data frame containing just the rows for your country of birth</li>
+<li>Has there been an increase in life expectancy over time?
+<ul>
+<li>visualise the trend using a scatter plot (<code>geom_point</code>), line graph (<code>geom_line</code>) or smoothed line (<code>geom_smooth</code>).</li>
+</ul></li>
+<li>What happens when you modify the <code>geom_boxplot</code> example to compare the gdp distributions for different years?
+<ul>
+<li>Look at the message <code>ggplot2</code> prints above the plot and try to modify the code to give a separate boxplot for each year</li>
+</ul></li>
+</ul>
+</div>
+<hr>
+<hr>
+<hr>
+<p>As we have seen already, <code>ggplot</code> offers an interface to create many popular plot types. It is up to the user to decide what the best way to visualise the data.</p>
+</section>
+</section>
+<section id="customising-the-plot-appearance" class="level2">
+<h2 class="anchored" data-anchor-id="customising-the-plot-appearance">Customising the plot appearance</h2>
+<p>Our plots are a bit dreary at the moment, but one way to add colour is to add a <code>col</code> argument to the <code>geom_point</code> function. The value can be any of the pre-defined colour names in R. These are displayed in this <a href="http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf">handy online reference</a>. <em>R</em>ed, <em>G</em>reen, <em>B</em>lue of <em>Hex</em> values can also be given.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x =</span> gdpPercap, <span class="at">y=</span>lifeExp)) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="at">col=</span><span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-43-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Use the Hex codes from Farrow and Ball: https://convertingcolors.com/list/farrow-ball.html</span></span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a><span class="co"># (cook's blue)</span></span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x =</span> gdpPercap, <span class="at">y=</span>lifeExp)) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="at">col=</span><span class="st">"#6A90B4"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-44-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>However, a powerful feature of <code>ggplot2</code> is that colours are treated as aesthetics of the plot. In other words we can use a column in our dataset.</p>
+<p>Let’s say that we want points on our plot to be coloured according to continent. We add an extra argument to the definition of aesthetics to define the mapping. <code>ggplot2</code> will even decide on colours and create a legend for us.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x =</span> gdpPercap, <span class="at">y=</span>lifeExp,<span class="at">col=</span>continent)) <span class="sc">+</span> <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-45-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>It will even choose a continuous or discrete colour scale based on the data type. We have already seen that <code>ggplot2</code> is treat our <code>year</code> column as numerical data; which is probably not very useful for visualisation.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x =</span> gdpPercap, <span class="at">y=</span>lifeExp,<span class="at">col=</span>year)) <span class="sc">+</span> <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-46-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can force <code>ggplot2</code> to treat <code>year</code> as categorical data by using <code>as.factor</code> when creating the aesthetics.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x =</span> gdpPercap, <span class="at">y=</span>lifeExp,<span class="at">col=</span><span class="fu">as.factor</span>(year))) <span class="sc">+</span> <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-47-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>When used in the construction of a boxplot, the <code>col</code> argument will change the colour of the lines. To change the colour of the boxes we have to use <code>fill</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder, <span class="fu">aes</span>(<span class="at">x =</span> continent, <span class="at">y=</span>gdpPercap,<span class="at">fill=</span>continent)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-48-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
