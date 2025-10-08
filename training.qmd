@@ -4,3 +4,5 @@ listing:
   contents: training  # <-- the sub-directory with blog content
   type: grid          # <-- my preferred layout type
 ---
+
+Here is a collection of Bioinformatics and Data Analysis materials that I have created and taught over the years. Please feel free to browse, and get in touch if you would like them to be taught at your institute.

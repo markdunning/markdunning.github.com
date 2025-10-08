@@ -11,12 +11,11 @@ Starting to play with data with the `dplyr` and `ggplot2` packages
 
 ## Topics covered
 
-- Choosing which columns to show from the data
-- Choosing what rows to keep in the data
-- Adding / altering columns
-- Sorting the rows in our data
-- Introduction to plotting
-
+-   Choosing which columns to show from the data
+-   Choosing what rows to keep in the data
+-   Adding / altering columns
+-   Sorting the rows in our data
+-   Introduction to plotting
 
 # Data Manipulation
 
@@ -31,12 +30,10 @@ download.file("https://raw.githubusercontent.com/markdunning/markdunning.github.
 
 We also discussed in the previous part how to read the example dataset into R.
 
-
 ```{r message=FALSE}
 library(readr)
 gapminder <- read_csv("raw_data/gapminder.csv")
 ```
-
 
 ## Manipulating Columns
 
@@ -44,40 +41,43 @@ We are going to use functions from the **`dplyr`** package to **manipulate the d
 
 There are **many more functions available in `dplyr`** than we will cover today. An overview of all functions is given in a cheatsheet.
 
-::: {.callout-tip, collapse = TRUE}
-
+::: {.callout-tip appearance="simple"}
 ## Help with dplyr functions
 
-- [dplyr cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf). The cheatsheet is also available through the RStudio Help menu.
+-   [dplyr cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf). The "cheatsheet" is also available through the RStudio Help menu. However, I don't think of this as cheating to have such information to hand. There are far too many functions to remember all of them!
+:::
 
-::: 
-
-Before using any of these functions, we need to load the library:- 
+Before using any of these functions, we need to load the library:-
 
 ```{r message=FALSE}
 library(dplyr)
 ```
 
-
 ### `select`ing columns
 
-
-We can **access the columns** of a data frame using the `select` function. 
+We can **access the columns** of a data frame using the `select` function. This lets us have control over what is printed to the screen. Admitedly the dataset we are using here is rather small (being only six columns), but these useful functions really shine when faced with 10s or 100s of columns
 
 #### by name
 
-Firstly, we can select column by name, by adding bare column names (i.e. not requiring quote marks around the name) after the name of the data frame, separated by a `,` . 
+Firstly, we can select column by name, by adding bare column names (i.e. not requiring quote marks around the name) after the name of the data frame, separated by a `,` .
 
 ```{r}
 select(gapminder, country, continent)
 ```
 
+Now lets imagine that we want to see all the columns *apart from `country`*. It would quickly become tedious, not to mention and prone to error, if we had to type every column name we wanted to keep by-hand.
 
-We can also omit columns from the ouput by putting a minus (`-`) in front of the column name. Note that this is not the same as removing the column from the data permanently.
+Thankfully, we can also omit columns from the ouput by putting a minus (`-`) in front of the column name. Note that this is not the same as removing the column from the data permanently.
 
 ```{r}
 select(gapminder, -country)
 ```
+
+::: {.callout-note appearance="simple"}
+The `dplyr` package has been carefully developed over the years with the needs of the data analyst in mind. Ideally we would rather be spending our time exploring and understanding data than writing reams of code. For this reason, you will often find a helpful function for a common task.
+
+If you find yourself having to write lots of code to achieve a data manipulation task, the chances are the a convenient function already exists.
+:::
 
 #### range of columns
 
@@ -87,7 +87,7 @@ A range of columns can be selected by the `:` operator.
 select(gapminder, lifeExp:gdpPercap)
 ```
 
-#### helper functions 
+#### helper functions
 
 There are a number of helper functions can be employed if we are unsure about the exact name of the column.
 
@@ -104,11 +104,7 @@ It is also possible to use the column number in the selection.
 select(gapminder, 4:6)
 ```
 
-<div class="exercise">
-**Question**: Why might using the number of the column sometimes be problematic? Consider what might happen if you wrote code to select the last column of data from a file using the column number. What would happen if the number of columns in the file was not constant?
-</div>
-
-The `select` function can be used with just a single column name - in a similar manner to the `$` operation we saw last time. However, `select` always returns a *data frame* whereas `$` gives a vector. Compare the output of the following code chunks
+The `select` function can be used with just a single column name - in a similar manner to the `$` operation we saw in [Part 1](/training/r_part1/index.html#accessing-data-in-columns). However, `select` always returns a *data frame* whereas `$` gives a vector. Compare the output of the following code chunks
 
 ```{r}
 select(gapminder, pop)
@@ -132,21 +128,17 @@ pops <- pull(gapminder,pop)
 mean(pops)
 ```
 
-
-
 ## Restricting rows with filter
 
 So far we have been returning all the rows in the output. We can use what we call a **logical test** to **filter the rows** in a data frame. This logical test will be applied to each row and give either a `TRUE` or `FALSE` result. When filtering, **only rows with a `TRUE` result get returned**.
 
-For example we filter for rows where the `lifeExp` variable is less than 40. 
+For example we filter for rows where the `lifeExp` variable is less than 40. You can think of R looking at each row of the data frame in turn and deciding whether the `lifeExp` value in that row is less than 40. If so, that row will be shown on the screen.
 
 ```{r}
 filter(gapminder, lifeExp < 40)
 ```
 
-Internally, R creates a *vector* of `TRUE` or `FALSE`; one for each row in the data frame. This is then used to decide which rows to display.
-
-Testing for equality can be done using `==`. This will only give `TRUE` for entries that are *exactly* the same as the test string. 
+Testing for equality can be done using `==`. This will only give `TRUE` for entries that are *exactly* the same as the test string.
 
 ```{r}
 filter(gapminder, country == "Zambia")
@@ -158,7 +150,7 @@ N.B. For partial matches, the `grepl` function and / or *regular expressions* (i
 filter(gapminder, grepl("land", country))
 ```
 
-We can also test if rows are *not* equal to a value using  `!=` 
+We can also test if rows are *not* equal to a value using `!=`
 
 ```{r}
 filter(gapminder, continent != "Europe")
@@ -168,11 +160,19 @@ filter(gapminder, continent != "Europe")
 
 There are a couple of ways of testing for more than one pattern. The first uses an *or* `|` statement. i.e. testing if the value of `country` is `Zambia` *or* the value is `Zimbabwe`. Remember to use double `=` sign to test for string equality; `==`.
 
-
 ```{r}
 filter(gapminder, country == "Zambia" | country == "Zimbabwe")
 ```
 
+::: {.callout-note appearance="simple"}
+## The difference between "**and**" and "**or**"
+
+Consider the following code. Is the output as you expect? 🤔
+
+```{r}
+filter(gapminder, country == "Zambia", country == "Zimbabwe")
+```
+:::
 
 The `%in%` function is a convenient function for testing which items in a vector correspond to a defined set of values.
 
@@ -180,32 +180,60 @@ The `%in%` function is a convenient function for testing which items in a vector
 filter(gapminder, country %in% c("Zambia", "Zimbabwe"))
 ```
 
-
-We can require that both tests are `TRUE`,  e.g. which years in Zambia had a life expectancy less than 40, by separating conditional statements by a `,`. This performs an *AND* test so only rows that meet both conditions are returned.
+We can require that two or more tests are `TRUE`, e.g. which years in Zambia had a life expectancy less than 40, by separating conditional statements by a `,`. This performs an *AND* test so only rows that meet both conditions are returned.
 
 ```{r}
 filter(gapminder, country == "Zambia", lifeExp < 40)
 ```
 
-<div class="information">
+::: {.callout-note appearance="simple"}
 You may have noticed that `filter` will always output the same number of columns as the input data frame. `filter` never changes the columns that are displayed. There are ways of using `filter` in conjunction with `select` as we will see later.
-</div>
+:::
 
-******
-******
-******
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 ## Exercise
-<div class="exercise">
-- Create a subset of the data where the population less than a million in the year 2002
-- Create a subset of the data where the life expectancy is greater than 75 in the years prior to 1987
-- Create a subset of the European data where the life expectancy is between 75 and 80 in the years 2002 or 2007.
-- If you are finished with these, try to explore alternative ways of performing the same filtering
-</div>
-******
-******
-******
 
+::: exercise
+-   Create a subset of the data where the population less than a million in the year 2002
+-   Create a subset of the data where the life expectancy is greater than 75 in the years prior to 1987
+-   Create a subset of the European data where the life expectancy is between 75 and 80 in the years 2002 or 2007.
+-   If you are finished with these, try to explore alternative ways of performing the same filtering
+:::
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+::: {.callout-note collapse="true"}
+## Solutions
+
+```{r}
+# Create a subset of the data where the population less than a million in the year 2002
+filter(gapminder, pop < 1e6, year == 2002)
+
+# Create a subset of the data where the life expectancy is greater than 75 in the years prior to 1987
+
+filter(gapminder, lifeExp > 75, year < 1987)
+
+# Create a subset of the European data where the life expectancy is between 75 and 80 in the years 2002 or 2007
+
+filter(gapminder, continent == "Europe", lifeExp > 75, lifeExp < 80 , year == 2002 | year == 2007)
+
+# A different version using a built-in dplyr function called between
+
+filter(gapminder, continent == "Europe", 
+       between(lifeExp, 75,80), 
+       year %in% c(2002,2007))
+
+```
+:::
 
 ## Manipulating the values in a column / creating new columns
 
@@ -217,14 +245,46 @@ Here, we create a new column of population in millions (`PopInMillions`) and rou
 mutate(gapminder, PopInMillions = pop / 1e6,
        lifeExp = round(lifeExp))
 ```
-Note that we haven't actually changed our `gapminder` data frame. If we wanted to make the new columns permanent, we would have to create a new variable.
 
-If we want to rename existing columns, and not create any extra columns, we can use the `rename` function.
+::: {.callout-note appearance="simple"}
+
+## Something to think about
+
+In the previous code we created a new column called `PopInMillions`. Why does the following code now produce an error?
+
+```{r eval=FALSE}
+select(gapminder, PopInMillions)
+```
+
+::: {.callout-note collapse="true"}
+
+This code shows what a data frame looks like with a new column called PopInMillions.
+```{r}
+mutate(gapminder, PopInMillions = pop / 1e6,
+       lifeExp = round(lifeExp))
+```
+
+It does not alter the `gapminder` dataset itself. If we wanted to continue to work with `PopInMillions`, we would either need to create a new variable or overwrite the original `gapminder` dataset (not recommended)
+
+```{r}
+gapminder2 <- mutate(gapminder, PopInMillions = pop / 1e6,
+       lifeExp = round(lifeExp))
+
+select(gapminder2, PopInMillions)
+```
+
+
+
+:::
+
+:::
+
+
+Similar to `mutate`, if we want to rename existing columns, and not create any extra columns, we can use the `rename` function.
 
 ```{r}
 rename(gapminder, GDP=gdpPercap)
 ```
-
 
 ## Ordering / sorting
 
@@ -233,7 +293,6 @@ The whole data frame can be re-ordered according to the values in one column usi
 ```{r}
 arrange(gapminder, pop)
 ```
-
 
 The default is `smallest --> largest` but we can change this using the `desc` function
 
@@ -253,22 +312,20 @@ We can even order by more than one condition
 arrange(gapminder, year, pop)
 ```
 
-
 ```{r}
 arrange(gapminder, year, continent, pop)
 ```
 
 ## Saving data frames
 
-A final point on data frames is that we can write them to disk once we have done our data processing. 
+A final point on data frames is that we can write them to disk once we have done our data processing.
 
-Let's create a folder in which to store such processed, analysis ready data
+Let's create a folder in which to store such processed, "analysis-ready" data for sharing
 
 ```{r, warning=FALSE, message=FALSE}
 dir.create("out_data",showWarnings = FALSE)
 ## showWarnings will stop a message from appearing if the directory already exists
 ```
-
 
 ```{r}
 byWealth <- arrange(gapminder, desc(gdpPercap))
@@ -279,28 +336,42 @@ write_csv(byWealth, file = "out_data/by_wealth.csv")
 
 We will now try an exercise that involves using several steps of these operations
 
-******
-******
-******
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 ## Exercise
-<div class="exercise">
-- Filter the data to include just observations from the year 2002
-- Re-arrange the table so that the countries from each continent are ordered according to decreasing wealth. i.e. the wealthiest countries first
-- Select all the columns apart from year 
-- Write the data frame out to a file in `out_data/` folder
-</div>
-```{r echo=FALSE}
+
+::: exercise
+-   Filter the data to include just observations from the year 2002
+-   Re-arrange the table so that the countries from each continent are ordered according to decreasing wealth. i.e. the wealthiest countries first
+-   Select all the columns apart from year
+-   Write the data frame out to a file in `out_data/` folder
+:::
 
 
 
+::: {.callout-note collapse="true"}
+
+## Solution
+
+```{r eval=FALSE}
+gapminder2 <- filter(gapminder, year == 2002)
+gapminder3 <- arrange(gapminder2, continent, country, desc(gdpPercap))
+gapminder4 <- select(gapminder3, -year)
+write_csv(gapminder4, "out_data/gapminder_2002.csv")
 ```
 
 
-******
-******
-******
+:::
 
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 ## "Piping"
 
@@ -308,7 +379,7 @@ As have have just seen, we will often need to perform an analysis, or clean a da
 
 As a small example; if we wanted to filter our results to just Europe the `continent` column becomes redundant so we might as well remove it.
 
-The following is perfectly valid R code, but invites the user to make mistakes and copy-and-paste erros when writing it. We also have to create multiple copies of the same data frame.
+The following is perfectly valid R code, but invites the user to make mistakes and copy-and-paste errors when writing it. We also have to create multiple copies of the same data frame, which would not be desirable for large datasets.
 
 ```{r}
 tmp <- filter(gapminder, continent == "Europe")
@@ -316,29 +387,29 @@ tmp2 <- select(tmp, -continent)
 tmp2
 ```
 
-(Those familiar with Unix may recall that commands can be joined with a pipe; `|`)
 
-In R, `dplyr` commands to be linked together and form a workflow. The symbol `%>%` is pronounced **then**. With a `%>% ` the input to a function is assumed to be the output of the previous line. All the `dplyr` functions that we have seen so far take a data frame as an input and return an altered data frame as an output, so are amenable to this type of programming.
+In R, `dplyr` commands to be linked together and form a workflow. The symbol `%>%` is pronounced **then**. With a `%>%` the input to a function is assumed to be the output of the previous line. All the `dplyr` functions that we have seen so far take a data frame as an input and return an altered data frame as an output, so are amenable to this type of programming.
 
 The example we gave of filtering just the European countries and removing the `continent` column becomes:-
-
 
 ```{r}
 filter(gapminder, continent=="Europe") %>% 
   select(-continent)
 ```
 
+Hopefully you will agree that the code is much cleaner and easier to read and write.
 
-******
-******
-******
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 #### Exercise
 
-<div class="exercise">
-- Re-write your solution to the previous exercise, but using the ` %>% ` symbol
-
-</div>
+::: exercise
+-   Re-write your solution to the previous exercise, but using the `%>%` symbol
+:::
 
 ```{r}
 
@@ -346,15 +417,31 @@ filter(gapminder, continent=="Europe") %>%
 ```
 
 
-******
-******
-******
+::: {.callout-note collapse="true"}
+
+## Solution
+
+```{r}
+filter(gapminder, year == 2002) %>% 
+  arrange(continent, desc(gdpPercap)) %>% 
+  select(-year) %>% 
+write_csv("out_data/gapminder_piped_2002.csv")
+```
+
+
+:::
+
+We will leave `dplyr` for the moment (although it will never be far away from us, since it is such a fundamental tool...) and start to look at making some nice graphs to understand our data.
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 # Plotting
 
-The R language has extensive graphical capabilities.
-
-Graphics in R may be created by many different methods including base graphics and more advanced plotting packages such as lattice.
+The R language has extensive graphical capabilities. Graphics in R may be created by many different methods including base graphics and more advanced plotting packages such as lattice.
 
 The `ggplot2` package was created by Hadley Wickham and provides a intuitive plotting system to rapidly generate publication quality graphics.
 
@@ -366,39 +453,45 @@ The structured syntax and high level of abstraction used by ggplot2 should allow
 
 On top of this central philosophy ggplot2 has:
 
-- Increased flexibility over many plotting systems.
-- An advanced theme system for professional/publication level graphics.
-- Large developer base – Many libraries extending its flexibility.
-- Large user base – Great documentation and active mailing list.
+-   Increased flexibility over many plotting systems.
+-   An advanced theme system for professional/publication level graphics.
+-   Large developer base – Many libraries extending its flexibility.
+-   Large user base – Great documentation and active mailing list.
 
-<div class="information">
+::: {.callout-tip appearance="simple"}
 
-It is always useful to think about the message you want to convey and the appropriate plot before writing any R code. Resources like [data-to-viz.com](https://www.data-to-viz.com/) should help.
-</div>
+## Top tip
+
+It is always useful to think about the message you want to convey and the appropriate plot before writing any R code. Resources like [data-to-viz.com](https://www.data-to-viz.com/) should help. Don't be afraid to even sketch out the plot on paper or a whiteboard!
+
+:::
 
 With some practice, `ggplot2` makes it easier to go from the figure you are imagining in our head (or on paper) to a publication-ready image in R.
 
-<div class="information">
+::: {.callout-tip appearance="simple"}
+
+## Another "cheatsheet"
+
 As with `dplyr`, we won't have time to cover all details of `ggplot2`. This is however a useful [cheatsheet](https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-visualization.pdf) that can be printed as a reference. The cheatsheet is also available through the RStudio Help menu.
-</div>
+:::
 
 ## Basic plot types
 
-A plot in `ggplot2` is created with the following type of command
+A plot in `ggplot2` is created with the following type of command. N.B. please dont try and run this code, it just an overall sketch of what our `ggplot2` code will look like.
 
-```
+```         
 ggplot(data = <DATA>, mapping = aes(<MAPPINGS>)) +  <GEOM_FUNCTION>()
 ```
 
 So we need to specify
 
-- The data to be used in graph
-- Mappings of data to the graph (*aesthetic* mapping)
-- What type of graph we want to use (The *geom* to use).
+-   The data to be used in graph
+-   Mappings of data to the graph (*aesthetic* mapping)
+-   What type of graph we want to use (The *geom* to use).
 
 Lets say that we want to explore the relationship between GDP and Life Expectancy. We might start with the hypothesis that richer countries have higher life expectancy. A sensible choice of plot would be a *scatter plot* with gdp on the x-axis and life expectancy on the y-axis.
 
-The first stage is to specify our dataset
+The first stage is to specify our dataset using the `data` argument. `ggplot2` is great, but not clever enough to know what kind of plot we might want. It just creates a blank canvas.
 
 ```{r}
 library(ggplot2)
@@ -417,26 +510,22 @@ That created the axes, but we still need to define how to display our points on 
 ggplot(data = gapminder,aes(x=gdpPercap, y=lifeExp)) + geom_point()
 ```
 
-
-
-
 The *geom* we use will depend on what kind of data we have (continuous, categorical etc)
 
-- `geom_point()` - Scatter plots
-- `geom_line()` - Line plots
-- `geom_smooth()` - Fitted line plots
-- `geom_bar()` - Bar plots
-- `geom_boxplot()` - Boxplots
-- `geom_jitter()` - Jitter to plots
-- `geom_histogram()` - Histogram plots
-- `geom_density()` - Density plots
-- `geom_text()` - Text to plots
-- `geom_errorbar()` - Errorbars to plots
-- `geom_violin()` - Violin plots
-- `geom_tile()` - for "heatmap"-like plots
+-   `geom_point()` - Scatter plots
+-   `geom_line()` - Line plots
+-   `geom_smooth()` - Fitted line plots
+-   `geom_bar()` - Bar plots
+-   `geom_boxplot()` - Boxplots
+-   `geom_jitter()` - Jitter to plots
+-   `geom_histogram()` - Histogram plots
+-   `geom_density()` - Density plots
+-   `geom_text()` - Text to plots
+-   `geom_errorbar()` - Errorbars to plots
+-   `geom_violin()` - Violin plots
+-   `geom_tile()` - for "heatmap"-like plots
 
-
-Boxplots are commonly used to visualise the distributions of continuous data. We have to use a categorical variable on the x-axis such as `continent` or `country` (not advisable in this case as there are too many different values). 
+Boxplots are commonly used to visualise the distributions of continuous data. We have to use a categorical variable on the x-axis such as `continent` or `country` (not advisable in this case as there are too many different values).
 
 The order of the boxes along the x-axis is dictated by the order of categories in the factor; with the default for names being alphabetical order.
 
@@ -444,69 +533,122 @@ The order of the boxes along the x-axis is dictated by the order of categories i
 ggplot(gapminder, aes(x = continent, y=gdpPercap)) + geom_boxplot()
 ```
 
+A histogram is a common method for visualising a *distribution* of numeric values. Your data are split into a number of bins (which can be altered in the code) across the whole data range, and the number of observations in each bin is shown on the y-axis. Thus you can see where the majority of your data points are
+
+
 
 ```{r}
 ggplot(gapminder, aes(x = gdpPercap)) + geom_histogram()
 ```
 
-Producing a barplot of counts only requires an `x` variable. The counts will be generated by R. 
+
+For *categorical* data, e.g. the country of continent columns in our case, a barplot will show the number of times each category is observed. The `geom_bar` will do the job of counting and plotting.
+
 
 ```{r}
 ggplot(gapminder, aes(x=continent)) + geom_bar()
 ```
 
-The height of the bars can also be mapped directly to numeric variables in the data frame if the `geom_col` function is used instead. 
 
-In the below plot the axis labels will be messy and difficult to read. This is something that can be customised with some of the `ggplot2` options we will explore later.
+If you have particular numeric values you want to display in a barplot you can use `geom_col`. To give an example we will first filter the data to a particular year and continent. The `gdpPercap` values for each country can then be plotted. In the below plot the axis labels will be messy and difficult to read. This is something that can be customised with some of the `ggplot2` options we will explore later.
 
 ```{r}
 gapminder2002 <- filter(gapminder, year==2002,continent=="Americas")
+
+## Notice that we plot the variable we have just created and not gapminder
+## You could also do this in one step using the piping technique for earlier
+
 ggplot(gapminder2002, aes(x=country,y=gdpPercap)) + geom_col()
 ```
 
-Where appropriate, we can add multiple layers of `geom`s to the plot. For instance, a criticism of the boxplot is that it does not show all the data. We can rectify this by overlaying the individual points.
+Where appropriate, we can add multiple layers of `geom`s to the plot. For instance, a criticism of the boxplot is that it does not show all the data. We can rectify this by overlaying the individual points. This can give a representation of how many data points there are.
 
 ```{r}
 ggplot(gapminder, aes(x = continent, y=gdpPercap)) + geom_boxplot() + geom_point()
 ```
 
+However, the default x-coordinate is always the same for each category. Adding some random "noise" to the x-axis can help using `geom_jitter`.
+
 ```{r}
 ggplot(gapminder, aes(x = continent, y=gdpPercap)) + geom_boxplot() + geom_jitter(width=0.1)
 ```
 
+------------------------------------------------------------------------
 
-******
-******
-******
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 ### Exercises
 
-<div class="exercise">
-- The violin plot is a popular alternative to the boxplot. Create a violin plot with `geom_violin` to visualise the differences in GDP between different continents.
-- Create a subset of the `gapminder` data frame containing just the rows for your country of birth
-- Has there been an increase in life expectancy over time?
-    + visualise the trend using a scatter plot (`geom_point`), line graph (`geom_line`) or smoothed line (`geom_smooth`).
-- What happens when you modify the `geom_boxplot` example to compare the gdp distributions for different years?
-    + Look at the message `ggplot2` prints above the plot and try to modify the code to give a separate boxplot for each year
-</div>
-
-******
-******
-******
+::: exercise
+-   The violin plot is a popular alternative to the boxplot. Create a violin plot with `geom_violin` to visualise the differences in GDP between different continents.
+-   Create a subset of the `gapminder` data frame containing just the rows for your country of birth
+-   Has there been an increase in life expectancy over time?
+    -   visualise the trend using a scatter plot (`geom_point`), line graph (`geom_line`) or smoothed line (`geom_smooth`).
+-   What happens when you modify the `geom_boxplot` example to compare the gdp distributions for different years?
+    -   Look at the message `ggplot2` prints above the plot and try to modify the code to give a separate boxplot for each year
+:::
 
 
-```{r}
+::: {.callout-tip collapse="true"}
+
+## Solution
+
+```{r eval=FALSE}
+
+
+ggplot(gapminder, aes(x = continent, y = gdpPercap)) + geom_violin()
+
+## I choose United Kingdom here, but pick a different one if you like
+
+uk_data <- filter(gapminder, country == "United Kingdom")
+
+## As a scatter plot
+ggplot(uk_data, aes(x = year, y = lifeExp)) + geom_point()
+
+## As a line plot
+ggplot(uk_data, aes(x = year, y = lifeExp)) + geom_line()
+
+## With a smoothed line
+ggplot(uk_data, aes(x = year, y = lifeExp)) + geom_smooth()
+
+
+## more than one of the above
+## You can also fit a straight line (via a linear model) by changing method
+
+ggplot(uk_data, aes(x = year, y = lifeExp)) + geom_point() + geom_smooth(method = "lm")
+
+## this exercise could also make use of the piping technique
+
+filter(gapminder, country == "United Kingdom") %>% 
+  ggplot(aes(x = year, y = lifeExp)) + geom_point() + geom_smooth()
+
+# this is how we might expect the code to look like
+ggplot(gapminder, aes(x = year, y = gdpPercap)) + geom_boxplot()
+
+# The previous output hints that you might want to group by year - otherwise it thinks that year is a numerical variable
+
+
+ggplot(gapminder, aes(x = year, y = gdpPercap, group=year)) + geom_boxplot()
+
+# You may sometimes see this as a possible solution which fixes the year to be a categorical variable
+ggplot(gapminder, aes(x = as.factor(year), y = gdpPercap)) + geom_boxplot()
 
 ```
 
 
+:::
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 
 
 As we have seen already, `ggplot` offers an interface to create many popular plot types. It is up to the user to decide what the best way to visualise the data.
-
-
-
 
 ## Customising the plot appearance
 
@@ -523,16 +665,15 @@ ggplot(gapminder, aes(x = gdpPercap, y=lifeExp)) + geom_point(col="red")
 ggplot(gapminder, aes(x = gdpPercap, y=lifeExp)) + geom_point(col="#6A90B4")
 ```
 
+However, whilst looking nicer this doesn't really **tell us anything** about the data. For example, what are the points to the far right? Do they belong to a particular country or continent? A powerful feature of `ggplot2` is that colours are treated as aesthetics of the plot. In other words we can use a column in our dataset.
 
-However, a powerful feature of `ggplot2` is that colours are treated as aesthetics of the plot. In other words we can use a column in our dataset.
-
-Let's say that we want points on our plot to be coloured according to continent. We add an extra argument to the definition of aesthetics to define the mapping. `ggplot2` will even decide on colours and create a legend for us.
+Let's say that we want points on our plot to be coloured according to continent. We add an extra argument to the definition of aesthetics to define the mapping. `ggplot2` will even decide on colours and create a legend for us. Don't worry if you don't like the colours chosen, all of this can be customised.
 
 ```{r}
 ggplot(gapminder, aes(x = gdpPercap, y=lifeExp,col=continent)) + geom_point()
 ```
 
-It will even choose a continuous or discrete colour scale based on the data type. We have already seen that `ggplot2` is treat our `year` column as numerical data; which is probably not very useful for visualisation.
+It will even choose a continuous or discrete colour scale based on the data type. We have already seen that `ggplot2` is treating our `year` column as numerical data; which is probably not very useful for visualisation.
 
 ```{r}
 ggplot(gapminder, aes(x = gdpPercap, y=lifeExp,col=year)) + geom_point()
@@ -550,3 +691,74 @@ When used in the construction of a boxplot, the `col` argument will change the c
 ggplot(gapminder, aes(x = continent, y=gdpPercap,fill=continent)) + geom_boxplot()
 ```
 
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+## Wrap-up
+
+We have covered a *lot* about manipulating and visualising data, but have only just scratched the surface. In the [next part](/training/r_part3/index.html) we will conclude with
+
+- Choosing colour palettes
+- (Some ways to) customise our plots
+- Automatically plot different subsets / categories in our data using "faceting"
+- Producing summary statistics from our data, and for different subsets / categories
+- Joining two data frames
+- (Briefly) how to clean "messy" data
+
+## Bonus Exercise
+
+These are a bit more challenging, but please feel free to have a go
+
+- Using the `filter` function, find all countries that start with the letter Z
+  + Hint: You can find the first letter of each country using the `substr` function. The `mutate` function can then be used to add a new column to the data.
+- Use `geom_tile` to create a heatmap visualising life expectancy over time for European countries. You will need to work out what `aes`thetics to specify for a `geom_tile` plot
+
+![](/files/training/r/tile_example.png)
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+::: {.callout-tip collapse="true"}
+
+## Solution
+
+### Part 1
+
+```{r eval=FALSE}
+## month.name is a built-in vector of the months of the year
+month.name
+
+
+## substr can be used to extract substrings from a character vector betwen a start and end position
+## e.g. print the first three letters of each moth
+
+
+substr(month.name, 1, 3)
+
+# Using mutate, add an extra column; the first letter of each country name. 
+
+gapminder2 <- mutate(gapminder, FirstLetter = substr(country, 1,1))
+
+# Now filter using the new FirstLetter column
+
+gapminder3 <- filter(gapminder2, FirstLetter == "Z")
+gapminder3
+```
+
+
+```{r eval=FALSE}
+## Get the European countries
+filter(gapminder, continent == "Europe") %>% 
+## make heatmap. See the fill aesthetic to be life expectancy
+ggplot(aes(x=year,y=country,fill=lifeExp)) + geom_tile()
+
+```
+
+:::

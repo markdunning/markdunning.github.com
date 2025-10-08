@@ -12,12 +12,11 @@ In these materials, we explore fundamental operations of R and load some example
 
 ## Topics Covered
 
-- Basic calculations in R
-- Using functions
-- Getting help
-- Saving data using variables
-- Reading a spreadsheet into R
-
+-   Basic calculations in R
+-   Using functions
+-   Getting help
+-   Saving data using variables
+-   Reading a spreadsheet into R
 
 # Setup
 
@@ -58,18 +57,15 @@ You can check that this worked by copying and pasting the following:-
 source("https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/r/check_packages.R")
 ```
 
-We will not be working with the datasets of packages we downloaded just yet, as we need to cover some fundamentals first
+Your output should be like that shown above - indicating that all required packages are present. 🎉We will cover the purpose of R packages to extend the default R functionality later.
 
-
+However, we will not be working with the data or packages we downloaded just yet, as we need to cover some fundamentals first
 
 # Entering commands in R
 
 The traditional way to enter R commands is via the Terminal, or using the console in RStudio (bottom-left panel when RStudio opens for first time). This doesn’t automatically keep track of the steps you did.
 
-We'll be working in an [**R Notebook**](https://bookdown.org/yihui/rmarkdown/notebook.html). These file are an [R Markdown](https://bookdown.org/yihui/rmarkdown/) document type, which allow us to **combine R code with** [markdown](https://pandoc.org/MANUAL.html#pandocs-markdown), **a documentation language**, providing a framework for [literate programming](https://en.wikipedia.org/wiki/Literate_programming).  In an R Notebook, R code chunks can be executed independently and interactively, with output visible immediately beneath the input.
-
-
-
+We'll be working in an [**R Notebook**](https://bookdown.org/yihui/rmarkdown/notebook.html). These file are an [R Markdown](https://bookdown.org/yihui/rmarkdown/) document type, which allow us to **combine R code with** [markdown](https://pandoc.org/MANUAL.html#pandocs-markdown), **a documentation language**, providing a framework for [literate programming](https://en.wikipedia.org/wiki/Literate_programming). In an R Notebook, R code chunks can be executed independently and interactively, with output visible immediately beneath the input.
 
 Let’s try this now!
 
@@ -78,7 +74,6 @@ print("Hello World")
 ```
 
 R can be used as a calculator to compute simple sums
-
 
 ```{r}
 2 + 2
@@ -99,7 +94,6 @@ In the case of expressions involving multiple operations, R respects the [BODMAS
 
 R is capable of more complicated arithmetic such as trigonometry and logarithms; like you would find on a fancy scientific calculator. Of course, R also has a plethora of statistical operations as we will see.
 
-
 ```{r}
 pi
 sin (pi/2)
@@ -112,8 +106,7 @@ We can only go so far with performing simple calculations like this. Eventually 
 
 ## Variables
 
-A variable is a letter or word which takes (or contains) a value. We
-use the assignment 'operator', `<-` to create a variable and store some value in it. 
+A variable is a letter or word which takes (or contains) a value. We use the assignment 'operator', `<-` to create a variable and store some value in it.
 
 ```{r}
 x <- 10
@@ -121,6 +114,7 @@ x
 myNumber <- 25
 myNumber
 ```
+
 We also can perform arithmetic on variables using functions:
 
 ```{r}
@@ -128,10 +122,10 @@ sqrt(myNumber)
 ```
 
 We can add variables together:
+
 ```{r}
 x + myNumber
 ```
-
 
 We can change the value of an existing variable:
 
@@ -147,7 +141,6 @@ x <- myNumber
 x
 ```
 
-
 When we are feeling lazy we might give our variables short names (`x`, `y`, `i`...etc), but a better practice would be to give them meaningful names. There are some restrictions on creating variable names. They cannot start with a number or contain characters such as `.` and '-'. Naming variables the same as in-built functions in R, such as `c`, `T`, `mean` should also be avoided.
 
 Naming variables is a matter of taste. Some [conventions](http://adv-r.had.co.nz/Style.html) exist such as a separating words with `-` or using *c*amel*C*aps. Whatever convention you decided, stick with it!
@@ -161,7 +154,6 @@ sin(x)
 ```
 
 this returns the sine of x. In this case the function has one argument: **x**. Arguments are always contained in parentheses -- curved brackets, **()** -- separated by commas.
-
 
 Arguments can be named or unnamed, but if they are unnamed they must be ordered (we will see later how to find the right order). The names of the arguments are determined by the author of the function and can be found in the help page for the function. When testing code, it is easier and safer to name the arguments. `seq` is a function for generating a numeric sequence *from* and *to* particular numbers. Type `?seq` to get the help page for this function.
 
@@ -183,7 +175,7 @@ The normal distribution is defined by a *mean* (average) and *standard deviation
 
 (*N.B sometimes help pages can describe more than one function*)
 
-```{r}
+```{r eval=FALSE}
 ?rnorm
 ```
 
@@ -207,42 +199,43 @@ The arithmetic operations we have seen can be applied to these vectors; exactly 
 ```{r}
 my_seq + 2
 ```
+
 ```{r}
 my_seq * 2
 ```
 
+These so-called "vectorised operations" are a really nice feature of R and will come in useful when dealing with more complex data.
 
-******
-******
-******
+------------------------------------------------------------------------
 
+------------------------------------------------------------------------
 
+------------------------------------------------------------------------
 
 ### Exercise
 
-<div class="exercise">
+::: exercise
+-   What is the value of `pi` to 3 decimal places?
+    -   see the help for `round` `?round`
+-   How can we a create a sequence from 2 to 20 comprised of 5 equally-spaced numbers?
+    -   i.e. not specifying the `by` argument and getting R to work-out the intervals
+    -   check the help page for seq `?seq`
+-   Create a *variable* containing 1000 random numbers with a *mean* of 2 and a *standard deviation* of 3
+    -   what is the maximum and minimum of these numbers?
+    -   what is the average?
+    -   HINT: see the help pages for functions `min`, `max` and `mean`
+:::
 
-  - What is the value of `pi` to 3 decimal places?
-    + see the help for `round` `?round`
-  - How can we a create a sequence from 2 to 20 comprised of 5 equally-spaced numbers?
-    + i.e. not specifying the `by` argument and getting R to work-out the intervals
-    + check the help page for seq `?seq`
-  - Create a *variable* containing 1000 random numbers with a *mean* of 2 and a *standard deviation* of 3
-    + what is the maximum and minimum of these numbers?
-    + what is the average?
-    + HINT: see the help pages for functions `min`, `max` and `mean`
-</div>
+------------------------------------------------------------------------
 
+------------------------------------------------------------------------
 
-    
-    
-******
-******
-******
+------------------------------------------------------------------------
 
-::: {.callout-tip, collapse = TRUE}
+::: {.callout-tip collapse = "true"}
 
 ## Solutions
+
 ```{r}
 ## The digits argument needs to be changed
 round(pi,digits = 3)
@@ -261,11 +254,12 @@ min(my_numbers)
 mean(my_numbers)
 
 ```
+
 :::
 
+So far we have only used functions that come with every version of R. To do something more specialised we will need to install some add-on packages.
 
 ::: {.callout-note appearance="simple"}
-
 ## About random numbers...
 
 Sometimes we just want to create some numbers or data that we can play around with. However, most likely we will be concerned about the *reproducibility* of our R code. In circumstances where randomness is involved it is common to set a "seed" which ensures the same random numbers are generated each time.
@@ -283,14 +277,14 @@ So far we have used functions that are available with the *base* distribution of
 
 Packages are distributed through *repositories*. The most-common ones are CRAN and Bioconductor. CRAN alone has many thousands of packages.
 
-<div class="information">
-- The [meta cran](https://www.r-pkg.org/) website can be used to browse packages available in CRAN
-- Bioconductor packages can be browsed [here](http://bioconductor.org/packages/release/BiocViews.html#___Software)
-</div>
+::: information
+-   The [meta cran](https://www.r-pkg.org/) website can be used to browse packages available in CRAN
+-   Bioconductor packages can be browsed [here](http://bioconductor.org/packages/release/BiocViews.html#___Software)
+:::
 
 CRAN and Bioconductor have some level of curation so should be the first place to look. Researchers sometimes make their packages available on [github](www.github.com). However, there is no straightforward way of searching github for a particular package and no guarentee of quality.
 
-The **Packages** tab in the bottom-right panel of RStudio lists all packages that you currently have installed. Clicking on a package name will show a list of functions that available once that package has been loaded. 
+The **Packages** tab in the bottom-right panel of RStudio lists all packages that you currently have installed. Clicking on a package name will show a list of functions that available once that package has been loaded.
 
 There are functions for installing packages within R. If your package is part of the main **CRAN** repository, you can use `install.packages`.
 
@@ -305,47 +299,44 @@ install.packages("dplyr")
 # to install the entire set of tidyverse packages, we can do install.packages("tidyverse"). But this will take some time
 ```
 
-
-
 A package may have several *dependencies*; other R packages from which it uses functions or data types (re-using code from other packages is strongly-encouraged). If this is the case, the other R packages will be located and installed too.
 
-**So long as you stick with the same version of R, you won't need to repeat this install process.**
+::: {.callout-note appearance="simple"}
+Installing packages can sometimes take a long time. Fortunately we will only have to do it once \*\*as long as we stick to the same version of R.
 
+Note that you can install newer versions of RStudio without having to re-install R and any packages.
+:::
 
 Once a package is installed, the `library` function is used to load a package and make it's functions / data available in your current R session. *You need to do this every time you load a new RStudio session*. Let's go ahead and load the `readr` so we can import some data.
-
 
 ```{r message=FALSE}
 ## readr is a packages to import spreadsheets into R
 library(readr)
 ```
 
-
-
 # Dealing with data
 
 The [***tidyverse***](https://www.tidyverse.org/) is an eco-system of packages that provides a consistent, intuitive system for data manipulation and visualisation in R.
 
-
-![](https://aberdeenstudygroup.github.io/studyGroup/lessons/SG-T2-JointWorkshop/tidyverse.png)
-_Image Credit:_ [***Aberdeen Study Group***](https://aberdeenstudygroup.github.io/studyGroup/lessons/SG-T2-JointWorkshop/PopulationChangeSpeciesOccurrence/)
+![](https://aberdeenstudygroup.github.io/studyGroup/lessons/SG-T2-JointWorkshop/tidyverse.png) *Image Credit:* [***Aberdeen Study Group***](https://aberdeenstudygroup.github.io/studyGroup/lessons/SG-T2-JointWorkshop/PopulationChangeSpeciesOccurrence/)
 
 We are going to explore some of the basic features of the `tidyverse` using data from the [gapminder](https://www.gapminder.org/data/) project, which have been bundled into an [R package](https://github.com/jennybc/gapminder). These data give various indicator variables for different countries around the world (life expectancy, population and Gross Domestic Product). We have saved these data as a `.csv` file called `gapminder.csv` in a sub-directory called `raw_data/` to demonstrate how to import data into R.
-
-
-
-
 
 ## Reading in data
 
 Any `.csv` file can be imported into R by supplying the path to the file to `readr` function `read_csv` and assigning it to a new object to store the result. A useful sanity check is the `file.exists` function which will print `TRUE` is the file can be found in the working directory.
 
 ```{r}
+## This will print the current location of our working directory
 getwd()
+
 gapminder_path <- "raw_data/gapminder.csv"
 file.exists(gapminder_path)
 ```
 
+::: {.callout-note appearance="simple"}
+The `getwd()`, and `file.exists(...)` functions have been used here as you may find them useful in your own work. If we are confident that we know where a file is located we can use `read_csv` as below.
+:::
 
 Assuming the file can be found, we can use `read_csv` to import. Other functions can be used to read tab-delimited files (`read_delim`) or a generic `read.table` function. A data frame object is created.
 
@@ -355,16 +346,13 @@ gapminder_path <- "raw_data/gapminder.csv"
 gapminder <- read_csv(gapminder_path)
 ```
 
-
 ::: {.callout-note appearance="simple"}
+## File paths
 
-## Pay Attention
+🤔
 
-**Why would specifying `gapminder_path` as **
-`Users/mark/Documents/workflows/workshops/r-crash-course/raw_data/gapminder.csv` **be a bad idea?** Would you be able to re-run the analysis on another machine?
-
+**Why would specifying `gapminder_path` as** `Users/mark/Documents/workflows/workshops/r-crash-course/raw_data/gapminder.csv` **be a bad idea?** Would you be able to re-run the analysis on another machine?
 :::
-
 
 ::: {.callout-note appearance="simple"}
 ## Reading from Excel (xls/xlsx) files
@@ -379,14 +367,11 @@ data <- read_xls(PATH_TO_MY_XLS)
 ## Replace PATH_TO_MY_XLSX with the name of the file you want to read
 data <- read_xlsx(PATH_TO_MY_XLSX)
 ```
-
 :::
-
 
 ::: {.callout-note appearance="simple"}
-If you get *really* stuck importing data, there is a File -> Import Dataset option that should guide you through the process. It will also show the corresponding R code that you can use in future.
+If you get *really* stuck importing data, there is a File -\> Import Dataset option that should guide you through the process. It will also show the corresponding R code that you can use in future.
 :::
-
 
 The data frame object in R allows us to work with **"tabular" data**, like we might be used to dealing with in Excel, where our data can be thought of having **rows and columns**. The values in **each column** have to all be of the **same type** (i.e. all numbers or all text).
 
@@ -402,8 +387,6 @@ View(gapminder)
 gapminder
 ```
 
-
-
 We should **always check the data frame that we have created**. Sometimes R will happily read data using an inappropriate function and create an object without raising an error. However, the data might be unusable. Consider:-
 
 ```{r}
@@ -418,22 +401,30 @@ View(test)
 test
 ```
 
+😬
+
+::: {.callout-note appearance="simple"}
+The problem here is that we incorrectly told R that our file was "tab-delimited" rather than "comma-separated". Tab-delimited means that a "tab" (four spaces) is used to distinguish the columns in the file. Therefore R cannot tell where the columns are, and the resulting data frame has a single column. R will not automatically use the appropriate `read_csv` or `read_delim` etc function, so you need to be careful
+:::
+
 Quick sanity checks can also be performed by inspecting details in the environment tab. A useful check in RStudio is to use the `head` function, which prints the first 6 rows of the data frame to the screen.
 
 ```{r}
 head(gapminder)
 ```
 
-<div class="warning">
+::: {.callout-important appearance="simple"}
 We have used a nice, clean, dataset as our example for the workshop. Other datasets out in the wild might not be so ameanable for analysis in R. If your data look like this, you might have problems:-
+
 <img src="https://datacarpentry.org/2015-05-29-great-plains/spreadsheet-ecology/fig/2_datasheet_example.jpg"/>
 
 We recommend the Data Carpentry materials on spreadsheet organisation for an overview of common pitfalls - and how to address them
 
-- https://datacarpentry.org/spreadsheet-ecology-lesson/
+-   <https://datacarpentry.org/spreadsheet-ecology-lesson/>
 
-</div>
+Although R has many functions for data cleaning, if you are new to the language the best approach to such data would be to clean them before attempting to read into R.
 
+:::
 
 ## Accessing data in columns
 
@@ -465,15 +456,12 @@ Although we don't have to save the values in the column as a variable first
 min(gapminder$year)
 ```
 
-
 ## Coming next...
 
-In [Part 2](/training/part2) we will start to interrogate and visualise the data we have just imported
+In [Part 2](/training/r_part2/index.html) we will start to interrogate and visualise the data we have just imported
 
-- Choosing which columns to show from the data
-- Choosing what rows to keep in the data
-- Adding / altering columns
-- Sorting the rows in our data
-- Introduction to plotting
-
- 
+-   Choosing which columns to show from the data
+-   Choosing what rows to keep in the data
+-   Adding / altering columns
+-   Sorting the rows in our data
+-   Introduction to plotting
