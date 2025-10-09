@@ -3,6 +3,7 @@ title: "Introduction to R - Part 3"
 author: Mark Dunning
 date: today
 image: /files/training/r/part3_preview.png
+theme: darkly
 ---
 
 # Overview
@@ -217,9 +218,30 @@ The largest value after the log$_10$ transformation is around 5
 
 ## Facets
 
-One very useful feature of `ggplot2` is faceting. This allows you to produce plots subset by variables in your data. In the scatter plot above, it was quite difficult to determine if the relationship between gdp and life expectancy was the same for each continent. To overcome this, we would like a see a separate plot for each continent.
+One very useful feature of `ggplot2` is faceting. This allows you to produce plots for subsets and groupings in your data (aka "facets"). In the scatter plot above, it was quite difficult to determine if the relationship between gdp and life expectancy was the same for each continent. To overcome this, we would like a see a separate plot for each continent.
 
-To facet our data into multiple plots we can use the `facet_wrap` (1 variable) or `facet_grid` (2 variables) functions and specify the variable(s) we split by.
+In we attempted such a task manually we might start off by plotting Africa
+
+```{r}
+afr_plot<- gapminder %>% 
+  filter(continent == "Africa") %>% 
+  ggplot(aes(x = gdpPercap, y = lifeExp)) + geom_point() + scale_x_log10()
+afr_plot
+```
+
+And then the same for Americas:-
+
+
+```{r}
+amr_plot <- gapminder %>% 
+  filter(continent == "Americas") %>% 
+  ggplot(aes(x = gdpPercap, y = lifeExp)) + geom_point() + scale_x_log10()
+amr_plot
+```
+
+At some point we will have to stitch the plots together (which **is** possible, but we will cover this later) and make sure we have equivalent scales for all plots. In this setup we are manually specifying the name of the continent, which is prone to error. Again, we *could* use something like a *for loop* to make the plots for each continent. However, we aren't covering such techniques in these materials as `dplyr` and `ggplot2` don't tend to require them.
+
+As we said before, `dplyr`, and `ggplot2` are built with the analyst in mind and have many useful features for automating some common tasks. To achieve the plot we want is surprisingly simple. To "facet" our data into multiple plots we can use the `facet_wrap` (1 variable) or `facet_grid` (2 variables) functions and specify the variable(s) we split by.
 
 ```{r}
 p + facet_wrap(~continent) + scale_x_log10() + xlab("GDP (log10)") + ylab("Life Expectancy")
@@ -231,7 +253,7 @@ The `facet_grid` function will create a grid-like plot with one variable on the 
 p + facet_grid(continent~year)
 ```
 
-The previous plot was a bit messy as it contained all combinations of year and continent. Let's suppose we want our analysis to be a bit more focused and disregard countries in Oceania (as there are only 2 in our dataset) and maybe years between 1997 and 2002.
+The previous plot was a bit messy as it contained all combinations of year and continent. Let's suppose we want our analysis to be a bit more focused and disregard countries in Oceania (as there are only 2 in our dataset) and maybe years between 1997 and 2002. However, we can only "add" more information from our plots and not take anything away. Therefore the suggested approach is to pre-filter and manipulate the data into the form you want for plotting.
 
 We should know how to restrict the rows from the `gapminder` dataset using the `filter` function. Instead of filtering the data, creating a new data frame and constructing the data frame from these new data we can use the`%>%` operator to create the data frame on the fly and pass directly to `ggplot`. Thus we don't have to save a new data frame or alter the original data.
 
@@ -239,6 +261,8 @@ We should know how to restrict the rows from the `gapminder` dataset using the `
 filter(gapminder, continent!="Oceania", year %in% c(1997,2002,2007)) %>% 
   ggplot(aes(x = gdpPercap, y=lifeExp,col=continent)) + geom_point() + facet_grid(continent~year)
 ```
+
+There is lots more to cover on `ggplot2` and quickly we can start to understand our data without *too much* in the way of coding. When it comes to reporting and justifying our findings we will need to produce some numerical summaries. We tackle this in the next section.
 
 # Summarising and grouping with dplyr
 

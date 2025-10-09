@@ -3,6 +3,7 @@ title: "Introduction to R - Part 2"
 author: Mark Dunning
 date: today
 image: /files/training/r/part2_preview.png
+theme: darkly
 ---
 
 # Overview
