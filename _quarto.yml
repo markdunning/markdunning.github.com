@@ -3,6 +3,8 @@ project:
   output-dir: docs
 website:
   title: "Dr. Mark Dunning - Bioinformatician / Data Scientist"
+  google-analytics: 
+    tracking-id: "G-96TB60ETKS"
   navbar:
     left:
       - href: index.qmd
