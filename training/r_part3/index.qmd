@@ -12,14 +12,11 @@ Further data exploration and manipulation with `ggplot2` and `dplyr`
 
 ## Topics covered
 
-- Customising ggplot2 plots
-- Summarising data
-- Group-based summaries
-- Joining data
-- Data Cleaning
-
-
-
+-   Customising ggplot2 plots
+-   Summarising data
+-   Group-based summaries
+-   Joining data
+-   Data Cleaning
 
 Lets make sure we have read the gapminder data into R and have the relevant packages loaded.
 
@@ -32,9 +29,7 @@ download.file("https://raw.githubusercontent.com/markdunning/markdunning.github.
 }
 ```
 
-
 We also discussed in the previous part(s) how to read the example dataset into R. We will also load the libraries needed.
-
 
 ```{r message=FALSE}
 library(readr)
@@ -43,11 +38,9 @@ library(dplyr)
 gapminder <- read_csv("raw_data/gapminder.csv")
 ```
 
-
 ## Customising a plot
 
 Now make a scatter plot of gdp versus life expectancy as we did in the previous session. One of the last topics we covered was how to add colour to a plot. This can make the plot more appealing, but also help with data interpretation. In this case, we can use different colours to indicate countries belonging to different continents. For example, we can see a cluster of Asia data points with unusually large GDP. At some point we might want to adjust the scale on the x-axis to make the trend between the two axes easier to visualise.
-
 
 ```{r}
 
@@ -91,10 +84,8 @@ library(RColorBrewer)
 display.brewer.all(colorblindFriendly = TRUE)
 ```
 
-::: {.callout-important}
-
+::: callout-important
 When creating a plot, always check that the colour scheme is appropriate for people with various forms of colour-blindness
-
 :::
 
 When experimenting with colour palettes and labels, it is useful to save the plot as an object. This saves quite a bit of typing! Notice how nothing get shown on the screen.
@@ -115,7 +106,6 @@ But we can also make modifications to the plot with the `+` symbol. Here, we cha
 ## Here we pick 6 colours from the palette
 p + scale_color_manual(values=brewer.pal(6,"Set2"))
 ```
-
 
 Various labels can be modified using the `labs` function.
 
@@ -150,7 +140,8 @@ if(!require("ggthemes")) install.packages("ggthemes")
 library(ggthemes)
 p + theme_excel()
 ```
-## Exercise 
+
+## Exercise
 
 ::: exercise
 Use a boxplot to compare the life expectancy values of Australia and New Zealand. Use a `Set2` palette from `RColorBrewer` to colour the boxplots and apply a "minimal" theme to the plot.
@@ -167,8 +158,6 @@ gapminder %>%
   filter(continent == "Oceania") %>% 
   ggplot(aes(x = country, y = lifeExp,fill=country)) + geom_boxplot() + scale_fill_manual(values=brewer.pal(2,"Set2")) + theme_bw()
 ```
-
-
 :::
 
 Another transformation that is useful in this case is to display the x-axis on a log$_10$ scale. This compresses the values on the x-axis (reducing the impact of the high outliers) and makes trends easier to spot
@@ -177,15 +166,12 @@ Another transformation that is useful in this case is to display the x-axis on a
 p + scale_x_log10()
 ```
 
-It now seems that `lifeExp` is increasing in a roughly linear fashion with the GDP (on a log$_10$ scale). 
-
+It now seems that `lifeExp` is increasing in a roughly linear fashion with the GDP (on a log$_10$ scale).
 
 ::: {.callout-note collapse="true"}
-
-
 ## About the log transformation
 
-The logarithm of 10 (log10) is the exponent to which the base 10 must be "raised" to obtain the number 10. For example, log10(10) = 1, as 10 raised to the power of 1 equals 10. 
+The logarithm of 10 (log10) is the exponent to which the base 10 must be "raised" to obtain the number 10. For example, log10(10) = 1, as 10 raised to the power of 1 equals 10.
 
 ```{r}
 log10(10)
@@ -193,13 +179,15 @@ log10(10)
 log10(100)
 10^2
 ```
+
 This transformation helps in simplifying visualisation involving large numbers. The range of our `gdpPercap` values is extremely large. `summary` is a quick way to get various summary statistics from our data
 
 ```{r}
 ## we will use the $ notation for now
 
 summary(gapminder$gdpPercap)
-``` 
+```
+
 After a `log10` transformation the data are much more compressed.
 
 ```{r}
@@ -211,10 +199,7 @@ The largest value after the log$_10$ transformation is around 5
 ```{r}
 10^5.055
 ```
-
-
 :::
-
 
 ## Facets
 
@@ -230,7 +215,6 @@ afr_plot
 ```
 
 And then the same for Americas:-
-
 
 ```{r}
 amr_plot <- gapminder %>% 
@@ -255,7 +239,7 @@ p + facet_grid(continent~year)
 
 The previous plot was a bit messy as it contained all combinations of year and continent. Let's suppose we want our analysis to be a bit more focused and disregard countries in Oceania (as there are only 2 in our dataset) and maybe years between 1997 and 2002. However, we can only "add" more information from our plots and not take anything away. Therefore the suggested approach is to pre-filter and manipulate the data into the form you want for plotting.
 
-We should know how to restrict the rows from the `gapminder` dataset using the `filter` function. Instead of filtering the data, creating a new data frame and constructing the data frame from these new data we can use the`%>%` operator to create the data frame on the fly and pass directly to `ggplot`. Thus we don't have to save a new data frame or alter the original data.
+Weknow how to restrict the rows from the `gapminder` dataset using the `filter` function. Instead of filtering the data, creating a new data frame, and constructing the data frame from these new data we can use the`%>%` operator to create the data frame "on the fly" and pass directly to `ggplot`. Thus we don't have to save a new data frame or alter the original data.
 
 ```{r fig.width=12}
 filter(gapminder, continent!="Oceania", year %in% c(1997,2002,2007)) %>% 
@@ -265,6 +249,14 @@ filter(gapminder, continent!="Oceania", year %in% c(1997,2002,2007)) %>%
 There is lots more to cover on `ggplot2` and quickly we can start to understand our data without *too much* in the way of coding. When it comes to reporting and justifying our findings we will need to produce some numerical summaries. We tackle this in the next section.
 
 # Summarising and grouping with dplyr
+
+We now revisit one of the tasks from the end pf Part 1, but in the context of `dplyr`. Suppose we want to calculate a summary statistic (average, standard deviation, etc) from the columns in our data frame. Previously we saw the "base R" way of doing this
+
+```{r}
+mean(gapminder$gdpPercap)
+```
+
+However, you can only specify one column name after the `$` and the `mean` is calculated on the entire data frame. For a dataset such as this we probably want summaries for particular subsets e.g. different years, continents etc. We will build up to this and consider the simplest case first.
 
 The `summarise` function can take any R function that takes a vector of values (i.e. a column from a data frame) and returns a single value. Some of the more useful functions include:
 
@@ -277,6 +269,8 @@ The `summarise` function can take any R function that takes a vector of values (
 -   `IQR` the interquartile range
 -   `n_distinct` the number of distinct values
 -   `n` the number of observations (Note: this is a special function that doesn't take a vector argument, i.e. column)
+
+To calculate several statisitcs in one go we can use:-
 
 ```{r}
 library(dplyr)
@@ -293,7 +287,19 @@ summarise(MinLifeExpectancy = min(lifeExp),
           Correlation = cor(year, lifeExp))
 ```
 
-However, it is not particularly useful to calculate such values from the entire table as we have different continents and years. The `group_by` function allows us to split the table into different categories, and compute summary statistics for each year (for example).
+Notice that the correlation is not that impressive. However, it is not particularly useful to calculate such values from the entire table as we have different continents and years. The correlation would make a lot more sense on a per-country basis. It *would* be possible to achieve summaries for each continent manually with some effort.
+
+```{r}
+gapminder %>% 
+  filter(continent == "Africa") %>% 
+  summarise(MinLifeExpectancy = min(lifeExp), 
+          MaximumGDP = max(gdpPercap), 
+          AveragePop = mean(pop))
+```
+
+However, as for the facet plot example above we have to repeat for each continent. Tedious and could cause errors.
+
+Instead, the `group_by` function allows us to split the table into different categories, and compute summary statistics for each year (for example).
 
 ```{r}
 gapminder %>% 
@@ -303,7 +309,7 @@ gapminder %>%
               AveragePop = mean(pop))
 ```
 
-
+More than one categorical variable can be used for finer-grain summaries. Here the summaries are for each year and continent combination
 
 ```{r}
 gapminder %>% 
@@ -312,7 +318,6 @@ gapminder %>%
               MaximumGDP = max(gdpPercap), 
               AveragePop = mean(pop))
 ```
-
 
 We can list as many summary functions as we like. Whilst this can make our code somewhat verbose there are many helper functions available. Consider an example where we want to average all the columns in our data:-
 
@@ -341,7 +346,7 @@ gapminder %>%
   select(-country)
 ```
 
-Returning to the correlation between life expectancy and year, we can summarise as follows:-
+Returning to the correlation between life expectancy and year, we use the `group_by` technique as follows:-
 
 ```{r,message=FALSE}
 gapminder %>%     
@@ -381,6 +386,15 @@ filter(gapminder, country %in% c("Rwanda","Zambia","Zimbabwe")) %>%
 
 ------------------------------------------------------------------------
 
+It is perhaps worth considering at this point how sophisticated our R programming has become. Suppose we had been tasked with discovering countries whose correlation between life expectancy and time is negative. At the beginning of Part 1 you may have considered such a task to be extremely complicated. However, we can achieve this in just four lines of code - and that includes the code to read the data into R 🎉
+
+```{r}
+read_csv("raw_data/gapminder.csv") %>%      
+    group_by(country) %>% 
+    summarise(Correlation = cor(year , lifeExp)) %>% 
+    filter(Correlation < 0)
+```
+
 ### Exercise
 
 ::: exercise
@@ -395,8 +409,17 @@ filter(gapminder, country %in% c("Rwanda","Zambia","Zimbabwe")) %>%
 
 ------------------------------------------------------------------------
 
-![](https://raw.githubusercontent.com/sheffield-bioinformatics-core/r-crash-course/master/images/summarise_example.png)
+![](/files/training/r/summarise_example.png)
 
+::: {.callout-tip collapse="true"}
+## Solution
+
+```{r eval=FALSE}
+group_by(gapminder, continent, year) %>% 
+  summarise(GDP = mean(gdpPercap)) %>% 
+  ggplot(aes(x = year, y = GDP, fill=continent)) + geom_col() + facet_wrap(~continent)
+```
+:::
 
 # Joining
 
@@ -463,11 +486,11 @@ We have introduced a few of the essential packages from the R tidyverse that can
 
 To finish the workshop we will look at the analysis of some relevant data that we can import into R and analyse with the tools from the workshop.
 
-## Introducing the COVID-19 data
+## Data Cleaning: A COVID-19 data example
 
 Data for global COVID-19 cases are available online from CSSE at Johns Hopkins University on their github repository.
 
-::: information
+::: {.callout-note}
 [github](www.github.com) is an excellent way of making your code and analysis available for others to reuse and share. Private repositories with restricted access are also available. Here is a useful beginners guide.
 
 \-[Friendly github intro](https://kirstiejane.github.io/friendly-github-intro/)
@@ -476,8 +499,9 @@ Data for global COVID-19 cases are available online from CSSE at Johns Hopkins U
 R is capable of downloading files to our own machine so we can analyse them. We need to know the URL (for the COVID data we can find this from github, or use the address below) and can specify what to call the file when it is downloaded.
 
 ```{r}
-download.file("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",destfile = "raw_data/time_series_covid19_confirmed_global.csv")
-
+if(!file.exists("raw_data/time_series_covid19_confirmed_global.csv")){
+  download.file("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",destfile = "raw_data/time_series_covid19_confirmed_global.csv")
+}
 ```
 
 We can use the `read_csv` function as before to import the data and take a look. We can see the basic structure of the data is one row for each country / region and columns for cases on each day.
@@ -487,19 +511,15 @@ covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv")
 covid
 ```
 
-We can potentially join these data to `gapminder`, and it would be beneficial to have one column name in common between both files. We can `rename` the `Country/Region` column of our new data frame to match `gapminder`.
 
-```{r}
-covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv") %>% 
-  rename(country = `Country/Region`) 
-covid
-```
 
 Much of the analysis of this dataset has looked at trends over time (e.g. increasing /decreasing case numbers, comparing trajectories). As we know by now, the `ggplot2` package allows us to map columns (variables) in our dataset to aspects of the plot.
 
 In other words, we would expect to create plots by writing code such as:-
 
-    ggplot(covid, aes(x = Date, y =...)) + ...
+```         
+ggplot(covid, aes(x = Date, y =...)) + ...
+```
 
 Unfortunately such plots are not possible with the data in it's current format. Counts for each date are containing in a different column. What we require is a column to indicate the date, and the corresponding count in the next column. Such data arrangements are known as *long data*; whereas we have *wide* data. Fortunately we can convert between the two using the `tidyr` package (also part of tidyverse).
 
@@ -508,47 +528,63 @@ Unfortunately such plots are not possible with the data in it's current format. 
 install.packages("tidyr")
 ```
 
-::: information
+::: {.callout-note}
+
+## About "tidy data"
+
 For more information on *tidy data*, and how to convert between long and wide data, see
 
 <https://r4ds.had.co.nz/tidy-data.html>
 :::
 
+For convenience we will also rename the column containing country names
+
 ```{r}
+## set the show_col_types argument to FALSE to suppress message about column types
+
 library(tidyr)
-covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv") %>% 
-  rename(country = `Country/Region`) %>% 
+covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv",show_col_types = FALSE) %>% 
+    rename(country = `Country/Region`) %>% 
   pivot_longer(5:last_col(),names_to="Date", values_to="Cases")
 covid
 ```
 
-Another point to note is that the dates are not in an internationally recognised format, which could cause a problem for some visualisations that rely on date order. We can fix by explicitly converting to YYYY-MM-DD format.
+The number of rows and columns has changed dramatically, but this is a much more usable form for `dplyr` and `ggplot2`.
 
-<div class="information">
-For more ways of dealing with dates in R see the `lubridate` package.
-</div>
+Another point to note is that the dates are not in an internationally recognised format, which could cause a problem for some visualisations that rely on date order.
+
+![](http://images3.memedroid.com/images/UPLOADED951/62d545f80a3d6.jpeg)
+
+ We can fix by explicitly converting to YYYY-MM-DD format. The `as.Date` function can be used to convert an existing column into standardised dates. It needs to know how the months, days and years are being specified which might look a bit obtuse. The specification needed for these data is `%m/%d/%y`. This means months(`%m`) separated by a  `/` followed by a day (`%d`) followed by another `/` followed by the year represented by two digits (`%y`). Other conversions are possible including if you have dates with month names (`Jan`, `Feb`...) or four digit years. See the link below for more information.
+
+
+
+::: {.callout-tip}
+
+## Dealing with dates
+
+See this website for more about representing and converting dates in R.
+
+- [https://www.statology.org/r-date-format/](https://www.statology.org/r-date-format/)
+
+For more ways of dealing with dates in R see the `lubridate` package which can handle tasks such as calculating intervals between dates and much more
+
+:::
 
 ```{r}
-covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv") %>% 
-  rename(country = `Country/Region`) %>% 
+covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv",show_col_types = FALSE) %>% 
+    rename(country = `Country/Region`) %>% 
   pivot_longer(5:last_col(),names_to="Date", values_to="Cases") %>% 
-    mutate(Date=as.Date(Date,"%m/%d/%y"))
+  mutate(Date=as.Date(Date,"%m/%d/%y"))
 covid
 ```
 
-Another useful modification is to make sure only one row exists for each country. If we look at the data for some countries (e.g. China and UK) there are different entries for provinces and oversees territories.
+Another useful modification is to make sure only one row exists for each country. If we look at the data for some countries (e.g. China and UK) there are different entries for provinces and oversees territories. So we can change the Cases to be the `sum` of all cases for that country on a particular day. We can do this using the `group_by` and `summarise` functions from above.
+
+
 
 ```{r}
-## the count function tabulates the number of observations in a particular column
-
-filter(covid, country == "China") %>% 
-  count(`Province/State`)
-```
-
-So we can change the Cases to be the `sum` of all cases for that country on a particular day. We can do this using the `group_by` and `summarise` functions from above
-
-```{r}
-covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv") %>% 
+covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv", show_col_types = FALSE) %>% 
   rename(country = `Country/Region`) %>% 
   pivot_longer(5:last_col(),names_to="Date", values_to="Cases") %>% 
   mutate(Date=as.Date(Date,"%m/%d/%y")) %>% 
@@ -557,6 +593,24 @@ covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv") %>%
 
 covid
 ```
+
+```{r}
+covid
+```
+
+To join these new data with `gapminder` we have to start by telling R which columns in both data frames are equivalent. This is because there is no column name that is shared between both data frames.
+
+```{r}
+left_join(gapminder, covid)
+```
+
+Furthermore, we might also want to just use the `2007` rows from `gapminder`. 
+
+```{r}
+filter(gapminder, year == 2007) %>% 
+  left_join(covid)
+```
+
 
 ### Exercise
 
@@ -575,3 +629,77 @@ What plots and summaries can you make from these data?
 
  
 ```
+
+::: {.callout-tip collapse="true"}
+
+## Some solutions
+
+
+Compare trajectories of different countries. The `%in%` operator is an alternative to or (`|`) to find a country name that can either one of a number of possibilities.
+
+**Something is going wrong with United Kingdom here that I need to investigate!**
+
+```{r}
+covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv") %>% 
+  rename(country = `Country/Region`) %>% 
+  pivot_longer(5:last_col(),names_to="Date", values_to="Cases") %>% 
+  mutate(Date=as.Date(Date,"%m/%d/%y")) %>% 
+  group_by(country,Date) %>% 
+  summarise(Cases = sum(Cases))
+
+
+filter(covid, country %in% c("United Kingdom","France","Spain")) %>%
+  ggplot(aes(x = Date, y = Cases,col=country)) + geom_line()
+```
+
+```{r}
+filter(gapminder, year == 2007,continent=="Europe") %>%
+  left_join(covid) %>% 
+  filter(Date == "2022-01-06") %>% 
+  mutate(Cases = round(Cases / (pop / 1e5)))
+```
+
+Try to make example similar to [https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/](https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/). We're not using up-to-date figures for population so there will be some differences. The two data frames can be joined because they have a column name in common (`country`). Most of the country names that appear in `gapminder` also appear in the `covid` dataset, so not much data is lost in the join. 
+
+Since we are interested in European countries for this dataset, we pre-filter the `gapminder` data. Also, we only need the population values from 2007.
+
+
+```{r}
+filter(gapminder, year == 2007,continent=="Europe") %>% 
+  left_join(covid) %>% 
+  filter(Date == "2022-01-06") %>% 
+  mutate(Cases = round(Cases / (pop / 1e5))) %>% 
+  ggplot(aes(x = Cases, y = country)) + geom_col()
+```
+
+
+The default ordering for the bars is alphabetical, which is probably not a natural choice. The `forcats` package, which is part of `tidyverse` allows *factors* in a data frame to be re-ordered and re-labeled.
+
+- [forcats package](https://forcats.tidyverse.org/)
+
+In particular, we can use the `fct_reorder` function to reorder the country names according to the number of cases. This can be done inside the `ggplot2` function itself.
+
+```{r}
+## this will install the package if it is not already installed
+if(!require(forcats)) install.packages(forcats)
+
+filter(gapminder, year == 2007,continent=="Europe") %>% 
+  left_join(covid) %>% 
+  filter(Date == "2022-01-06") %>% 
+  mutate(Cases = round(Cases / (pop / 1e5))) %>% 
+  ggplot(aes(x = Cases, y = forcats::fct_reorder(country,Cases))) + geom_col()
+
+```
+
+A heatmap of number of cases over time (similar to that reported by the BBC) can be achieved using a `geom_tile`
+
+```{r}
+### Get the 2007 gapminder data to avoid repeating data
+filter(gapminder, year ==  2007, continent=="Europe") %>% 
+  left_join(covid) %>% 
+  filter(!is.na(Cases)) %>% ## remove countries with missing values
+  ggplot(aes(x = Date, y = country,fill=Cases)) + geom_tile()
+  
+```
+
+:::

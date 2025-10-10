@@ -25,8 +25,10 @@ If you followed the first part, you should already have some example data downlo
 ```{r }
 ## Checks if the required file is present, and downloads if not
 
-if(!file.exists("raw_data/gapminder.csv")) dir.create("raw_data/",showWarnings = FALSE)
+if(!file.exists("raw_data/gapminder.csv")) {
+  dir.create("raw_data/",showWarnings = FALSE)
 download.file("https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/r/raw_data/gapminder.csv", destfile = "raw_data/gapminder.csv")
+}
 ```
 
 We also discussed in the previous part how to read the example dataset into R.
@@ -433,6 +435,23 @@ write_csv("out_data/gapminder_piped_2002.csv")
 :::
 
 We will leave `dplyr` for the moment (although it will never be far away from us, since it is such a fundamental tool...) and start to look at making some nice graphs to understand our data.
+
+::: {.callout-note}
+
+## Ceci n'est pas une pipe
+
+The `%>%` operation was introduced as part of the `magrittr` package, which gets loaded automatically as part of `dplyr`. However, the `dplyr` package is quite large and involves a lot of dependencies. If you *only* wanted to use the `%>%` and not any other part of `dplyr` it would be quite inefficient to load the entire `dplyr` package as part of your code.
+
+An equivalent `|>` operation is available as part of base R. This means you can use piping *without having to load the whole of `dplyr`*. This is not an issue for these materials since we are working with `dplyr` quite a lot, but worth mentioning for completeness as you may see `|>` used elsewhere. The code is **exactly the same**.
+
+```{r}
+filter(gapminder, year == 2002) |>
+  arrange(continent, desc(gdpPercap)) |>
+  select(-year)
+```
+
+
+:::
 
 ------------------------------------------------------------------------
 

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Mark Dunning">
-<meta name="dcterms.date" content="2025-10-09">
+<meta name="dcterms.date" content="2025-10-10">
 
 <title>Introduction to R - Part 3 – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
 <style>
@@ -206,7 +206,7 @@ window.Quarto = {
   <li><a href="#joining" id="toc-joining" class="nav-link" data-scroll-target="#joining">Joining</a></li>
   <li><a href="#wrap-up" id="toc-wrap-up" class="nav-link" data-scroll-target="#wrap-up">Wrap-up</a>
   <ul class="collapse">
-  <li><a href="#introducing-the-covid-19-data" id="toc-introducing-the-covid-19-data" class="nav-link" data-scroll-target="#introducing-the-covid-19-data">Introducing the COVID-19 data</a>
+  <li><a href="#data-cleaning-a-covid-19-data-example" id="toc-data-cleaning-a-covid-19-data-example" class="nav-link" data-scroll-target="#data-cleaning-a-covid-19-data-example">Data Cleaning: A COVID-19 data example</a>
   <ul class="collapse">
   <li><a href="#exercise-2" id="toc-exercise-2" class="nav-link" data-scroll-target="#exercise-2">Exercise</a></li>
   </ul></li>
@@ -236,7 +236,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 9, 2025</p>
+      <p class="date">October 10, 2025</p>
     </div>
   </div>
   
@@ -589,7 +589,7 @@ About the log transformation
 </div>
 </div>
 <p>The previous plot was a bit messy as it contained all combinations of year and continent. Let’s suppose we want our analysis to be a bit more focused and disregard countries in Oceania (as there are only 2 in our dataset) and maybe years between 1997 and 2002. However, we can only “add” more information from our plots and not take anything away. Therefore the suggested approach is to pre-filter and manipulate the data into the form you want for plotting.</p>
-<p>We should know how to restrict the rows from the <code>gapminder</code> dataset using the <code>filter</code> function. Instead of filtering the data, creating a new data frame and constructing the data frame from these new data we can use the<code>%&gt;%</code> operator to create the data frame on the fly and pass directly to <code>ggplot</code>. Thus we don’t have to save a new data frame or alter the original data.</p>
+<p>Weknow how to restrict the rows from the <code>gapminder</code> dataset using the <code>filter</code> function. Instead of filtering the data, creating a new data frame, and constructing the data frame from these new data we can use the<code>%&gt;%</code> operator to create the data frame “on the fly” and pass directly to <code>ggplot</code>. Thus we don’t have to save a new data frame or alter the original data.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, continent<span class="sc">!=</span><span class="st">"Oceania"</span>, year <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">1997</span>,<span class="dv">2002</span>,<span class="dv">2007</span>)) <span class="sc">%&gt;%</span> </span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> gdpPercap, <span class="at">y=</span>lifeExp,<span class="at">col=</span>continent)) <span class="sc">+</span> <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="fu">facet_grid</span>(continent<span class="sc">~</span>year)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -606,6 +606,14 @@ About the log transformation
 </section>
 <section id="summarising-and-grouping-with-dplyr" class="level1">
 <h1>Summarising and grouping with dplyr</h1>
+<p>We now revisit one of the tasks from the end pf Part 1, but in the context of <code>dplyr</code>. Suppose we want to calculate a summary statistic (average, standard deviation, etc) from the columns in our data frame. Previously we saw the “base R” way of doing this</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(gapminder<span class="sc">$</span>gdpPercap)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 7215.327</code></pre>
+</div>
+</div>
+<p>However, you can only specify one column name after the <code>$</code> and the <code>mean</code> is calculated on the entire data frame. For a dataset such as this we probably want summaries for particular subsets e.g.&nbsp;different years, continents etc. We will build up to this and consider the simplest case first.</p>
 <p>The <code>summarise</code> function can take any R function that takes a vector of values (i.e.&nbsp;a column from a data frame) and returns a single value. Some of the more useful functions include:</p>
 <ul>
 <li><code>min</code> minimum value</li>
@@ -618,9 +626,10 @@ About the log transformation
 <li><code>n_distinct</code> the number of distinct values</li>
 <li><code>n</code> the number of observations (Note: this is a special function that doesn’t take a vector argument, i.e.&nbsp;column)</li>
 </ul>
+<p>To calculate several statisitcs in one go we can use:-</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summarise</span>(gapminder, <span class="fu">min</span>(lifeExp), <span class="fu">max</span>(gdpPercap), <span class="fu">mean</span>(pop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summarise</span>(gapminder, <span class="fu">min</span>(lifeExp), <span class="fu">max</span>(gdpPercap), <span class="fu">mean</span>(pop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 1 × 3
   `min(lifeExp)` `max(gdpPercap)` `mean(pop)`
@@ -630,11 +639,11 @@ About the log transformation
 </div>
 <p>It is also possible to summarise using a function that takes more than one value, i.e.&nbsp;from multiple columns. For example, we could compute the correlation between year and life expectancy. Here we also assign names to the table that is produced.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summarise</span>(<span class="at">MinLifeExpectancy =</span> <span class="fu">min</span>(lifeExp), </span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">MaximumGDP =</span> <span class="fu">max</span>(gdpPercap), </span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">AveragePop =</span> <span class="fu">mean</span>(pop), </span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">Correlation =</span> <span class="fu">cor</span>(year, lifeExp))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summarise</span>(<span class="at">MinLifeExpectancy =</span> <span class="fu">min</span>(lifeExp), </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">MaximumGDP =</span> <span class="fu">max</span>(gdpPercap), </span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">AveragePop =</span> <span class="fu">mean</span>(pop), </span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">Correlation =</span> <span class="fu">cor</span>(year, lifeExp))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 1 × 4
   MinLifeExpectancy MaximumGDP AveragePop Correlation
@@ -642,13 +651,28 @@ About the log transformation
 1              23.6    113523.  29601212.       0.436</code></pre>
 </div>
 </div>
-<p>However, it is not particularly useful to calculate such values from the entire table as we have different continents and years. The <code>group_by</code> function allows us to split the table into different categories, and compute summary statistics for each year (for example).</p>
+<p>Notice that the correlation is not that impressive. However, it is not particularly useful to calculate such values from the entire table as we have different continents and years. The correlation would make a lot more sense on a per-country basis. It <em>would</em> be possible to achieve summaries for each continent manually with some effort.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">MinLifeExpectancy =</span> <span class="fu">min</span>(lifeExp), </span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">MaximumGDP =</span> <span class="fu">max</span>(gdpPercap), </span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">AveragePop =</span> <span class="fu">mean</span>(pop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(continent <span class="sc">==</span> <span class="st">"Africa"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">MinLifeExpectancy =</span> <span class="fu">min</span>(lifeExp), </span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">MaximumGDP =</span> <span class="fu">max</span>(gdpPercap), </span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">AveragePop =</span> <span class="fu">mean</span>(pop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 3
+  MinLifeExpectancy MaximumGDP AveragePop
+              &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
+1              23.6     21951.   9916003.</code></pre>
+</div>
+</div>
+<p>However, as for the facet plot example above we have to repeat for each continent. Tedious and could cause errors.</p>
+<p>Instead, the <code>group_by</code> function allows us to split the table into different categories, and compute summary statistics for each year (for example).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span> </span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">MinLifeExpectancy =</span> <span class="fu">min</span>(lifeExp), </span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">MaximumGDP =</span> <span class="fu">max</span>(gdpPercap), </span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">AveragePop =</span> <span class="fu">mean</span>(pop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 12 × 4
     year MinLifeExpectancy MaximumGDP AveragePop
@@ -667,12 +691,13 @@ About the log transformation
 12  2007              39.6     49357.  44021220.</code></pre>
 </div>
 </div>
+<p>More than one categorical variable can be used for finer-grain summaries. Here the summaries are for each year and continent combination</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(year,continent) <span class="sc">%&gt;%</span> </span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">MinLifeExpectancy =</span> <span class="fu">min</span>(lifeExp), </span>
-<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">MaximumGDP =</span> <span class="fu">max</span>(gdpPercap), </span>
-<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">AveragePop =</span> <span class="fu">mean</span>(pop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(year,continent) <span class="sc">%&gt;%</span> </span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">MinLifeExpectancy =</span> <span class="fu">min</span>(lifeExp), </span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">MaximumGDP =</span> <span class="fu">max</span>(gdpPercap), </span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">AveragePop =</span> <span class="fu">mean</span>(pop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>`summarise()` has grouped output by 'year'. You can override using the
 `.groups` argument.</code></pre>
@@ -697,11 +722,11 @@ About the log transformation
 </div>
 <p>We can list as many summary functions as we like. Whilst this can make our code somewhat verbose there are many helper functions available. Consider an example where we want to average all the columns in our data:-</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span> </span>
-<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">MeanLifeExpectancy =</span> <span class="fu">mean</span>(lifeExp), </span>
-<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">MeanGDP =</span> <span class="fu">mean</span>(gdpPercap), </span>
-<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">MeanPop =</span> <span class="fu">mean</span>(pop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span> </span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">MeanLifeExpectancy =</span> <span class="fu">mean</span>(lifeExp), </span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">MeanGDP =</span> <span class="fu">mean</span>(gdpPercap), </span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">MeanPop =</span> <span class="fu">mean</span>(pop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 12 × 4
     year MeanLifeExpectancy MeanGDP   MeanPop
@@ -722,9 +747,9 @@ About the log transformation
 </div>
 <p>This wasn’t a huge effort to write this code. However, it would be much more tedious for a dataset with many more columns. Recognising this, we can use the convenient <code>summarise_all</code> function. This will return <code>NA</code> values for columns that do not contain numeric values.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(continent) <span class="sc">%&gt;%</span> </span>
-<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise_all</span>(mean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(continent) <span class="sc">%&gt;%</span> </span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise_all</span>(mean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 6
   continent country  year lifeExp       pop gdpPercap
@@ -738,10 +763,10 @@ About the log transformation
 </div>
 <p>The nice thing about <code>summarise</code> is that it can followed up by any of the other <code>dplyr</code> verbs that we have met so far (<code>select</code>, <code>filter</code>, <code>arrange</code>..etc). As the <code>country</code> column of the previous output containing missing values we can exclude it from further processing.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
-<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(continent) <span class="sc">%&gt;%</span> </span>
-<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise_all</span>(mean) <span class="sc">%&gt;%</span> </span>
-<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>country)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span> </span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(continent) <span class="sc">%&gt;%</span> </span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise_all</span>(mean) <span class="sc">%&gt;%</span> </span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>country)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 5
   continent  year lifeExp       pop gdpPercap
@@ -753,11 +778,11 @@ About the log transformation
 5 Oceania   1980.    74.3  8874672.    18622.</code></pre>
 </div>
 </div>
-<p>Returning to the correlation between life expectancy and year, we can summarise as follows:-</p>
+<p>Returning to the correlation between life expectancy and year, we use the <code>group_by</code> technique as follows:-</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span>     </span>
-<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(country) <span class="sc">%&gt;%</span> </span>
-<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">Correlation =</span> <span class="fu">cor</span>(year , lifeExp))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span>     </span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(country) <span class="sc">%&gt;%</span> </span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">Correlation =</span> <span class="fu">cor</span>(year , lifeExp))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 142 × 2
    country     Correlation
@@ -777,10 +802,10 @@ About the log transformation
 </div>
 <p>We can then arrange the table by the correlation to see which countries have the lowest correlation</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span>      </span>
-<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(country) <span class="sc">%&gt;%</span> </span>
-<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">Correlation =</span> <span class="fu">cor</span>(year , lifeExp)) <span class="sc">%&gt;%</span> </span>
-<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(Correlation)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span>      </span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(country) <span class="sc">%&gt;%</span> </span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">Correlation =</span> <span class="fu">cor</span>(year , lifeExp)) <span class="sc">%&gt;%</span> </span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(Correlation)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 142 × 2
    country          Correlation
@@ -800,10 +825,10 @@ About the log transformation
 </div>
 <p>We can filter the results to find observations of interest</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span>      </span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(country) <span class="sc">%&gt;%</span> </span>
-<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">Correlation =</span> <span class="fu">cor</span>(year , lifeExp)) <span class="sc">%&gt;%</span> </span>
-<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(Correlation <span class="sc">&lt;</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>gapminder <span class="sc">%&gt;%</span>      </span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(country) <span class="sc">%&gt;%</span> </span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">Correlation =</span> <span class="fu">cor</span>(year , lifeExp)) <span class="sc">%&gt;%</span> </span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(Correlation <span class="sc">&lt;</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 2
   country  Correlation
@@ -815,13 +840,13 @@ About the log transformation
 </div>
 <p>The countries we identify could then be used as the basis for a plot.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, country <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Rwanda"</span>,<span class="st">"Zambia"</span>,<span class="st">"Zimbabwe"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>year, <span class="at">y=</span>lifeExp,<span class="at">col=</span>country)) <span class="sc">+</span> <span class="fu">geom_line</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, country <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Rwanda"</span>,<span class="st">"Zambia"</span>,<span class="st">"Zimbabwe"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>year, <span class="at">y=</span>lifeExp,<span class="at">col=</span>country)) <span class="sc">+</span> <span class="fu">geom_line</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-35-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/unnamed-chunk-37-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -829,6 +854,31 @@ About the log transformation
 <hr>
 <hr>
 <hr>
+<p>It is perhaps worth considering at this point how sophisticated our R programming has become. Suppose we had been tasked with discovering countries whose correlation between life expectancy and time is negative. At the beginning of Part 1 you may have considered such a task to be extremely complicated. However, we can achieve this in just four lines of code - and that includes the code to read the data into R 🎉</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="st">"raw_data/gapminder.csv"</span>) <span class="sc">%&gt;%</span>      </span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(country) <span class="sc">%&gt;%</span> </span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">Correlation =</span> <span class="fu">cor</span>(year , lifeExp)) <span class="sc">%&gt;%</span> </span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(Correlation <span class="sc">&lt;</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 1704 Columns: 6
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (2): country, continent
+dbl (4): year, lifeExp, pop, gdpPercap
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 2
+  country  Correlation
+  &lt;chr&gt;          &lt;dbl&gt;
+1 Rwanda        -0.131
+2 Zambia        -0.245
+3 Zimbabwe      -0.237</code></pre>
+</div>
+</div>
 <section id="exercise-1" class="level3">
 <h3 class="anchored" data-anchor-id="exercise-1">Exercise</h3>
 <div class="exercise">
@@ -843,7 +893,27 @@ About the log transformation
 <hr>
 <hr>
 <hr>
-<p><img src="https://raw.githubusercontent.com/sheffield-bioinformatics-core/r-crash-course/master/images/summarise_example.png" class="img-fluid"></p>
+<p><img src="../..\files/training/r/summarise_example.png" class="img-fluid"></p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">group_by</span>(gapminder, continent, year) <span class="sc">%&gt;%</span> </span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">GDP =</span> <span class="fu">mean</span>(gdpPercap)) <span class="sc">%&gt;%</span> </span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> GDP, <span class="at">fill=</span>continent)) <span class="sc">+</span> <span class="fu">geom_col</span>() <span class="sc">+</span> <span class="fu">facet_wrap</span>(<span class="sc">~</span>continent)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+</div>
 </section>
 </section>
 <section id="joining" class="level1">
@@ -852,8 +922,8 @@ About the log transformation
 <p><code>dplyr</code> provides a set of join functions for combining two data frames based on matches within specified columns. For those familiar with such SQL, these operations are very similar to carrying out join operations between tables in a relational database.</p>
 <p>As a toy example, lets consider two data frames that some results of testing whether genes A, B and C are significant in our study (gene expression, mutations, etc.)</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>gene_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Name=</span>LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>], <span class="at">pvalue =</span> <span class="fu">c</span>(<span class="fl">0.001</span>, <span class="fl">0.1</span>,<span class="fl">0.01</span>))</span>
-<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>gene_results</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>gene_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Name=</span>LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>], <span class="at">pvalue =</span> <span class="fu">c</span>(<span class="fl">0.001</span>, <span class="fl">0.1</span>,<span class="fl">0.01</span>))</span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>gene_results</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  Name pvalue
 1    A  0.001
@@ -863,8 +933,8 @@ About the log transformation
 </div>
 <p>We might also have a data frame containing more data about the genes; such as which chromosome they are located on. As part of our data interpretation we might need to know where in the genome the genes are located. Note that both data frames have a column called <code>Name</code>. This column will be used to identify genes common to both tables.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>gene_anno <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Name =</span> <span class="fu">c</span>(<span class="st">"A"</span>,<span class="st">"B"</span>,<span class="st">"D"</span>), <span class="at">chromosome=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">3</span>))</span>
-<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>gene_anno</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>gene_anno <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Name =</span> <span class="fu">c</span>(<span class="st">"A"</span>,<span class="st">"B"</span>,<span class="st">"D"</span>), <span class="at">chromosome=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">3</span>))</span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>gene_anno</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  Name chromosome
 1    A          1
@@ -878,7 +948,7 @@ About the log transformation
 <p><code>left_join</code> returns all rows from the first data frame regardless of whether there is a match in the second data frame. Rows with no match are included in the resulting data frame but have <code>NA</code> values in the additional columns coming from the second data frame.</p>
 <p>Animations to illustrate other types of join are available at <a href="https://github.com/gadenbuie/tidy-animated-verbs" class="uri">https://github.com/gadenbuie/tidy-animated-verbs</a></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">left_join</span>(gene_results, gene_anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="fu">left_join</span>(gene_results, gene_anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Joining with `by = join_by(Name)`</code></pre>
 </div>
@@ -891,7 +961,7 @@ About the log transformation
 </div>
 <p><code>right_join</code> is similar but returns all rows from the second data frame that have a match with rows in the first data frame based on the specified column.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">right_join</span>(gene_results, gene_anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="fu">right_join</span>(gene_results, gene_anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Joining with `by = join_by(Name)`</code></pre>
 </div>
@@ -904,7 +974,7 @@ About the log transformation
 </div>
 <p><code>inner_join</code> only returns those rows where matches could be made</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">inner_join</span>(gene_results, gene_anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="fu">inner_join</span>(gene_results, gene_anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Joining with `by = join_by(Name)`</code></pre>
 </div>
@@ -929,22 +999,34 @@ About the log transformation
 </ul>
 </div>
 <p>To finish the workshop we will look at the analysis of some relevant data that we can import into R and analyse with the tools from the workshop.</p>
-<section id="introducing-the-covid-19-data" class="level2">
-<h2 class="anchored" data-anchor-id="introducing-the-covid-19-data">Introducing the COVID-19 data</h2>
+<section id="data-cleaning-a-covid-19-data-example" class="level2">
+<h2 class="anchored" data-anchor-id="data-cleaning-a-covid-19-data-example">Data Cleaning: A COVID-19 data example</h2>
 <p>Data for global COVID-19 cases are available online from CSSE at Johns Hopkins University on their github repository.</p>
-<div class="information">
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
 <p><a href="www.github.com">github</a> is an excellent way of making your code and analysis available for others to reuse and share. Private repositories with restricted access are also available. Here is a useful beginners guide.</p>
 <p>-<a href="https://kirstiejane.github.io/friendly-github-intro/">Friendly github intro</a></p>
 </div>
+</div>
 <p>R is capable of downloading files to our own machine so we can analyse them. We need to know the URL (for the COVID data we can find this from github, or use the address below) and can specify what to call the file when it is downloaded.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"</span>,<span class="at">destfile =</span> <span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>)){</span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(<span class="st">"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"</span>,<span class="at">destfile =</span> <span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>)</span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>We can use the <code>read_csv</code> function as before to import the data and take a look. We can see the basic structure of the data is one row for each country / region and columns for cases on each day.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Rows: 289 Columns: 1147
+<pre><code>Rows: 270 Columns: 1147
 ── Column specification ────────────────────────────────────────────────────────
 Delimiter: ","
 chr    (2): Province/State, Country/Region
@@ -953,9 +1035,9 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
 ℹ Use `spec()` to retrieve the full column specification for this data.
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>covid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>covid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 289 × 1,147
+<pre><code># A tibble: 270 × 1,147
    `Province/State`  `Country/Region`   Lat   Long `1/22/20` `1/23/20` `1/24/20`
    &lt;chr&gt;             &lt;chr&gt;            &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
  1 &lt;NA&gt;              Afghanistan       33.9  67.7          0         0         0
@@ -968,7 +1050,7 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
  8 &lt;NA&gt;              Argentina        -38.4 -63.6          0         0         0
  9 &lt;NA&gt;              Armenia           40.1  45.0          0         0         0
 10 Australian Capit… Australia        -35.5 149.           0         0         0
-# ℹ 279 more rows
+# ℹ 260 more rows
 # ℹ 1,140 more variables: `1/25/20` &lt;dbl&gt;, `1/26/20` &lt;dbl&gt;, `1/27/20` &lt;dbl&gt;,
 #   `1/28/20` &lt;dbl&gt;, `1/29/20` &lt;dbl&gt;, `1/30/20` &lt;dbl&gt;, `1/31/20` &lt;dbl&gt;,
 #   `2/1/20` &lt;dbl&gt;, `2/2/20` &lt;dbl&gt;, `2/3/20` &lt;dbl&gt;, `2/4/20` &lt;dbl&gt;,
@@ -977,74 +1059,39 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
 #   `2/13/20` &lt;dbl&gt;, `2/14/20` &lt;dbl&gt;, `2/15/20` &lt;dbl&gt;, `2/16/20` &lt;dbl&gt;, …</code></pre>
 </div>
 </div>
-<p>We can potentially join these data to <code>gapminder</code>, and it would be beneficial to have one column name in common between both files. We can <code>rename</code> the <code>Country/Region</code> column of our new data frame to match <code>gapminder</code>.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">country =</span> <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 289 Columns: 1147
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr    (2): Province/State, Country/Region
-dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a>covid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 289 × 1,147
-   `Province/State` country   Lat   Long `1/22/20` `1/23/20` `1/24/20` `1/25/20`
-   &lt;chr&gt;            &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
- 1 &lt;NA&gt;             Afghan…  33.9  67.7          0         0         0         0
- 2 &lt;NA&gt;             Albania  41.2  20.2          0         0         0         0
- 3 &lt;NA&gt;             Algeria  28.0   1.66         0         0         0         0
- 4 &lt;NA&gt;             Andorra  42.5   1.52         0         0         0         0
- 5 &lt;NA&gt;             Angola  -11.2  17.9          0         0         0         0
- 6 &lt;NA&gt;             Antarc… -71.9  23.3          0         0         0         0
- 7 &lt;NA&gt;             Antigu…  17.1 -61.8          0         0         0         0
- 8 &lt;NA&gt;             Argent… -38.4 -63.6          0         0         0         0
- 9 &lt;NA&gt;             Armenia  40.1  45.0          0         0         0         0
-10 Australian Capi… Austra… -35.5 149.           0         0         0         0
-# ℹ 279 more rows
-# ℹ 1,139 more variables: `1/26/20` &lt;dbl&gt;, `1/27/20` &lt;dbl&gt;, `1/28/20` &lt;dbl&gt;,
-#   `1/29/20` &lt;dbl&gt;, `1/30/20` &lt;dbl&gt;, `1/31/20` &lt;dbl&gt;, `2/1/20` &lt;dbl&gt;,
-#   `2/2/20` &lt;dbl&gt;, `2/3/20` &lt;dbl&gt;, `2/4/20` &lt;dbl&gt;, `2/5/20` &lt;dbl&gt;,
-#   `2/6/20` &lt;dbl&gt;, `2/7/20` &lt;dbl&gt;, `2/8/20` &lt;dbl&gt;, `2/9/20` &lt;dbl&gt;,
-#   `2/10/20` &lt;dbl&gt;, `2/11/20` &lt;dbl&gt;, `2/12/20` &lt;dbl&gt;, `2/13/20` &lt;dbl&gt;,
-#   `2/14/20` &lt;dbl&gt;, `2/15/20` &lt;dbl&gt;, `2/16/20` &lt;dbl&gt;, `2/17/20` &lt;dbl&gt;, …</code></pre>
-</div>
-</div>
 <p>Much of the analysis of this dataset has looked at trends over time (e.g.&nbsp;increasing /decreasing case numbers, comparing trajectories). As we know by now, the <code>ggplot2</code> package allows us to map columns (variables) in our dataset to aspects of the plot.</p>
 <p>In other words, we would expect to create plots by writing code such as:-</p>
 <pre><code>ggplot(covid, aes(x = Date, y =...)) + ...</code></pre>
 <p>Unfortunately such plots are not possible with the data in it’s current format. Counts for each date are containing in a different column. What we require is a column to indicate the date, and the corresponding count in the next column. Such data arrangements are known as <em>long data</em>; whereas we have <em>wide</em> data. Fortunately we can convert between the two using the <code>tidyr</code> package (also part of tidyverse).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a><span class="do">## install tidyr if you don't already have it</span></span>
-<span id="cb85-2"><a href="#cb85-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"tidyr"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb89"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a><span class="do">## install tidyr if you don't already have it</span></span>
+<span id="cb89-2"><a href="#cb89-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"tidyr"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="information">
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+About “tidy data”
+</div>
+</div>
+<div class="callout-body-container callout-body">
 <p>For more information on <em>tidy data</em>, and how to convert between long and wide data, see</p>
 <p><a href="https://r4ds.had.co.nz/tidy-data.html" class="uri">https://r4ds.had.co.nz/tidy-data.html</a></p>
 </div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
-<span id="cb86-2"><a href="#cb86-2" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb86-3"><a href="#cb86-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">country =</span> <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb86-4"><a href="#cb86-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">5</span><span class="sc">:</span><span class="fu">last_col</span>(),<span class="at">names_to=</span><span class="st">"Date"</span>, <span class="at">values_to=</span><span class="st">"Cases"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 289 Columns: 1147
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr    (2): Province/State, Country/Region
-dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a>covid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For convenience we will also rename the column containing country names</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a><span class="do">## set the show_col_types argument to FALSE to suppress message about column types</span></span>
+<span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb90-3"><a href="#cb90-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb90-4"><a href="#cb90-4" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>,<span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb90-5"><a href="#cb90-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename</span>(<span class="at">country =</span> <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb90-6"><a href="#cb90-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">5</span><span class="sc">:</span><span class="fu">last_col</span>(),<span class="at">names_to=</span><span class="st">"Date"</span>, <span class="at">values_to=</span><span class="st">"Cases"</span>)</span>
+<span id="cb90-7"><a href="#cb90-7" aria-hidden="true" tabindex="-1"></a>covid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 330,327 × 6
+<pre><code># A tibble: 308,610 × 6
    `Province/State` country       Lat  Long Date    Cases
    &lt;chr&gt;            &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt;
  1 &lt;NA&gt;             Afghanistan  33.9  67.7 1/22/20     0
@@ -1057,31 +1104,38 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
  8 &lt;NA&gt;             Afghanistan  33.9  67.7 1/29/20     0
  9 &lt;NA&gt;             Afghanistan  33.9  67.7 1/30/20     0
 10 &lt;NA&gt;             Afghanistan  33.9  67.7 1/31/20     0
-# ℹ 330,317 more rows</code></pre>
+# ℹ 308,600 more rows</code></pre>
 </div>
 </div>
-<p>Another point to note is that the dates are not in an internationally recognised format, which could cause a problem for some visualisations that rely on date order. We can fix by explicitly converting to YYYY-MM-DD format.</p>
-<div class="information">
-<p>For more ways of dealing with dates in R see the <code>lubridate</code> package.</p>
+<p>The number of rows and columns has changed dramatically, but this is a much more usable form for <code>dplyr</code> and <code>ggplot2</code>.</p>
+<p>Another point to note is that the dates are not in an internationally recognised format, which could cause a problem for some visualisations that rely on date order.</p>
+<p><img src="http://images3.memedroid.com/images/UPLOADED951/62d545f80a3d6.jpeg" class="img-fluid"></p>
+<p>We can fix by explicitly converting to YYYY-MM-DD format. The <code>as.Date</code> function can be used to convert an existing column into standardised dates. It needs to know how the months, days and years are being specified which might look a bit obtuse. The specification needed for these data is <code>%m/%d/%y</code>. This means months(<code>%m</code>) separated by a <code>/</code> followed by a day (<code>%d</code>) followed by another <code>/</code> followed by the year represented by two digits (<code>%y</code>). Other conversions are possible including if you have dates with month names (<code>Jan</code>, <code>Feb</code>…) or four digit years. See the link below for more information.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Dealing with dates
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>See this website for more about representing and converting dates in R.</p>
+<ul>
+<li><a href="https://www.statology.org/r-date-format/">https://www.statology.org/r-date-format/</a></li>
+</ul>
+<p>For more ways of dealing with dates in R see the <code>lubridate</code> package which can handle tasks such as calculating intervals between dates and much more</p>
+</div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">country =</span> <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb90-3"><a href="#cb90-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">5</span><span class="sc">:</span><span class="fu">last_col</span>(),<span class="at">names_to=</span><span class="st">"Date"</span>, <span class="at">values_to=</span><span class="st">"Cases"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb90-4"><a href="#cb90-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Date=</span><span class="fu">as.Date</span>(Date,<span class="st">"%m/%d/%y"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 289 Columns: 1147
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr    (2): Province/State, Country/Region
-dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>covid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>,<span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename</span>(<span class="at">country =</span> <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">5</span><span class="sc">:</span><span class="fu">last_col</span>(),<span class="at">names_to=</span><span class="st">"Date"</span>, <span class="at">values_to=</span><span class="st">"Cases"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb92-4"><a href="#cb92-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Date=</span><span class="fu">as.Date</span>(Date,<span class="st">"%m/%d/%y"</span>))</span>
+<span id="cb92-5"><a href="#cb92-5" aria-hidden="true" tabindex="-1"></a>covid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 330,327 × 6
+<pre><code># A tibble: 308,610 × 6
    `Province/State` country       Lat  Long Date       Cases
    &lt;chr&gt;            &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;date&gt;     &lt;dbl&gt;
  1 &lt;NA&gt;             Afghanistan  33.9  67.7 2020-01-22     0
@@ -1094,55 +1148,25 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
  8 &lt;NA&gt;             Afghanistan  33.9  67.7 2020-01-29     0
  9 &lt;NA&gt;             Afghanistan  33.9  67.7 2020-01-30     0
 10 &lt;NA&gt;             Afghanistan  33.9  67.7 2020-01-31     0
-# ℹ 330,317 more rows</code></pre>
+# ℹ 308,600 more rows</code></pre>
 </div>
 </div>
-<p>Another useful modification is to make sure only one row exists for each country. If we look at the data for some countries (e.g.&nbsp;China and UK) there are different entries for provinces and oversees territories.</p>
+<p>Another useful modification is to make sure only one row exists for each country. If we look at the data for some countries (e.g.&nbsp;China and UK) there are different entries for provinces and oversees territories. So we can change the Cases to be the <code>sum</code> of all cases for that country on a particular day. We can do this using the <code>group_by</code> and <code>summarise</code> functions from above.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a><span class="do">## the count function tabulates the number of observations in a particular column</span></span>
-<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(covid, country <span class="sc">==</span> <span class="st">"China"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb94-4"><a href="#cb94-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(<span class="st">`</span><span class="at">Province/State</span><span class="st">`</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 34 × 2
-   `Province/State`     n
-   &lt;chr&gt;            &lt;int&gt;
- 1 Anhui             1143
- 2 Beijing           1143
- 3 Chongqing         1143
- 4 Fujian            1143
- 5 Gansu             1143
- 6 Guangdong         1143
- 7 Guangxi           1143
- 8 Guizhou           1143
- 9 Hainan            1143
-10 Hebei             1143
-# ℹ 24 more rows</code></pre>
-</div>
-</div>
-<p>So we can change the Cases to be the <code>sum</code> of all cases for that country on a particular day. We can do this using the <code>group_by</code> and <code>summarise</code> functions from above</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb96-2"><a href="#cb96-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">country =</span> <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb96-3"><a href="#cb96-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">5</span><span class="sc">:</span><span class="fu">last_col</span>(),<span class="at">names_to=</span><span class="st">"Date"</span>, <span class="at">values_to=</span><span class="st">"Cases"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb96-4"><a href="#cb96-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Date=</span><span class="fu">as.Date</span>(Date,<span class="st">"%m/%d/%y"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb96-5"><a href="#cb96-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(country,Date) <span class="sc">%&gt;%</span> </span>
-<span id="cb96-6"><a href="#cb96-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">Cases =</span> <span class="fu">sum</span>(Cases))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">country =</span> <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">5</span><span class="sc">:</span><span class="fu">last_col</span>(),<span class="at">names_to=</span><span class="st">"Date"</span>, <span class="at">values_to=</span><span class="st">"Cases"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb94-4"><a href="#cb94-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Date=</span><span class="fu">as.Date</span>(Date,<span class="st">"%m/%d/%y"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb94-5"><a href="#cb94-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(country,Date) <span class="sc">%&gt;%</span> </span>
+<span id="cb94-6"><a href="#cb94-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">Cases =</span> <span class="fu">sum</span>(Cases))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Rows: 289 Columns: 1147
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr    (2): Province/State, Country/Region
-dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-`summarise()` has grouped output by 'country'. You can override using the `.groups` argument.</code></pre>
+<pre><code>`summarise()` has grouped output by 'country'. You can override using the
+`.groups` argument.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a>covid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>covid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 229,743 × 3
-# Groups:   country [201]
+<pre><code># A tibble: 218,313 × 3
+# Groups:   country [191]
    country     Date       Cases
    &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
  1 Afghanistan 2020-01-22     0
@@ -1155,7 +1179,81 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
  8 Afghanistan 2020-01-29     0
  9 Afghanistan 2020-01-30     0
 10 Afghanistan 2020-01-31     0
-# ℹ 229,733 more rows</code></pre>
+# ℹ 218,303 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a>covid</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 218,313 × 3
+# Groups:   country [191]
+   country     Date       Cases
+   &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
+ 1 Afghanistan 2020-01-22     0
+ 2 Afghanistan 2020-01-23     0
+ 3 Afghanistan 2020-01-24     0
+ 4 Afghanistan 2020-01-25     0
+ 5 Afghanistan 2020-01-26     0
+ 6 Afghanistan 2020-01-27     0
+ 7 Afghanistan 2020-01-28     0
+ 8 Afghanistan 2020-01-29     0
+ 9 Afghanistan 2020-01-30     0
+10 Afghanistan 2020-01-31     0
+# ℹ 218,303 more rows</code></pre>
+</div>
+</div>
+<p>To join these new data with <code>gapminder</code> we have to start by telling R which columns in both data frames are equivalent. This is because there is no column name that is shared between both data frames.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb100"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a><span class="fu">left_join</span>(gapminder, covid)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Joining with `by = join_by(country)`</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in left_join(gapminder, covid): Detected an unexpected many-to-many relationship between `x` and `y`.
+ℹ Row 1 of `x` matches multiple rows in `y`.
+ℹ Row 1 of `y` matches multiple rows in `x`.
+ℹ If a many-to-many relationship is expected, set `relationship =
+  "many-to-many"` to silence this warning.</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,673,592 × 8
+   country     continent  year lifeExp     pop gdpPercap Date       Cases
+   &lt;chr&gt;       &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt; &lt;date&gt;     &lt;dbl&gt;
+ 1 Afghanistan Asia       1952    28.8 8425333      779. 2020-01-22     0
+ 2 Afghanistan Asia       1952    28.8 8425333      779. 2020-01-23     0
+ 3 Afghanistan Asia       1952    28.8 8425333      779. 2020-01-24     0
+ 4 Afghanistan Asia       1952    28.8 8425333      779. 2020-01-25     0
+ 5 Afghanistan Asia       1952    28.8 8425333      779. 2020-01-26     0
+ 6 Afghanistan Asia       1952    28.8 8425333      779. 2020-01-27     0
+ 7 Afghanistan Asia       1952    28.8 8425333      779. 2020-01-28     0
+ 8 Afghanistan Asia       1952    28.8 8425333      779. 2020-01-29     0
+ 9 Afghanistan Asia       1952    28.8 8425333      779. 2020-01-30     0
+10 Afghanistan Asia       1952    28.8 8425333      779. 2020-01-31     0
+# ℹ 1,673,582 more rows</code></pre>
+</div>
+</div>
+<p>Furthermore, we might also want to just use the <code>2007</code> rows from <code>gapminder</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb104"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, year <span class="sc">==</span> <span class="dv">2007</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb104-2"><a href="#cb104-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(covid)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Joining with `by = join_by(country)`</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 139,466 × 8
+   country     continent  year lifeExp      pop gdpPercap Date       Cases
+   &lt;chr&gt;       &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;date&gt;     &lt;dbl&gt;
+ 1 Afghanistan Asia       2007    43.8 31889923      975. 2020-01-22     0
+ 2 Afghanistan Asia       2007    43.8 31889923      975. 2020-01-23     0
+ 3 Afghanistan Asia       2007    43.8 31889923      975. 2020-01-24     0
+ 4 Afghanistan Asia       2007    43.8 31889923      975. 2020-01-25     0
+ 5 Afghanistan Asia       2007    43.8 31889923      975. 2020-01-26     0
+ 6 Afghanistan Asia       2007    43.8 31889923      975. 2020-01-27     0
+ 7 Afghanistan Asia       2007    43.8 31889923      975. 2020-01-28     0
+ 8 Afghanistan Asia       2007    43.8 31889923      975. 2020-01-29     0
+ 9 Afghanistan Asia       2007    43.8 31889923      975. 2020-01-30     0
+10 Afghanistan Asia       2007    43.8 31889923      975. 2020-01-31     0
+# ℹ 139,456 more rows</code></pre>
 </div>
 </div>
 <section id="exercise-2" class="level3">
@@ -1174,6 +1272,140 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
 <li>e.g.&nbsp;<a href="https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/" class="uri">https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/</a></li>
 </ul></li>
 </ul>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Some solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Compare trajectories of different countries. The <code>%in%</code> operator is an alternative to or (<code>|</code>) to find a country name that can either one of a number of possibilities.</p>
+<p><strong>Something is going wrong with United Kingdom here that I need to investigate!</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb107"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb107-2"><a href="#cb107-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">country =</span> <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb107-3"><a href="#cb107-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">5</span><span class="sc">:</span><span class="fu">last_col</span>(),<span class="at">names_to=</span><span class="st">"Date"</span>, <span class="at">values_to=</span><span class="st">"Cases"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb107-4"><a href="#cb107-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Date=</span><span class="fu">as.Date</span>(Date,<span class="st">"%m/%d/%y"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb107-5"><a href="#cb107-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(country,Date) <span class="sc">%&gt;%</span> </span>
+<span id="cb107-6"><a href="#cb107-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">Cases =</span> <span class="fu">sum</span>(Cases))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 270 Columns: 1147
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr    (2): Province/State, Country/Region
+dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+`summarise()` has grouped output by 'country'. You can override using the `.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb109"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(covid, country <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"United Kingdom"</span>,<span class="st">"France"</span>,<span class="st">"Spain"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb109-2"><a href="#cb109-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Date, <span class="at">y =</span> Cases,<span class="at">col=</span>country)) <span class="sc">+</span> <span class="fu">geom_line</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-55-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb110"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb110-1"><a href="#cb110-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, year <span class="sc">==</span> <span class="dv">2007</span>,continent<span class="sc">==</span><span class="st">"Europe"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb110-2"><a href="#cb110-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(covid) <span class="sc">%&gt;%</span> </span>
+<span id="cb110-3"><a href="#cb110-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Date <span class="sc">==</span> <span class="st">"2022-01-06"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb110-4"><a href="#cb110-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Cases =</span> <span class="fu">round</span>(Cases <span class="sc">/</span> (pop <span class="sc">/</span> <span class="fl">1e5</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Joining with `by = join_by(country)`</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 28 × 8
+   country             continent  year lifeExp    pop gdpPercap Date       Cases
+   &lt;chr&gt;               &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt; &lt;date&gt;     &lt;dbl&gt;
+ 1 Albania             Europe     2007    76.4 3.60e6     5937. 2022-01-06  5923
+ 2 Austria             Europe     2007    79.8 8.20e6    36126. 2022-01-06 15865
+ 3 Belgium             Europe     2007    79.4 1.04e7    33693. 2022-01-06 21237
+ 4 Bosnia and Herzego… Europe     2007    74.9 4.55e6     7446. 2022-01-06  6532
+ 5 Bulgaria            Europe     2007    73.0 7.32e6    10681. 2022-01-06 10515
+ 6 Croatia             Europe     2007    75.7 4.49e6    14619. 2022-01-06 16592
+ 7 Denmark             Europe     2007    78.3 5.47e6    35278. 2022-01-06 17001
+ 8 Finland             Europe     2007    79.3 5.24e6    33207. 2022-01-06  6031
+ 9 France              Europe     2007    80.7 6.11e7    30470. 2022-01-06 18483
+10 Germany             Europe     2007    79.4 8.24e7    32170. 2022-01-06  8934
+# ℹ 18 more rows</code></pre>
+</div>
+</div>
+<p>Try to make example similar to <a href="https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/">https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/</a>. We’re not using up-to-date figures for population so there will be some differences. The two data frames can be joined because they have a column name in common (<code>country</code>). Most of the country names that appear in <code>gapminder</code> also appear in the <code>covid</code> dataset, so not much data is lost in the join.</p>
+<p>Since we are interested in European countries for this dataset, we pre-filter the <code>gapminder</code> data. Also, we only need the population values from 2007.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb113"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb113-1"><a href="#cb113-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, year <span class="sc">==</span> <span class="dv">2007</span>,continent<span class="sc">==</span><span class="st">"Europe"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-2"><a href="#cb113-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(covid) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-3"><a href="#cb113-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Date <span class="sc">==</span> <span class="st">"2022-01-06"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-4"><a href="#cb113-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Cases =</span> <span class="fu">round</span>(Cases <span class="sc">/</span> (pop <span class="sc">/</span> <span class="fl">1e5</span>))) <span class="sc">%&gt;%</span> </span>
+<span id="cb113-5"><a href="#cb113-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Cases, <span class="at">y =</span> country)) <span class="sc">+</span> <span class="fu">geom_col</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Joining with `by = join_by(country)`</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-57-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The default ordering for the bars is alphabetical, which is probably not a natural choice. The <code>forcats</code> package, which is part of <code>tidyverse</code> allows <em>factors</em> in a data frame to be re-ordered and re-labeled.</p>
+<ul>
+<li><a href="https://forcats.tidyverse.org/">forcats package</a></li>
+</ul>
+<p>In particular, we can use the <code>fct_reorder</code> function to reorder the country names according to the number of cases. This can be done inside the <code>ggplot2</code> function itself.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb115"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a><span class="do">## this will install the package if it is not already installed</span></span>
+<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(forcats)) <span class="fu">install.packages</span>(forcats)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: forcats</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb117"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, year <span class="sc">==</span> <span class="dv">2007</span>,continent<span class="sc">==</span><span class="st">"Europe"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb117-2"><a href="#cb117-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(covid) <span class="sc">%&gt;%</span> </span>
+<span id="cb117-3"><a href="#cb117-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Date <span class="sc">==</span> <span class="st">"2022-01-06"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb117-4"><a href="#cb117-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Cases =</span> <span class="fu">round</span>(Cases <span class="sc">/</span> (pop <span class="sc">/</span> <span class="fl">1e5</span>))) <span class="sc">%&gt;%</span> </span>
+<span id="cb117-5"><a href="#cb117-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Cases, <span class="at">y =</span> forcats<span class="sc">::</span><span class="fu">fct_reorder</span>(country,Cases))) <span class="sc">+</span> <span class="fu">geom_col</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Joining with `by = join_by(country)`</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-58-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>A heatmap of number of cases over time (similar to that reported by the BBC) can be achieved using a <code>geom_tile</code></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb119"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Get the 2007 gapminder data to avoid repeating data</span></span>
+<span id="cb119-2"><a href="#cb119-2" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, year <span class="sc">==</span>  <span class="dv">2007</span>, continent<span class="sc">==</span><span class="st">"Europe"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb119-3"><a href="#cb119-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(covid) <span class="sc">%&gt;%</span> </span>
+<span id="cb119-4"><a href="#cb119-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Cases)) <span class="sc">%&gt;%</span> <span class="do">## remove countries with missing values</span></span>
+<span id="cb119-5"><a href="#cb119-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Date, <span class="at">y =</span> country,<span class="at">fill=</span>Cases)) <span class="sc">+</span> <span class="fu">geom_tile</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Joining with `by = join_by(country)`</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-59-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</div>
 </div>
 
 

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Mark Dunning">
-<meta name="dcterms.date" content="2025-10-09">
+<meta name="dcterms.date" content="2025-10-10">
 
 <title>Introduction to R - Part 1 – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
 <style>
@@ -208,7 +208,7 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 9, 2025</p>
+      <p class="date">October 10, 2025</p>
     </div>
   </div>
   
@@ -442,8 +442,8 @@ Attaching package: 'dplyr'</code></pre>
 <div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="do">## this will produce a random set of numbers, so everyone will get a different set of numbers</span></span>
 <span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rnorm</span>(<span class="at">n=</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code> [1] -0.15804178 -0.45158197  0.08683528  0.13584718  0.29392988 -0.21776205
- [7]  0.95444156  0.49892592 -1.13708676  2.20545641</code></pre>
+<pre><code> [1] -0.67710992 -0.82463169 -1.75796068 -0.48616825  0.03893636 -1.11184888
+ [7]  0.70216915 -0.80995872 -1.50238537 -0.46289679</code></pre>
 </div>
 </div>
 <p>The normal distribution is defined by a <em>mean</em> (average) and <em>standard deviation</em> (spread). However, in the above example we didn’t tell R what mean and standard deviation we wanted. So how does R know what to do? All arguments to a function and their default values are listed in the help page</p>
@@ -455,13 +455,13 @@ Attaching package: 'dplyr'</code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rnorm</span>(<span class="at">n=</span><span class="dv">10</span>, <span class="at">mean=</span><span class="dv">2</span>,<span class="at">sd=</span><span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code> [1]  1.732216 -1.698160  3.318331 -3.756933 -3.188993  3.571470  4.959359
- [8]  2.318216 -2.131226  1.238319</code></pre>
+<pre><code> [1]  2.5041626  2.3406650  3.2935304  2.4632436  4.9917373  3.4023527
+ [7] -0.9743205  5.9547026  2.4286916  0.4147667</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rnorm</span>(<span class="dv">10</span>, <span class="dv">2</span>, <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code> [1]  2.3034762  1.4333489 -0.6054940  4.5292890  2.0977299  0.7679876
- [7] -2.3476851 -0.2364118  5.6567889  8.5875587</code></pre>
+<pre><code> [1]  2.6417084  1.1012701  2.7778154  4.4660608 -0.4184364 -5.1426588
+ [7]  3.1203372  1.9781148  1.8096780  1.7626966</code></pre>
 </div>
 </div>
 <p>In the examples above, <code>seq</code> and <code>rnorm</code> were both outputting a series of numbers, which is called a <em>vector</em> in R and is the most-fundamental data-type.</p>
@@ -539,15 +539,15 @@ Solutions
 <span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(my_numbers)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 11.89764</code></pre>
+<pre><code>[1] 12.07009</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="fu">min</span>(my_numbers)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] -8.262161</code></pre>
+<pre><code>[1] -7.280136</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(my_numbers)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 2.027459</code></pre>
+<pre><code>[1] 2.212935</code></pre>
 </div>
 </div>
 </div>
