@@ -1,0 +1,113 @@
+---
+title: "Always check your input data"
+author: Mark Dunning
+date: today
+
+theme: darkly
+---
+
+# Overview
+
+Why you always check your input data before starting
+
+
+# A cautionary tale
+
+As part of creating this website I decided to revise and re-compile [Part 3](/training/r_part3) of my introductory R series. I had to take a long train journey (this will become relevant later...) and it seemed like an ideal time to do so. I have used the materials numerous times before, and am following best-practices such as keeping my code under version control, using quarto for reproducible documentation, but yet one of the plots just didn't look right. 
+
+Here I am supposed to be plotting the number of COVID cases over time for a number of countries. It probably won't take long to spot that the line for United Kingdom shows an extremely small number of cases - which certainly isn't true. I was running the same code I had done countless times before, so what could the problem be?
+
+![](covid_lines_incorrect.PNG)
+
+## Overview of the code
+
+
+```{r echo=FALSE}
+dir.create("raw_data")
+if(!file.exists("raw_data/time_series_covid19_confirmed_global.csv")){
+  download.file("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",destfile = "raw_data/time_series_covid19_confirmed_global.csv")
+}
+```
+The code chunk below takes a time series dataset of covid cases worldwide and applies some essential data cleaning transformations. 
+These ensure that the data are in a "tidy" format expected by ggplot2 and convert the dates into an international standards. Furthermore, some countries are represented by multiple regions and for simplicity we add these case numbers together.
+
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+
+covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv") %>% 
+  rename(country = `Country/Region`) %>% 
+  pivot_longer(5:last_col(),names_to="Date", values_to="Cases") %>% 
+  mutate(Date=as.Date(Date,"%m/%d/%y")) %>% 
+  group_by(country,Date) %>% 
+  summarise(Cases = sum(Cases))
+
+head(covid)
+
+```
+
+The plot is now a standard application of the `ggplot` function
+
+```{r}
+filter(covid, country %in% c("United Kingdom","France","Spain")) %>%
+  ggplot(aes(x = Date, y = Cases,col=country)) + geom_line()
+```
+
+But the plot is now looking as expected - with United Kingdom showing high numbers of cases. So what could have happened to produce the top of the page? I neglected to explain that the source data come from a github page are were downloaded as part of my code. In the training materials this was intended to show a workflow that started from data located at a remote source. The code below first creates a `raw_data` folder (without complaining if such a folder already exists - `showWarnings=FALSE`) and then checks via `file.exists` if `time_series_covid19_confirmed_global.csv` is already present. If not, the code will download from github.
+
+```{r}
+dir.create("raw_data", showWarnings = FALSE)
+if(!file.exists("raw_data/time_series_covid19_confirmed_global.csv")){
+  download.file("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",destfile = "raw_data/time_series_covid19_confirmed_global.csv")
+}
+```
+
+What *should* happen now is to perform some basic checks on the dimensions of the data once
+
+```{r}
+covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv")
+dim(covid)
+```
+
+```{r}
+head(covid)
+```
+
+
+```{r}
+tail(covid)
+```
+
+```{r}
+covid_bad <- read_csv("time_series_covid19_confirmed_global_BAD.csv")
+dim(covid_bad)
+```
+
+```{r}
+head(covid)
+```
+
+```{r}
+tail(covid_bad)
+```
+
+```{r}
+# Load the tools package
+library(tools)
+
+# Compute MD5 checksum for a file
+file_path <- "path/to/your/file.txt"
+checksum <- md5sum("raw_data/time_series_covid19_confirmed_global.csv")
+checksum
+```
+
+```{r}
+checksum_bad <- md5sum("time_series_covid19_confirmed_global_BAD.csv")
+checksum_bad
+```
+
+```{r}
+checksum == checksum_bad
+```
+

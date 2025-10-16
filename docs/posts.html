@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Dr.&nbsp;Mark Dunning – Dr. Mark Dunning - Bioinformatician / Data Scientist</title>
+<title>Posts – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,10 +30,13 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-listing/list.min.js"></script>
+<script src="site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-2fef5ea3f8957b3e4ecc936fc74692ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
@@ -66,6 +69,35 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
+<script>
+
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-title','listing-author','listing-date','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-title","listing-author","listing-date","listing-image","listing-description"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
 <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-96TB60ETKS"></script>
 
 <script type="text/javascript">
@@ -76,11 +108,40 @@ gtag('js', new Date());
 gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
 </script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="nav-fixed fullcontent quarto-light">
+<body class="nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -98,7 +159,7 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
@@ -110,7 +171,7 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
 <span class="menu-text">Training Materials</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./posts.html"> 
+    <a class="nav-link active" href="./posts.html" aria-current="page"> 
 <span class="menu-text">Posts</span></a>
   </li>  
 </ul>
@@ -124,41 +185,72 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+        
+    </div>
 <!-- main -->
-<div class="quarto-about-jolla">
-  <img src="files/Mark-Dunning.jpg" class="about-image
-  round " style="height: 15em; width: 15em;">
- <header id="title-block-header" class="quarto-title-block default">
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Dr.&nbsp;Mark Dunning</h1>
+<h1 class="title">Posts</h1>
 </div>
+
+
+
 <div class="quarto-title-meta">
+
+    
+  
+    
   </div>
-</header><main class="content" id="quarto-document-content">
-<p>I’m a Bioinformatician with a background in Mathematics and Computer Science with over 20 years of experience. I specialise in the visualisation and interpretation of complex data and have a wealth of experience in making results accessible and easy to interrogate for wet-lab biologists. I also have experience in developing and delivering training courses and workships, along with formal teaching.</p>
-<p>I obtained my PhD in the Statistics and Computational Biology group of Simon Tavaré at the University of Cambridge / Cancer Research Uk. During this time, I developed the <a href="http://www.bioconductor.org/packages/release/bioc/html/beadarray.html">beadarray</a> Bioconductor package for the analysis of Illumina microarray data. My PhD thesis is available <a href="https://www.repository.cam.ac.uk/handle/1810/218542">online</a>, should you be interested.</p>
-<p>After my PhD, I worked as a Bioinformatics Analyst within the Bioinformatics Core; consulting on, and assisting in, the analysis on all types of high-throughput datasets. During this time I worked on studies to define subtypes of <a href="http://www.nature.com/nature/journal/v486/n7403/full/nature10983.html">Breast</a> and <a href="http://www.sciencedirect.com/science/article/pii/S2352396415300712">Prostate</a> cancer and established pipelines for analysis whole-genome and exome resequencing data.</p>
-<p>I held the role of “<em>Bioinformatics Training Coordinator</em>” in the Bioinformatics Core of <a href="http://www.cruk.cam.ac.uk/">Cancer Research Uk Cambridge Institute</a>. I organised, developed and facilitated <a href="http://www.cruk.cam.ac.uk/core-facilities/bioinformatics-core/training">Bioinformatics training courses</a> to teach computational and analytical skills to wet-lab biologists - along with a series of “Bioinformatics Summer Schools” for Cancer Research funded staff nationwide.</p>
-<p>From October 2017 I established the <a href="https://sbc.shef.ac.uk">Bioinformatics Core at The University of Sheffield</a> which ran until August 2025. Along with supporting clinicians and researchers across campus, I also contributed to various MSC and undergraduate programs as well as obtaining training / teaching qualifications from <a href="https://carpentries.org/">thecarpentries</a> and <a href="https://advance-he.ac.uk/">AdvanceHE</a> (FHEA)</p>
+  
 
 
-</main> 
-  <hr class="about-sep">
-   <div class="about-links">
-  <a href="mailto:mark@mdbioinformatics.com" class="about-link" rel="" target="">
-    <i class="bi bi-envelope"></i>
-     <span class="about-link-text"></span>
-  </a>
-  <a href="https://www.linkedin.com/in/drmarkdunning/" class="about-link" rel="" target="">
-    <i class="bi bi-linkedin"></i>
-     <span class="about-link-text"></span>
-  </a>
+</header>
+
+
+<p>You will find some <a href=".\training/">comprehensive training materials</a> on this site, and here I will add some shorter musings on other aspects of data analysis and Bioinformatics that I have found useful</p>
+
+
+
+
+<div class="quarto-listing quarto-listing-container-grid" id="listing-listing">
+<div class="list grid quarto-listing-cols-3">
+<div class="g-col-1" data-index="0" data-listing-date-sort="1760569200000" data-listing-file-modified-sort="1760608840572" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="16">
+<a href="./posts/2025_10_16_check_data/index.html" class="quarto-grid-link">
+<div class="quarto-grid-item card h-100 card-left">
+<p class="card-img-top"><img src="posts\2025_10_16_check_data\covid_lines_incorrect.PNG" style="height: 150px;"  class="thumbnail-image card-img"/></p>
+<div class="card-body post-contents">
+<h5 class="no-anchor card-title listing-title">
+Always check your input data
+</h5>
+<div class="card-text listing-description delink">
+Why you always check your input data before starting
+</div>
+<div class="card-attribution card-text-small justify">
+<div class="listing-author">
+Mark Dunning
+</div>
+<div class="listing-date">
+Oct 16, 2025
 </div>
 </div>
- <!-- /main -->
+</div>
+</div></a>
+</div>
+</div>
+<div class="listing-no-matching d-none">No matching items</div>
+</div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
     const isCodeAnnotation = (el) => {
       for (const clz of el.classList) {
         if (clz.startsWith('code-annotation-')) {                     
