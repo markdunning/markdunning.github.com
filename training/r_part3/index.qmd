@@ -598,11 +598,22 @@ covid
 covid
 ```
 
-To join these new data with `gapminder` we have to start by telling R which columns in both data frames are equivalent. This is because there is no column name that is shared between both data frames.
+Since we previously renamed the country column in `covid` and both data frames now have a column called `country` we can use a `left_join`. 
 
 ```{r}
 left_join(gapminder, covid)
 ```
+
+::: {callout-tip}
+
+If we hadn't used `rename` previously, the joining code would look like this
+
+```{r eval=FALSE}
+left_join(gapminder, covid, by = c("county" = "Country/Region"))
+```
+
+
+:::
 
 Furthermore, we might also want to just use the `2007` rows from `gapminder`. 
 
@@ -635,9 +646,8 @@ What plots and summaries can you make from these data?
 ## Some solutions
 
 
-Compare trajectories of different countries. The `%in%` operator is an alternative to or (`|`) to find a country name that can either one of a number of possibilities.
+Compare trajectories of different countries. The `%in%` operator is an alternative to or (`|`) to find a country name that can have a number of possibilities.
 
-**Something is going wrong with United Kingdom here that I need to investigate!**
 
 ```{r}
 covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv") %>% 
@@ -652,10 +662,12 @@ filter(covid, country %in% c("United Kingdom","France","Spain")) %>%
   ggplot(aes(x = Date, y = Cases,col=country)) + geom_line()
 ```
 
+To explore the european data on a particular date, we first filter gapminder appropriately
+
 ```{r}
 filter(gapminder, year == 2007,continent=="Europe") %>%
   left_join(covid) %>% 
-  filter(Date == "2022-01-06") %>% 
+  filter(Date == "2023-01-13") %>% 
   mutate(Cases = round(Cases / (pop / 1e5)))
 ```
 
@@ -685,7 +697,7 @@ if(!require(forcats)) install.packages(forcats)
 
 filter(gapminder, year == 2007,continent=="Europe") %>% 
   left_join(covid) %>% 
-  filter(Date == "2022-01-06") %>% 
+  filter(Date == "2023-01-13") %>% 
   mutate(Cases = round(Cases / (pop / 1e5))) %>% 
   ggplot(aes(x = Cases, y = forcats::fct_reorder(country,Cases))) + geom_col()
 
@@ -697,8 +709,9 @@ A heatmap of number of cases over time (similar to that reported by the BBC) can
 ### Get the 2007 gapminder data to avoid repeating data
 filter(gapminder, year ==  2007, continent=="Europe") %>% 
   left_join(covid) %>% 
-  filter(!is.na(Cases)) %>% ## remove countries with missing values
-  ggplot(aes(x = Date, y = country,fill=Cases)) + geom_tile()
+  filter(!is.na(Cases)) %>% ## remove countries with missing values%>% 
+  mutate(Cases = round(Cases / (pop / 1e5))) %>% 
+  ggplot(aes(x = Date, y = country,fill=Cases)) + geom_tile() + scale_fill_viridis_c()
   
 ```
 

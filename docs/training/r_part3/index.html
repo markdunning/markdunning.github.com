@@ -1291,8 +1291,7 @@ Some solutions
 </div>
 <div id="callout-8" class="callout-8-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Compare trajectories of different countries. The <code>%in%</code> operator is an alternative to or (<code>|</code>) to find a country name that can either one of a number of possibilities.</p>
-<p><strong>Something is going wrong with United Kingdom here that I need to investigate!</strong></p>
+<p>Compare trajectories of different countries. The <code>%in%</code> operator is an alternative to or (<code>|</code>) to find a country name that can have a number of possibilities.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb108"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb108-1"><a href="#cb108-1" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb108-2"><a href="#cb108-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">country =</span> <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
@@ -1321,10 +1320,11 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
 </div>
 </div>
 </div>
+<p>To explore the european data on a particular date, we first filter gapminder appropriately</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb111"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, year <span class="sc">==</span> <span class="dv">2007</span>,continent<span class="sc">==</span><span class="st">"Europe"</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb111-2"><a href="#cb111-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(covid) <span class="sc">%&gt;%</span> </span>
-<span id="cb111-3"><a href="#cb111-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Date <span class="sc">==</span> <span class="st">"2022-01-06"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb111-3"><a href="#cb111-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Date <span class="sc">==</span> <span class="st">"2023-01-13"</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb111-4"><a href="#cb111-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Cases =</span> <span class="fu">round</span>(Cases <span class="sc">/</span> (pop <span class="sc">/</span> <span class="fl">1e5</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Joining with `by = join_by(country)`</code></pre>
@@ -1333,16 +1333,16 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
 <pre><code># A tibble: 28 × 8
    country             continent  year lifeExp    pop gdpPercap Date       Cases
    &lt;chr&gt;               &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt; &lt;date&gt;     &lt;dbl&gt;
- 1 Albania             Europe     2007    76.4 3.60e6     5937. 2022-01-06  5923
- 2 Austria             Europe     2007    79.8 8.20e6    36126. 2022-01-06 15865
- 3 Belgium             Europe     2007    79.4 1.04e7    33693. 2022-01-06 21237
- 4 Bosnia and Herzego… Europe     2007    74.9 4.55e6     7446. 2022-01-06  6532
- 5 Bulgaria            Europe     2007    73.0 7.32e6    10681. 2022-01-06 10515
- 6 Croatia             Europe     2007    75.7 4.49e6    14619. 2022-01-06 16592
- 7 Denmark             Europe     2007    78.3 5.47e6    35278. 2022-01-06 17001
- 8 Finland             Europe     2007    79.3 5.24e6    33207. 2022-01-06  6031
- 9 France              Europe     2007    80.7 6.11e7    30470. 2022-01-06 18483
-10 Germany             Europe     2007    79.4 8.24e7    32170. 2022-01-06  8934
+ 1 Albania             Europe     2007    76.4 3.60e6     5937. 2023-01-13  9277
+ 2 Austria             Europe     2007    79.8 8.20e6    36126. 2023-01-13 69987
+ 3 Belgium             Europe     2007    79.4 1.04e7    33693. 2023-01-13 45093
+ 4 Bosnia and Herzego… Europe     2007    74.9 4.55e6     7446. 2023-01-13  8813
+ 5 Bulgaria            Europe     2007    73.0 7.32e6    10681. 2023-01-13 17672
+ 6 Croatia             Europe     2007    75.7 4.49e6    14619. 2023-01-13 28181
+ 7 Denmark             Europe     2007    78.3 5.47e6    35278. 2023-01-13 62970
+ 8 Finland             Europe     2007    79.3 5.24e6    33207. 2023-01-13 27654
+ 9 France              Europe     2007    80.7 6.11e7    30470. 2023-01-13 64906
+10 Germany             Europe     2007    79.4 8.24e7    32170. 2023-01-13 45637
 # ℹ 18 more rows</code></pre>
 </div>
 </div>
@@ -1378,7 +1378,7 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
 </div>
 <div class="sourceCode cell-code" id="cb118"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb118-1"><a href="#cb118-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, year <span class="sc">==</span> <span class="dv">2007</span>,continent<span class="sc">==</span><span class="st">"Europe"</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb118-2"><a href="#cb118-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(covid) <span class="sc">%&gt;%</span> </span>
-<span id="cb118-3"><a href="#cb118-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Date <span class="sc">==</span> <span class="st">"2022-01-06"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb118-3"><a href="#cb118-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Date <span class="sc">==</span> <span class="st">"2023-01-13"</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb118-4"><a href="#cb118-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Cases =</span> <span class="fu">round</span>(Cases <span class="sc">/</span> (pop <span class="sc">/</span> <span class="fl">1e5</span>))) <span class="sc">%&gt;%</span> </span>
 <span id="cb118-5"><a href="#cb118-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Cases, <span class="at">y =</span> forcats<span class="sc">::</span><span class="fu">fct_reorder</span>(country,Cases))) <span class="sc">+</span> <span class="fu">geom_col</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
@@ -1397,8 +1397,9 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
 <div class="sourceCode cell-code" id="cb120"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Get the 2007 gapminder data to avoid repeating data</span></span>
 <span id="cb120-2"><a href="#cb120-2" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, year <span class="sc">==</span>  <span class="dv">2007</span>, continent<span class="sc">==</span><span class="st">"Europe"</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb120-3"><a href="#cb120-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(covid) <span class="sc">%&gt;%</span> </span>
-<span id="cb120-4"><a href="#cb120-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Cases)) <span class="sc">%&gt;%</span> <span class="do">## remove countries with missing values</span></span>
-<span id="cb120-5"><a href="#cb120-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Date, <span class="at">y =</span> country,<span class="at">fill=</span>Cases)) <span class="sc">+</span> <span class="fu">geom_tile</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb120-4"><a href="#cb120-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Cases)) <span class="sc">%&gt;%</span> <span class="do">## remove countries with missing values%&gt;% </span></span>
+<span id="cb120-5"><a href="#cb120-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Cases =</span> <span class="fu">round</span>(Cases <span class="sc">/</span> (pop <span class="sc">/</span> <span class="fl">1e5</span>))) <span class="sc">%&gt;%</span> </span>
+<span id="cb120-6"><a href="#cb120-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Date, <span class="at">y =</span> country,<span class="at">fill=</span>Cases)) <span class="sc">+</span> <span class="fu">geom_tile</span>() <span class="sc">+</span> <span class="fu">scale_fill_viridis_c</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Joining with `by = join_by(country)`</code></pre>
 </div>
