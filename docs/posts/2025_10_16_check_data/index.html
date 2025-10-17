@@ -216,7 +216,7 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
 </section>
 <section id="a-cautionary-tale" class="level1">
 <h1>A cautionary tale</h1>
-<p>As part of creating this website I decided to revise and re-compile <a href="../..\training/r_part3">Part 3</a> of my introductory R series. I had to take a long train journey (this will become relevant later…) and it seemed like an ideal time to do so. I have used the materials numerous times before, and am following best-practices such as keeping my code under version control, using quarto for reproducible documentation, but yet one of the plots just didn’t look right.</p>
+<p>As part of creating this website I decided to revise and re-compile <a href="../..\training/r_part3/index.html">Part 3</a> of my introductory R series. I had to take a long train journey (this will become relevant later…) and it seemed like an ideal time to do so. I have used the materials numerous times before, and am following best-practices such as keeping my code under version control, using quarto for reproducible documentation, but yet one of the plots just didn’t look right.</p>
 <p>Here I am supposed to be plotting the number of COVID cases over time for a number of countries. It probably won’t take long to spot that the line for United Kingdom shows an extremely small number of cases - which certainly isn’t true. I was running the same code I had done countless times before, so what could the problem be? It should be noted that <strong>at no point did RStudio show any error messages</strong>, so as far as R was concerned it what behaving perfectly well.</p>
 <p><img src="covid_lines_incorrect.PNG" class="img-fluid"></p>
 <section id="overview-of-the-code" class="level2">
@@ -586,6 +586,12 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
 <h1>Conclusion</h1>
 <p>So I should have checked the input data more thoroughly before plotting. Thankfully it was an example for a workshop, but even so I should be demonstrating best practices. I was particularly unlucky that the data stopped halfway through the particular subset I was trying to plot.</p>
 <p>There are other ways of checking that your outputs are correct involving something called “unit tests”, which are primarily used during software development but could also be useful in this context. I may just talk about these in the future.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">list.files</span>(<span class="st">"raw_data/"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "time_series_covid19_confirmed_global.csv"</code></pre>
+</div>
+</div>
 
 
 </section>
