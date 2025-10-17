@@ -2,7 +2,6 @@
 title: "Always check your input data"
 author: Mark Dunning
 date: today
-
 theme: darkly
 ---
 
@@ -10,31 +9,30 @@ theme: darkly
 
 Why you always check your input data before starting
 
-
 # A cautionary tale
 
-As part of creating this website I decided to revise and re-compile [Part 3](/training/r_part3) of my introductory R series. I had to take a long train journey (this will become relevant later...) and it seemed like an ideal time to do so. I have used the materials numerous times before, and am following best-practices such as keeping my code under version control, using quarto for reproducible documentation, but yet one of the plots just didn't look right. 
+As part of creating this website I decided to revise and re-compile [Part 3](/training/r_part3) of my introductory R series. I had to take a long train journey (this will become relevant later...) and it seemed like an ideal time to do so. I have used the materials numerous times before, and am following best-practices such as keeping my code under version control, using quarto for reproducible documentation, but yet one of the plots just didn't look right.
 
-Here I am supposed to be plotting the number of COVID cases over time for a number of countries. It probably won't take long to spot that the line for United Kingdom shows an extremely small number of cases - which certainly isn't true. I was running the same code I had done countless times before, so what could the problem be?
+Here I am supposed to be plotting the number of COVID cases over time for a number of countries. It probably won't take long to spot that the line for United Kingdom shows an extremely small number of cases - which certainly isn't true. I was running the same code I had done countless times before, so what could the problem be? It should be noted that **at no point did RStudio show any error messages**, so as far as R was concerned it what behaving perfectly well.
 
 ![](covid_lines_incorrect.PNG)
 
 ## Overview of the code
 
-
-```{r echo=FALSE}
+```{r echo=FALSE, message=FALSE}
 dir.create("raw_data")
 if(!file.exists("raw_data/time_series_covid19_confirmed_global.csv")){
   download.file("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",destfile = "raw_data/time_series_covid19_confirmed_global.csv")
 }
 ```
-The code chunk below takes a time series dataset of covid cases worldwide and applies some essential data cleaning transformations. 
-These ensure that the data are in a "tidy" format expected by ggplot2 and convert the dates into an international standards. Furthermore, some countries are represented by multiple regions and for simplicity we add these case numbers together.
+
+The code chunk below takes a time series dataset of covid cases worldwide and applies some essential data cleaning transformations. These ensure that the data are in a "tidy" format expected by ggplot2 and convert the dates into an international standards. Furthermore, some countries are represented by multiple regions and for simplicity we add these case numbers together.
 
 ```{r}
 library(readr)
 library(dplyr)
 library(ggplot2)
+library(tidyr)
 
 covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv") %>% 
   rename(country = `Country/Region`) %>% 
@@ -63,34 +61,105 @@ if(!file.exists("raw_data/time_series_covid19_confirmed_global.csv")){
 }
 ```
 
-What *should* happen now is to perform some basic checks on the dimensions of the data once
+What *should* happen, and missing from the workshop materials, is to perform some basic checks on the dimensions of the data once imported into R and stored as a `tibble`. 🤦
 
 ```{r}
 covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv")
+```
+
+Checking the dimensions will print the number of rows and columns
+
+```{r}
 dim(covid)
 ```
+
+The `head` function is a classic function for printing the first six rows (adjustable using the `n` argument)
 
 ```{r}
 head(covid)
 ```
 
+Similarly, `tail` will show the last rows in the data
 
 ```{r}
 tail(covid)
 ```
 
+
+I saved a copy of the csv file that was downloaded during the same session that created the erroneous covid line plot. 
+
 ```{r}
 covid_bad <- read_csv("time_series_covid19_confirmed_global_BAD.csv")
-dim(covid_bad)
 ```
+The first rows of the `tibble` look to be the same
 
 ```{r}
 head(covid)
 ```
 
+But clearly there are fewer rows
+
+```{r}
+dim(covid_bad)
+```
+
+And the last rows of the tibble are not the same as the complete dataset.
+
 ```{r}
 tail(covid_bad)
 ```
+
+What is incredibly unlucky in my case was that not all of the `United Kingdom` rows are present in the shorter dataset.
+
+```{r}
+filter(covid, `Country/Region` == "United Kingdom")
+```
+
+
+Here are the rows for `United Kingdom` in the truncated data
+
+```{r}
+filter(covid_bad, `Country/Region` == "United Kingdom")
+```
+
+
+What's worse is that the row containing the covid cases for mainland Uk are only present in the full dataset. This is where most of the cases occur.
+
+```{r}
+filter(covid, `Country/Region` == "United Kingdom", is.na(`Province/State`))
+```
+
+
+```{r}
+filter(covid_bad, `Country/Region` == "United Kingdom", is.na(`Province/State`))
+```
+We can filter the data for `United Kingdom` and use `select` to show the last column. The helper function `last_col()` is incredibly useful for this as we don't need to know the name of the column. Using `summarise` we can add all the values in the column. This is the cumulative number of casees at the last date in the dataset. Dividing by one million (`1e6`) makes the numbers a bit easier to read. 
+
+```{r}
+filter(covid, `Country/Region` == "United Kingdom") %>% 
+  select(last_col()) %>% 
+  summarise(sum(.) / 1e6)
+```
+For the truncated dataset, the number of counts is substantially lower as we are missing the mainland Uk data. So it is not surprisingly that the trend lines for the Uk did not look correct.
+
+```{r}
+filter(covid_bad, `Country/Region` == "United Kingdom") %>% 
+  select(last_col()) %>% 
+  summarise(sum(.))
+```
+
+In this particular instance I think my poor internet connection on the train wi-fi must have caused me to not download the complete file. Since no errors were produced I might not have detected the problem if I wasn't trying to visualise data for United Kingdom which happened to be located towards the bottom of the file.
+
+Checking the dimensions of the `tibble` help to diagnose the problem, but there are couple of other techniques. R has an in-built function to check the size of a file.
+
+```{r}
+file.size("raw_data/time_series_covid19_confirmed_global.csv")
+```
+
+```{r}
+file.size("time_series_covid19_confirmed_global_BAD.csv")
+```
+A bit more rigourous is to calculate a *checksum*. In short, this is a calculated value that represents **the exact contents of a file**. If the file changes — even by a single byte — the checksum changes as well. That’s why it’s often described as a "digital fingerprint" for data integrity. This can be done in R by first loading the `tools` library and using the `md5sum` function.
 
 ```{r}
 # Load the tools package
@@ -106,8 +175,15 @@ checksum
 checksum_bad <- md5sum("time_series_covid19_confirmed_global_BAD.csv")
 checksum_bad
 ```
+In practice if someone is sending data you large, especially if the file is large, they will also send a file containing checksums for you to check data integrity. The following would print `TRUE` if both files had exactly the same contents.
 
 ```{r}
 checksum == checksum_bad
 ```
 
+
+# Conclusion
+
+So I should have checked the input data more thoroughly before plotting. Thankfully it was an example for a workshop, but even so I should be demonstrating best practices. I was particularly unlucky that the data stopped halfway through the particular subset I was trying to plot. 
+
+There are other ways of checking that your outputs are correct involving something called "unit tests", which are primarily used during software development but could also be useful in this context. I may just talk about these in the future.

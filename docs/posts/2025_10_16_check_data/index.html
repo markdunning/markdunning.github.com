@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Mark Dunning">
-<meta name="dcterms.date" content="2025-10-16">
+<meta name="dcterms.date" content="2025-10-17">
 
 <title>Always check your input data – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
 <style>
@@ -21,6 +21,41 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -133,7 +168,11 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
    
   <ul>
   <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
-  <li><a href="#always-check-your-input-data" id="toc-always-check-your-input-data" class="nav-link" data-scroll-target="#always-check-your-input-data">Always check your input data</a></li>
+  <li><a href="#a-cautionary-tale" id="toc-a-cautionary-tale" class="nav-link" data-scroll-target="#a-cautionary-tale">A cautionary tale</a>
+  <ul class="collapse">
+  <li><a href="#overview-of-the-code" id="toc-overview-of-the-code" class="nav-link" data-scroll-target="#overview-of-the-code">Overview of the code</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
     </div>
@@ -159,7 +198,7 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 16, 2025</p>
+      <p class="date">October 17, 2025</p>
     </div>
   </div>
   
@@ -175,10 +214,378 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
 <h1>Overview</h1>
 <p>Why you always check your input data before starting</p>
 </section>
-<section id="always-check-your-input-data" class="level1">
-<h1>Always check your input data</h1>
-<p>A cautionary tale</p>
+<section id="a-cautionary-tale" class="level1">
+<h1>A cautionary tale</h1>
+<p>As part of creating this website I decided to revise and re-compile <a href="../..\training/r_part3">Part 3</a> of my introductory R series. I had to take a long train journey (this will become relevant later…) and it seemed like an ideal time to do so. I have used the materials numerous times before, and am following best-practices such as keeping my code under version control, using quarto for reproducible documentation, but yet one of the plots just didn’t look right.</p>
+<p>Here I am supposed to be plotting the number of COVID cases over time for a number of countries. It probably won’t take long to spot that the line for United Kingdom shows an extremely small number of cases - which certainly isn’t true. I was running the same code I had done countless times before, so what could the problem be? It should be noted that <strong>at no point did RStudio show any error messages</strong>, so as far as R was concerned it what behaving perfectly well.</p>
 <p><img src="covid_lines_incorrect.PNG" class="img-fluid"></p>
+<section id="overview-of-the-code" class="level2">
+<h2 class="anchored" data-anchor-id="overview-of-the-code">Overview of the code</h2>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in dir.create("raw_data"): 'raw_data' already exists</code></pre>
+</div>
+</div>
+<p>The code chunk below takes a time series dataset of covid cases worldwide and applies some essential data cleaning transformations. These ensure that the data are in a “tidy” format expected by ggplot2 and convert the dates into an international standards. Furthermore, some countries are represented by multiple regions and for simplicity we add these case numbers together.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">country =</span> <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">5</span><span class="sc">:</span><span class="fu">last_col</span>(),<span class="at">names_to=</span><span class="st">"Date"</span>, <span class="at">values_to=</span><span class="st">"Cases"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Date=</span><span class="fu">as.Date</span>(Date,<span class="st">"%m/%d/%y"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(country,Date) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">Cases =</span> <span class="fu">sum</span>(Cases))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 289 Columns: 1147</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr    (2): Province/State, Country/Region
+dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+`summarise()` has grouped output by 'country'. You can override using the `.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(covid)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+# Groups:   country [1]
+  country     Date       Cases
+  &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
+1 Afghanistan 2020-01-22     0
+2 Afghanistan 2020-01-23     0
+3 Afghanistan 2020-01-24     0
+4 Afghanistan 2020-01-25     0
+5 Afghanistan 2020-01-26     0
+6 Afghanistan 2020-01-27     0</code></pre>
+</div>
+</div>
+<p>The plot is now a standard application of the <code>ggplot</code> function</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(covid, country <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"United Kingdom"</span>,<span class="st">"France"</span>,<span class="st">"Spain"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Date, <span class="at">y =</span> Cases,<span class="at">col=</span>country)) <span class="sc">+</span> <span class="fu">geom_line</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>But the plot is now looking as expected - with United Kingdom showing high numbers of cases. So what could have happened to produce the top of the page? I neglected to explain that the source data come from a github page are were downloaded as part of my code. In the training materials this was intended to show a workflow that started from data located at a remote source. The code below first creates a <code>raw_data</code> folder (without complaining if such a folder already exists - <code>showWarnings=FALSE</code>) and then checks via <code>file.exists</code> if <code>time_series_covid19_confirmed_global.csv</code> is already present. If not, the code will download from github.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"raw_data"</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>)){</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(<span class="st">"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"</span>,<span class="at">destfile =</span> <span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>What <em>should</em> happen, and missing from the workshop materials, is to perform some basic checks on the dimensions of the data once imported into R and stored as a <code>tibble</code>. 🤦</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>covid <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 289 Columns: 1147
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr    (2): Province/State, Country/Region
+dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+</div>
+<p>Checking the dimensions will print the number of rows and columns</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(covid)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  289 1147</code></pre>
+</div>
+</div>
+<p>The <code>head</code> function is a classic function for printing the first six rows (adjustable using the <code>n</code> argument)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(covid)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 1,147
+  `Province/State` `Country/Region`   Lat  Long `1/22/20` `1/23/20` `1/24/20`
+  &lt;chr&gt;            &lt;chr&gt;            &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+1 &lt;NA&gt;             Afghanistan       33.9 67.7          0         0         0
+2 &lt;NA&gt;             Albania           41.2 20.2          0         0         0
+3 &lt;NA&gt;             Algeria           28.0  1.66         0         0         0
+4 &lt;NA&gt;             Andorra           42.5  1.52         0         0         0
+5 &lt;NA&gt;             Angola           -11.2 17.9          0         0         0
+6 &lt;NA&gt;             Antarctica       -71.9 23.3          0         0         0
+# ℹ 1,140 more variables: `1/25/20` &lt;dbl&gt;, `1/26/20` &lt;dbl&gt;, `1/27/20` &lt;dbl&gt;,
+#   `1/28/20` &lt;dbl&gt;, `1/29/20` &lt;dbl&gt;, `1/30/20` &lt;dbl&gt;, `1/31/20` &lt;dbl&gt;,
+#   `2/1/20` &lt;dbl&gt;, `2/2/20` &lt;dbl&gt;, `2/3/20` &lt;dbl&gt;, `2/4/20` &lt;dbl&gt;,
+#   `2/5/20` &lt;dbl&gt;, `2/6/20` &lt;dbl&gt;, `2/7/20` &lt;dbl&gt;, `2/8/20` &lt;dbl&gt;,
+#   `2/9/20` &lt;dbl&gt;, `2/10/20` &lt;dbl&gt;, `2/11/20` &lt;dbl&gt;, `2/12/20` &lt;dbl&gt;,
+#   `2/13/20` &lt;dbl&gt;, `2/14/20` &lt;dbl&gt;, `2/15/20` &lt;dbl&gt;, `2/16/20` &lt;dbl&gt;,
+#   `2/17/20` &lt;dbl&gt;, `2/18/20` &lt;dbl&gt;, `2/19/20` &lt;dbl&gt;, `2/20/20` &lt;dbl&gt;, …</code></pre>
+</div>
+</div>
+<p>Similarly, <code>tail</code> will show the last rows in the data</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span>(covid)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 1,147
+  `Province/State` `Country/Region`      Lat  Long `1/22/20` `1/23/20` `1/24/20`
+  &lt;chr&gt;            &lt;chr&gt;               &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+1 &lt;NA&gt;             Vietnam              14.1 108.          0         2         2
+2 &lt;NA&gt;             West Bank and Gaza   32.0  35.2         0         0         0
+3 &lt;NA&gt;             Winter Olympics 20…  39.9 116.          0         0         0
+4 &lt;NA&gt;             Yemen                15.6  48.5         0         0         0
+5 &lt;NA&gt;             Zambia              -13.1  27.8         0         0         0
+6 &lt;NA&gt;             Zimbabwe            -19.0  29.2         0         0         0
+# ℹ 1,140 more variables: `1/25/20` &lt;dbl&gt;, `1/26/20` &lt;dbl&gt;, `1/27/20` &lt;dbl&gt;,
+#   `1/28/20` &lt;dbl&gt;, `1/29/20` &lt;dbl&gt;, `1/30/20` &lt;dbl&gt;, `1/31/20` &lt;dbl&gt;,
+#   `2/1/20` &lt;dbl&gt;, `2/2/20` &lt;dbl&gt;, `2/3/20` &lt;dbl&gt;, `2/4/20` &lt;dbl&gt;,
+#   `2/5/20` &lt;dbl&gt;, `2/6/20` &lt;dbl&gt;, `2/7/20` &lt;dbl&gt;, `2/8/20` &lt;dbl&gt;,
+#   `2/9/20` &lt;dbl&gt;, `2/10/20` &lt;dbl&gt;, `2/11/20` &lt;dbl&gt;, `2/12/20` &lt;dbl&gt;,
+#   `2/13/20` &lt;dbl&gt;, `2/14/20` &lt;dbl&gt;, `2/15/20` &lt;dbl&gt;, `2/16/20` &lt;dbl&gt;,
+#   `2/17/20` &lt;dbl&gt;, `2/18/20` &lt;dbl&gt;, `2/19/20` &lt;dbl&gt;, `2/20/20` &lt;dbl&gt;, …</code></pre>
+</div>
+</div>
+<p>I saved a copy of the csv file that was downloaded during the same session that created the erroneous covid line plot.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>covid_bad <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"time_series_covid19_confirmed_global_BAD.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 270 Columns: 1147
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr    (2): Province/State, Country/Region
+dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+</div>
+<p>The first rows of the <code>tibble</code> look to be the same</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(covid)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 1,147
+  `Province/State` `Country/Region`   Lat  Long `1/22/20` `1/23/20` `1/24/20`
+  &lt;chr&gt;            &lt;chr&gt;            &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+1 &lt;NA&gt;             Afghanistan       33.9 67.7          0         0         0
+2 &lt;NA&gt;             Albania           41.2 20.2          0         0         0
+3 &lt;NA&gt;             Algeria           28.0  1.66         0         0         0
+4 &lt;NA&gt;             Andorra           42.5  1.52         0         0         0
+5 &lt;NA&gt;             Angola           -11.2 17.9          0         0         0
+6 &lt;NA&gt;             Antarctica       -71.9 23.3          0         0         0
+# ℹ 1,140 more variables: `1/25/20` &lt;dbl&gt;, `1/26/20` &lt;dbl&gt;, `1/27/20` &lt;dbl&gt;,
+#   `1/28/20` &lt;dbl&gt;, `1/29/20` &lt;dbl&gt;, `1/30/20` &lt;dbl&gt;, `1/31/20` &lt;dbl&gt;,
+#   `2/1/20` &lt;dbl&gt;, `2/2/20` &lt;dbl&gt;, `2/3/20` &lt;dbl&gt;, `2/4/20` &lt;dbl&gt;,
+#   `2/5/20` &lt;dbl&gt;, `2/6/20` &lt;dbl&gt;, `2/7/20` &lt;dbl&gt;, `2/8/20` &lt;dbl&gt;,
+#   `2/9/20` &lt;dbl&gt;, `2/10/20` &lt;dbl&gt;, `2/11/20` &lt;dbl&gt;, `2/12/20` &lt;dbl&gt;,
+#   `2/13/20` &lt;dbl&gt;, `2/14/20` &lt;dbl&gt;, `2/15/20` &lt;dbl&gt;, `2/16/20` &lt;dbl&gt;,
+#   `2/17/20` &lt;dbl&gt;, `2/18/20` &lt;dbl&gt;, `2/19/20` &lt;dbl&gt;, `2/20/20` &lt;dbl&gt;, …</code></pre>
+</div>
+</div>
+<p>But clearly there are fewer rows</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(covid_bad)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  270 1147</code></pre>
+</div>
+</div>
+<p>And the last rows of the tibble are not the same as the complete dataset.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span>(covid_bad)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 1,147
+  `Province/State`   `Country/Region`   Lat   Long `1/22/20` `1/23/20` `1/24/20`
+  &lt;chr&gt;              &lt;chr&gt;            &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+1 Anguilla           United Kingdom    18.2 -63.1          0         0         0
+2 Bermuda            United Kingdom    32.3 -64.8          0         0         0
+3 British Virgin Is… United Kingdom    18.4 -64.6          0         0         0
+4 Cayman Islands     United Kingdom    19.3 -81.3          0         0         0
+5 Channel Islands    United Kingdom    49.4  -2.36         0         0         0
+6 Falkland Islands … United Kingdom   -51.8 -59.5          0         0         0
+# ℹ 1,140 more variables: `1/25/20` &lt;dbl&gt;, `1/26/20` &lt;dbl&gt;, `1/27/20` &lt;dbl&gt;,
+#   `1/28/20` &lt;dbl&gt;, `1/29/20` &lt;dbl&gt;, `1/30/20` &lt;dbl&gt;, `1/31/20` &lt;dbl&gt;,
+#   `2/1/20` &lt;dbl&gt;, `2/2/20` &lt;dbl&gt;, `2/3/20` &lt;dbl&gt;, `2/4/20` &lt;dbl&gt;,
+#   `2/5/20` &lt;dbl&gt;, `2/6/20` &lt;dbl&gt;, `2/7/20` &lt;dbl&gt;, `2/8/20` &lt;dbl&gt;,
+#   `2/9/20` &lt;dbl&gt;, `2/10/20` &lt;dbl&gt;, `2/11/20` &lt;dbl&gt;, `2/12/20` &lt;dbl&gt;,
+#   `2/13/20` &lt;dbl&gt;, `2/14/20` &lt;dbl&gt;, `2/15/20` &lt;dbl&gt;, `2/16/20` &lt;dbl&gt;,
+#   `2/17/20` &lt;dbl&gt;, `2/18/20` &lt;dbl&gt;, `2/19/20` &lt;dbl&gt;, `2/20/20` &lt;dbl&gt;, …</code></pre>
+</div>
+</div>
+<p>What is incredibly unlucky in my case was that not all of the <code>United Kingdom</code> rows are present in the shorter dataset.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(covid, <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"United Kingdom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 15 × 1,147
+   `Province/State`          `Country/Region`    Lat    Long `1/22/20` `1/23/20`
+   &lt;chr&gt;                     &lt;chr&gt;             &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+ 1 Anguilla                  United Kingdom    18.2   -63.1          0         0
+ 2 Bermuda                   United Kingdom    32.3   -64.8          0         0
+ 3 British Virgin Islands    United Kingdom    18.4   -64.6          0         0
+ 4 Cayman Islands            United Kingdom    19.3   -81.3          0         0
+ 5 Channel Islands           United Kingdom    49.4    -2.36         0         0
+ 6 Falkland Islands (Malvin… United Kingdom   -51.8   -59.5          0         0
+ 7 Gibraltar                 United Kingdom    36.1    -5.35         0         0
+ 8 Guernsey                  United Kingdom    49.4    -2.59         0         0
+ 9 Isle of Man               United Kingdom    54.2    -4.55         0         0
+10 Jersey                    United Kingdom    49.2    -2.14         0         0
+11 Montserrat                United Kingdom    16.7   -62.2          0         0
+12 Pitcairn Islands          United Kingdom   -24.4  -128.           0         0
+13 Saint Helena, Ascension … United Kingdom    -7.95  -14.4          0         0
+14 Turks and Caicos Islands  United Kingdom    21.7   -71.8          0         0
+15 &lt;NA&gt;                      United Kingdom    55.4    -3.44         0         0
+# ℹ 1,141 more variables: `1/24/20` &lt;dbl&gt;, `1/25/20` &lt;dbl&gt;, `1/26/20` &lt;dbl&gt;,
+#   `1/27/20` &lt;dbl&gt;, `1/28/20` &lt;dbl&gt;, `1/29/20` &lt;dbl&gt;, `1/30/20` &lt;dbl&gt;,
+#   `1/31/20` &lt;dbl&gt;, `2/1/20` &lt;dbl&gt;, `2/2/20` &lt;dbl&gt;, `2/3/20` &lt;dbl&gt;,
+#   `2/4/20` &lt;dbl&gt;, `2/5/20` &lt;dbl&gt;, `2/6/20` &lt;dbl&gt;, `2/7/20` &lt;dbl&gt;,
+#   `2/8/20` &lt;dbl&gt;, `2/9/20` &lt;dbl&gt;, `2/10/20` &lt;dbl&gt;, `2/11/20` &lt;dbl&gt;,
+#   `2/12/20` &lt;dbl&gt;, `2/13/20` &lt;dbl&gt;, `2/14/20` &lt;dbl&gt;, `2/15/20` &lt;dbl&gt;,
+#   `2/16/20` &lt;dbl&gt;, `2/17/20` &lt;dbl&gt;, `2/18/20` &lt;dbl&gt;, `2/19/20` &lt;dbl&gt;, …</code></pre>
+</div>
+</div>
+<p>Here are the rows for <code>United Kingdom</code> in the truncated data</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(covid_bad, <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"United Kingdom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 1,147
+  `Province/State`   `Country/Region`   Lat   Long `1/22/20` `1/23/20` `1/24/20`
+  &lt;chr&gt;              &lt;chr&gt;            &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+1 Anguilla           United Kingdom    18.2 -63.1          0         0         0
+2 Bermuda            United Kingdom    32.3 -64.8          0         0         0
+3 British Virgin Is… United Kingdom    18.4 -64.6          0         0         0
+4 Cayman Islands     United Kingdom    19.3 -81.3          0         0         0
+5 Channel Islands    United Kingdom    49.4  -2.36         0         0         0
+6 Falkland Islands … United Kingdom   -51.8 -59.5          0         0         0
+# ℹ 1,140 more variables: `1/25/20` &lt;dbl&gt;, `1/26/20` &lt;dbl&gt;, `1/27/20` &lt;dbl&gt;,
+#   `1/28/20` &lt;dbl&gt;, `1/29/20` &lt;dbl&gt;, `1/30/20` &lt;dbl&gt;, `1/31/20` &lt;dbl&gt;,
+#   `2/1/20` &lt;dbl&gt;, `2/2/20` &lt;dbl&gt;, `2/3/20` &lt;dbl&gt;, `2/4/20` &lt;dbl&gt;,
+#   `2/5/20` &lt;dbl&gt;, `2/6/20` &lt;dbl&gt;, `2/7/20` &lt;dbl&gt;, `2/8/20` &lt;dbl&gt;,
+#   `2/9/20` &lt;dbl&gt;, `2/10/20` &lt;dbl&gt;, `2/11/20` &lt;dbl&gt;, `2/12/20` &lt;dbl&gt;,
+#   `2/13/20` &lt;dbl&gt;, `2/14/20` &lt;dbl&gt;, `2/15/20` &lt;dbl&gt;, `2/16/20` &lt;dbl&gt;,
+#   `2/17/20` &lt;dbl&gt;, `2/18/20` &lt;dbl&gt;, `2/19/20` &lt;dbl&gt;, `2/20/20` &lt;dbl&gt;, …</code></pre>
+</div>
+</div>
+<p>What’s worse is that the row containing the covid cases for mainland Uk are only present in the full dataset. This is where most of the cases occur.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(covid, <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"United Kingdom"</span>, <span class="fu">is.na</span>(<span class="st">`</span><span class="at">Province/State</span><span class="st">`</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 1,147
+  `Province/State` `Country/Region`   Lat  Long `1/22/20` `1/23/20` `1/24/20`
+  &lt;chr&gt;            &lt;chr&gt;            &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+1 &lt;NA&gt;             United Kingdom    55.4 -3.44         0         0         0
+# ℹ 1,140 more variables: `1/25/20` &lt;dbl&gt;, `1/26/20` &lt;dbl&gt;, `1/27/20` &lt;dbl&gt;,
+#   `1/28/20` &lt;dbl&gt;, `1/29/20` &lt;dbl&gt;, `1/30/20` &lt;dbl&gt;, `1/31/20` &lt;dbl&gt;,
+#   `2/1/20` &lt;dbl&gt;, `2/2/20` &lt;dbl&gt;, `2/3/20` &lt;dbl&gt;, `2/4/20` &lt;dbl&gt;,
+#   `2/5/20` &lt;dbl&gt;, `2/6/20` &lt;dbl&gt;, `2/7/20` &lt;dbl&gt;, `2/8/20` &lt;dbl&gt;,
+#   `2/9/20` &lt;dbl&gt;, `2/10/20` &lt;dbl&gt;, `2/11/20` &lt;dbl&gt;, `2/12/20` &lt;dbl&gt;,
+#   `2/13/20` &lt;dbl&gt;, `2/14/20` &lt;dbl&gt;, `2/15/20` &lt;dbl&gt;, `2/16/20` &lt;dbl&gt;,
+#   `2/17/20` &lt;dbl&gt;, `2/18/20` &lt;dbl&gt;, `2/19/20` &lt;dbl&gt;, `2/20/20` &lt;dbl&gt;, …</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(covid_bad, <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"United Kingdom"</span>, <span class="fu">is.na</span>(<span class="st">`</span><span class="at">Province/State</span><span class="st">`</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 0 × 1,147
+# ℹ 1,147 variables: Province/State &lt;chr&gt;, Country/Region &lt;chr&gt;, Lat &lt;dbl&gt;,
+#   Long &lt;dbl&gt;, 1/22/20 &lt;dbl&gt;, 1/23/20 &lt;dbl&gt;, 1/24/20 &lt;dbl&gt;, 1/25/20 &lt;dbl&gt;,
+#   1/26/20 &lt;dbl&gt;, 1/27/20 &lt;dbl&gt;, 1/28/20 &lt;dbl&gt;, 1/29/20 &lt;dbl&gt;, 1/30/20 &lt;dbl&gt;,
+#   1/31/20 &lt;dbl&gt;, 2/1/20 &lt;dbl&gt;, 2/2/20 &lt;dbl&gt;, 2/3/20 &lt;dbl&gt;, 2/4/20 &lt;dbl&gt;,
+#   2/5/20 &lt;dbl&gt;, 2/6/20 &lt;dbl&gt;, 2/7/20 &lt;dbl&gt;, 2/8/20 &lt;dbl&gt;, 2/9/20 &lt;dbl&gt;,
+#   2/10/20 &lt;dbl&gt;, 2/11/20 &lt;dbl&gt;, 2/12/20 &lt;dbl&gt;, 2/13/20 &lt;dbl&gt;, 2/14/20 &lt;dbl&gt;,
+#   2/15/20 &lt;dbl&gt;, 2/16/20 &lt;dbl&gt;, 2/17/20 &lt;dbl&gt;, 2/18/20 &lt;dbl&gt;, …</code></pre>
+</div>
+</div>
+<p>We can filter the data for <code>United Kingdom</code> and use <code>select</code> to show the last column. The helper function <code>last_col()</code> is incredibly useful for this as we don’t need to know the name of the column. Using <code>summarise</code> we can add all the values in the column. This is the cumulative number of casees at the last date in the dataset. Dividing by one million (<code>1e6</code>) makes the numbers a bit easier to read.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(covid, <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"United Kingdom"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">last_col</span>()) <span class="sc">%&gt;%</span> </span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">sum</span>(.) <span class="sc">/</span> <span class="fl">1e6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 1
+  `sum(.)/1e+06`
+           &lt;dbl&gt;
+1           24.7</code></pre>
+</div>
+</div>
+<p>For the truncated dataset, the number of counts is substantially lower as we are missing the mainland Uk data. So it is not surprisingly that the trend lines for the Uk did not look correct.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(covid_bad, <span class="st">`</span><span class="at">Country/Region</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"United Kingdom"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">last_col</span>()) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">sum</span>(.))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 1
+  `sum(.)`
+     &lt;dbl&gt;
+1    63439</code></pre>
+</div>
+</div>
+<p>In this particular instance I think my poor internet connection on the train wi-fi must have caused me to not download the complete file. Since no errors were produced I might not have detected the problem if I wasn’t trying to visualise data for United Kingdom which happened to be located towards the bottom of the file.</p>
+<p>Checking the dimensions of the <code>tibble</code> help to diagnose the problem, but there are couple of other techniques. R has an in-built function to check the size of a file.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.size</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1820194</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.size</span>(<span class="st">"time_series_covid19_confirmed_global_BAD.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1714255</code></pre>
+</div>
+</div>
+<p>A bit more rigourous is to calculate a <em>checksum</em>. In short, this is a calculated value that represents <strong>the exact contents of a file</strong>. If the file changes — even by a single byte — the checksum changes as well. That’s why it’s often described as a “digital fingerprint” for data integrity. This can be done in R by first loading the <code>tools</code> library and using the <code>md5sum</code> function.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the tools package</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tools)</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute MD5 checksum for a file</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>file_path <span class="ot">&lt;-</span> <span class="st">"path/to/your/file.txt"</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>checksum <span class="ot">&lt;-</span> <span class="fu">md5sum</span>(<span class="st">"raw_data/time_series_covid19_confirmed_global.csv"</span>)</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>checksum</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>raw_data/time_series_covid19_confirmed_global.csv 
+               "095dfec62d4981a32630bed5094296f7" </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>checksum_bad <span class="ot">&lt;-</span> <span class="fu">md5sum</span>(<span class="st">"time_series_covid19_confirmed_global_BAD.csv"</span>)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>checksum_bad</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>time_series_covid19_confirmed_global_BAD.csv 
+          "179af9d326d1c9451c49e5d9821c85e0" </code></pre>
+</div>
+</div>
+<p>In practice if someone is sending data you large, especially if the file is large, they will also send a file containing checksums for you to check data integrity. The following would print <code>TRUE</code> if both files had exactly the same contents.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>checksum <span class="sc">==</span> checksum_bad</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>raw_data/time_series_covid19_confirmed_global.csv 
+                                            FALSE </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>So I should have checked the input data more thoroughly before plotting. Thankfully it was an example for a workshop, but even so I should be demonstrating best practices. I was particularly unlucky that the data stopped halfway through the particular subset I was trying to plot.</p>
+<p>There are other ways of checking that your outputs are correct involving something called “unit tests”, which are primarily used during software development but could also be useful in this context. I may just talk about these in the future.</p>
 
 
 </section>

@@ -13,6 +13,8 @@ website:
         text: CV
       - href: training.qmd
         text: Training Materials
+      - href: posts.qmd
+        text: Posts
 
 
 format:
