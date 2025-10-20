@@ -424,7 +424,6 @@ We recommend the Data Carpentry materials on spreadsheet organisation for an ove
 -   <https://datacarpentry.org/spreadsheet-ecology-lesson/>
 
 Although R has many functions for data cleaning, if you are new to the language the best approach to such data would be to clean them before attempting to read into R.
-
 :::
 
 ## Accessing data in columns
