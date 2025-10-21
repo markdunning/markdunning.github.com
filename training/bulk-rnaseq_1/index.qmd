@@ -3,6 +3,7 @@ title: "Introduction to RNA-Seq - Part 1"
 author: Mark Dunning
 date: today
 theme: darkly
+image: /files/training/bulk_rnaseq/samp_cor.png
 ---
 
 # Overview
