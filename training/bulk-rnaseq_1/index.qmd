@@ -10,37 +10,33 @@ image: /files/training/bulk_rnaseq/samp_cor.png
 
 Importing "raw" RNA-seq counts into R and performing quality assessment
 
-
 ## Pre-amble
 
 High-throughput sequencing is now established as a standard technique for many functional genomics studies; allowing the researcher to compare and contrast the transcriptomes of many individuals to obtain biological insight. A high-volume of data are generated from these experimental techniques and thus require robust and reproducible tools to be employed in the analysis.
 
-In this workshop, you will be learning how to analyse RNA-seq count data, using R. This will include reading the data into R, quality control and performing differential expression analysis and gene set testing, with a focus on the well-respected DESEq2 analysis workflow. You will learn how to generate common plots for analysis and visualisation of gene expression data, such as boxplots and heatmaps. 
+In this workshop, you will be learning how to analyse RNA-seq count data, using R. This will include reading the data into R, quality control and performing differential expression analysis and gene set testing, with a focus on the well-respected DESEq2 analysis workflow. You will learn how to generate common plots for analysis and visualisation of gene expression data, such as boxplots and heatmaps.
 
-::: {.callout-note}
-
+::: callout-note
 We will be discussing **Bulk** RNA-seq only, although some of the methods and techniques will be applicable to *single-cell* RNA-seq. I am planning some materials on single-cell RNA-seq in the future. In the meantime, the homepage for Seurat (a popular R package for single-cell analysis) has lots of useful tutorials.
 
-- [Seurat homepage](https://satijalab.org/seurat/)
-
+-   [Seurat homepage](https://satijalab.org/seurat/)
 :::
-
 
 ## Quick Start
 
 I will go through the setup in quite a bit of detail. If you are already fairly confident with R, you can probably skim this and proceed to [the start of the pre-processing section](#rna-seq-processing).
 
-- Create a new RStudio project that you want to work in 
-- Create folders called `meta_data` and `raw_counts`
-- Download the meta data and raw counts
-  + [meta data](https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/meta_data/sampleInfo.csv)
-  + [raw counts](https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/raw_counts/raw_counts_matrix.tsv)
-- Place the `sampleInfo.csv` and `raw_counts_matrix.tsv` files into `meta_data` and `raw_counts` folders respectively
-- Install some R packages using this command
+-   Create a new RStudio project that you want to work in
+-   Create folders called `meta_data` and `raw_counts`
+-   Download the meta data and raw counts
+    -   [meta data](https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/meta_data/sampleInfo.csv)
+    -   [raw counts](https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/raw_counts/raw_counts_matrix.tsv)
+-   Place the `sampleInfo.csv` and `raw_counts_matrix.tsv` files into `meta_data` and `raw_counts` folders respectively
+-   Install some R packages using this command
+
 ```{r eval=FALSE}
 source("https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/install_bioc_packages.R")
 ```
-
 
 ## Setup
 
@@ -54,7 +50,6 @@ Rather than typing the location of the install script I suggest copying from her
 source("https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/install_bioc_packages.R")
 ```
 
-
 It may take a few minutes, but you will only have to do this once for a specific version of R. To check that everything worked, now copy and paste the following command. It should print messages to the screen to say that all the packages were installed
 
 ```{r eval=FALSE}
@@ -62,16 +57,13 @@ source("https://raw.githubusercontent.com/markdunning/markdunning.github.com/ref
 
 ```
 
-
-
 I also recommend creating a new *project* to work through the tutorial. You can do this via the file menu in Rstudio and it will ask you to choose a directory on your hard drive that you want the project to be located in. Briefly, using "projects" is a convenient way of keeping all the input data, R code, and outputs for a particular analysis together in the same place.
 
-**File** -> **New Project** -> **New Directory**
+**File** -\> **New Project** -\> **New Directory**
 
 ![](/files/training/bulk_rnaseq/new_proj_2.png)
 
 In the screenshot, I am using a directory (which doesn't exist at this point) called `bulkrnaseq_tutorial` in `c:\work\personal_development`. RStudio should now refresh and your working directory will be the location that you specified. Now we will use some code to download the example data. Again, I suggest you copy from below rather than typing manually.
-
 
 ```{r eval=FALSE}
 ## Create two folders for the meta data and counts
@@ -86,15 +78,13 @@ download.file("https://raw.githubusercontent.com/markdunning/markdunning.github.
 
 ```
 
-
 Hopefully your screen should look a bit like this:-
 
 ![](/files/training/bulk_rnaseq/rstudio_setup.png)
 
-
 Finally, create a new "Quarto Document" from the File menu
 
-File -> New File -> Quarto Document
+File -\> New File -\> Quarto Document
 
 ![](/files/training/bulk_rnaseq/new_quarto.png)
 
@@ -102,36 +92,31 @@ Clicking the "Create Empty Document" button on the pop-up that appears will crea
 
 R code can be added to this document by clicking the "Insert Code Chunk" toolbar option
 
-
 ![](/files/training/bulk_rnaseq/insert_code_before.png)
 
 This will give you space to type or paste R code from the tutorial. In the below screenshot, R code can be entered between lines 8 and 10. Pressing ENTER between these lines will allow more code to be written. Pressing CTRL + ENTER causes the code to be run.
 
 ![](/files/training/bulk_rnaseq/insert_code_after.png)
 
-Lines outside of a code chunk can be used to write any explanations or interpretations of the plots, stats that you produce along the way. 
+Lines outside of a code chunk can be used to write any explanations or interpretations of the plots, stats that you produce along the way.
 
-At this point you are working on an untitled document that is not saved to disk. Go through the menu **File** -> **Save** and choose a file name
+At this point you are working on an untitled document that is not saved to disk. Go through the menu **File** -\> **Save** and choose a file name
 
-
-## RNA-seq processing
+## RNA-seq processing {#rna-seq-processing}
 
 In this short section, we will briefly describe the pre-processing of RNA-seq data *which is not typically done in R*. If you are only interested in using R, you may [skip to the next section](#introducing-the-example-dataset).
 
-
-There are many steps involved in analysing an RNA-Seq experiment. 
+There are many steps involved in analysing an RNA-Seq experiment.
 
 ![](https://hbctraining.github.io/Intro-to-rnaseq-hpc-gt/img/alignmentfree_workflow_aug2017.png)
 
-
 (Workflow image from Harvard Bioinformatics Core)
-
 
 Analysing an RNAseq experiment begins with sequencing reads. These are large (typically several Gb) that contain information on the sequences that have been generated for each biological sample; one fastq (or pair of fastqs) for each sample. Each set of four lines describe one sequence (called a "read").
 
 A typical RNA-seq experiment will have 10 - 30 million reads in a fastq file, with each read about 100 bases long. e.g.
 
-```
+```         
 @D0UW5ACXX120511:8:1204:6261:40047/1
 AATGTTTATGTTCTTAAATTTTAGTTGTATATGTGAATCTTTGTAGTTTTTGCTAAAATACTAAGTAATTTATATAAAAGTGAGTTAAGAGATTTTTCTGA
 +
@@ -144,43 +129,34 @@ As the fastq files are large, we tend to analyse them using command-line softwar
 
 Again, this requires more memory than a typical laptop or desktop machine so is performed on a remote computer with large memory. The resulting file is called a *bam* and records the best genomic match for each read. However, as we are interested in gene expression we want to relate these mappings to the positions of genes.
 
-
 A variety of different counting methods can determine how many reads overlap each known gene region. These are know as the raw counts and are the kind of data we will start with today.
 
 <img src="https://raw.githubusercontent.com/sheffield-bioinformatics-core/rnaseq-beginners/main/media/htseq.png"/>
 
-Recent tools for RNA-seq analysis (e.g. `salmon`, `kallisto`) do not require the time-consuming step of whole-genome alignment to be performed, and can therefore produce gene-level counts in a much faster time frame. They not require the creation of large bam files, which is useful if constrained by file space  (e.g. if using Galaxy).
+Recent tools for RNA-seq analysis (e.g. `salmon`, `kallisto`) do not require the time-consuming step of whole-genome alignment to be performed, and can therefore produce gene-level counts in a much faster time frame. They not require the creation of large bam files, which is useful if constrained by file space (e.g. if using Galaxy).
 
 My strong recommendation would be to use the `nextflow` workflow system in conjunction with the `nf.core` pipeline to align and quantify your RNA-seq reads. My former colleague Dr. Lewis Quayle has a really good write-up of using `nf.core` on his pages
 
-- [https://www.lewisdoesdata.com/2024/05/01/bulk-rnaseq-end-to-end-part-1.html](https://www.lewisdoesdata.com/2024/05/01/bulk-rnaseq-end-to-end-part-1.html)
+-   <https://www.lewisdoesdata.com/2024/05/01/bulk-rnaseq-end-to-end-part-1.html>
 
-
-:::{.callout-important}
-
-Unless you are doing something *extremely* novel and bespoke I don't believe it would be worth writing your own pipeline for processing RNA-seq, or any other sequencing data, from scratch rather than using what is available in `nf.core`. 
-
+::: callout-important
+Unless you are doing something *extremely* novel and bespoke I don't believe it would be worth writing your own pipeline for processing RNA-seq, or any other sequencing data, from scratch rather than using what is available in `nf.core`.
 :::
 
-## Introducing the example dataset
+## Introducing the example dataset {#introducing-the-example-dataset}
 
-The data for this tutorial comes from the paper, [*Induction of fibroblast senescence generates a non-fibrogenic myofibroblast phenotype that differentially impacts on cancer prognosis.*](http://europepmc.org/article/MED/27992856). 
+The data for this tutorial comes from the paper, [*Induction of fibroblast senescence generates a non-fibrogenic myofibroblast phenotype that differentially impacts on cancer prognosis.*](http://europepmc.org/article/MED/27992856).
 
 > Cancer associated fibroblasts characterized by an myofibroblastic phenotype play a major role in the tumour microenvironment, being associated with poor prognosis. We found that this cell population is made in part by senescent fibroblasts in vivo. As senescent fibroblasts and myofibroblasts have been shown to share similar tumour promoting functions in vitro we compared the transcriptosomes of these two fibroblast types and performed RNA-seq of human foetal foreskin fibroblasts 2 (HFFF2) treated with 2ng/ml TGF-beta-1 to induce myofibroblast differentiation or 10Gy gamma irradiation to induce senescence. We isolated RNA 7 days upon this treatments changing the medium 3 days before the RNA extraction.
 
-
-
-::: {.callout-note}
-
+::: callout-note
 A really useful resource for obtaining raw sequencing reads is sraexplorer. Given a GEO, ArrayExpress of SRA dataset name it will give you links to download the raw fastq files
 
-- [SRA Explorer](https://sra-explorer.info/)
+-   [SRA Explorer](https://sra-explorer.info/)
 
 Again, Lewis' page has some commands for downloading these data in fastq form.
 
-- [Downloading the example data](https://www.lewisdoesdata.com/2024/05/01/bulk-rnaseq-end-to-end-part-1.html#data-acquisition)
-
-
+-   [Downloading the example data](https://www.lewisdoesdata.com/2024/05/01/bulk-rnaseq-end-to-end-part-1.html#data-acquisition)
 :::
 
 # Importing RNA-seq data into R
@@ -202,7 +178,6 @@ if(!require(stringr)) install.packages("stringr")
 colnames(counts)[-1] <- stringr::str_remove_all(colnames(counts)[-1], "X")
 ```
 
-
 The `dim` function (again part of base R) will tell us the dimensions, which in this case relate to the number of samples (`r ncol(counts)-1`) and "genes" (`r nrow(counts)`) included in the data.
 
 ```{r}
@@ -218,21 +193,19 @@ Modern sequencing devices are truly remarkable machines capable of taking biolog
 
 . Examples of variables recorded in the metadata might include.
 
-- tumour / normal status
-- cell line
-- age
-- gender
-- date of collection
-- litter
+-   tumour / normal status
+-   cell line
+-   age
+-   gender
+-   date of collection
+-   litter
 
 We include the sample groups that we want to compare, and any potential *confounding factors* that we might need to address as part of our quality assessment. The metadata is stored in a spreadsheet and typically entered by-hand. When creating such data we should be mindful of some best-practice guidelines that will make our data easier to read into R.
 
-::: {.callout-note}
-
+::: callout-note
 See here for a round-up of common errors to be avoiding when creating spreadsheets
 
-- [Data Carpentry lesson on spreadsheet errors](https://datacarpentry.org/spreadsheet-ecology-lesson/02-common-mistakes)
-
+-   [Data Carpentry lesson on spreadsheet errors](https://datacarpentry.org/spreadsheet-ecology-lesson/02-common-mistakes)
 :::
 
 The `sampleInfo.csv` in the `meta_data` folder contains basic information about the samples that we will need for the analysis today. This includes the ID for the sample ID assigned by the researcher (`Run`), the experimental condition (`condition`), shorter name for the sample (`Name`), the replicate number (`Replicate`) and whether the sample is a control or treated sample (`Treated`).
@@ -248,15 +221,14 @@ If you want to know how to create such a data frame based on the column names al
 
 ## Inferring the sample information from the count column names
 
-It is sometimes possible to create a meta data spreadsheet if none is available. This relies on the column names of the count matrix being named in a consistent fashion. In this example we can see that the biological group (`CTR`, `TGF` or `IR`) is encoded in the name and the column names contain a `_` character. The `stringr` and `tidyr` packages include the functionality for dealing cleaning these data. 
+It is sometimes possible to create a meta data spreadsheet if none is available. This relies on the column names of the count matrix being named in a consistent fashion. In this example we can see that the biological group (`CTR`, `TGF` or `IR`) is encoded in the name and the column names contain a `_` character. The `stringr` and `tidyr` packages include the functionality for dealing cleaning these data.
 
-- [stringr reference guide](https://stringr.tidyverse.org/articles/stringr.html)
+-   [stringr reference guide](https://stringr.tidyverse.org/articles/stringr.html)
 
 ```{r eval=FALSE}
 install.packages("stringr")
 install.packages("tidyr")
 ```
-
 
 ```{r message = FALSE, warning = FALSE}
 library(stringr)
@@ -269,9 +241,7 @@ cols
 
 ```
 
-
 The column names consists of various letters separated by a `_`. Some of these can be used to form the conditions and replicate information, and the `separate` function from `tidyr` is an efficient way of splitting the `Run` column into different components. The `BC` and number at the each of the name is not actually useful analysis, so we will remove in the next step. The `remove = FALSE` argument is used to keep the `Run` column in the data.
-
 
 ```{r}
 meta <- data.frame(Run = cols) %>% 
@@ -280,7 +250,6 @@ meta
 ```
 
 Now we keep the columns we need, and add the replicate numbers using the `rep` function to repeat a sequence `1`,`2`,`3` three times. The shorter name is formed by pasting the condition and replicate number (using `paste` with a `_` separator. Finally, `Treated` column is formed using an `ifelse` statement. This is used to test if a particular value of `condition` is equal to `CTR` or not. If it is, a value of `N` is used in the new `Treated` column. If not, the value of `Y` is used instead.
-
 
 ```{r}
 meta <- select(meta, Run, condition) %>% 
@@ -291,7 +260,6 @@ meta <- select(meta, Run, condition) %>%
 
 :::
 
-
 Although we can use basic R commands to read the counts and sample information into R, it is much more common to use specialist software for further analysis. Packages such as `DESeq2` (used in this tutorial), `edgeR` and `limma` have evolved other many years to offer an efficient way of storing and manipulating complex datasets.
 
 ```{r warnings=FALSE, message=FALSE}
@@ -300,14 +268,13 @@ library(DESeq2)
 
 The `DESeq2` allows data to be imported from various formats, and the option we will be using here is that of a counts matrix. The "vignette" for `DESeq2` is incredibly detailed, and offers code for importing data produced by different software
 
-- [DESeq2 Guide](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#input-data)
+-   [DESeq2 Guide](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#input-data)
 
 However, as we said the count matrix is the most common. It is important to note, [as described in the vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#why-un-normalized-counts), that your counts must be **raw** and not subjected to any kind of normalisation or calibration. These steps are included in the standard workflow as we will see.
 
 The code to import our data as given below. We also have to specify at this point a `design` for analysis. In the simplest terms this is essentially telling `DESeq2` which column in our dataset to use when making comparisons between groups. `DESeq2` will not actually do any differential expression unless we tell it to, so this is just a placeholder value for now. We can also introduce more complicated designs that might more than one column.
 
-
-We would normally think of a "count matrix" as containing just numeric data. Our `counts` contains gene identifiers which might usually be a problem but `DESeq2` is still able to import the data if we set `tidy=TRUE`. 
+We would normally think of a "count matrix" as containing just numeric data. Our `counts` contains gene identifiers which might usually be a problem but `DESeq2` is still able to import the data if we set `tidy=TRUE`.
 
 ```{r}
 dds <- DESeqDataSetFromMatrix(counts, 
@@ -315,12 +282,10 @@ dds <- DESeqDataSetFromMatrix(counts,
                                   design = ~condition, tidy = TRUE)
 ```
 
-:::{.callout-note}
-
+::: callout-note
 ## Warning about "converting to factors"
 
-You will probably get a `Warning` message including the phrase `some variables in design formula are characters, converting to factors`. This is perfectly fine and just means that `DESeq2` has converted some columns in your sample information from characters into factors. i.e. a column containing a categorical variable. 
-
+You will probably get a `Warning` message including the phrase `some variables in design formula are characters, converting to factors`. This is perfectly fine and just means that `DESeq2` has converted some columns in your sample information from characters into factors. i.e. a column containing a categorical variable.
 :::
 
 Printing the contents of `dds` to the screen gives some details of how the data are represented, and happily for us it does not print all the contents to the screen
@@ -328,6 +293,7 @@ Printing the contents of `dds` to the screen gives some details of how the data 
 ```{r}
 dds
 ```
+
 The object contains all the counts which can be retrieved using the `counts` function. The `head` function is used so that only the first six rows (genes) are shown.
 
 The gene names that appear in the rows are clearly not very useful for us now, but these can be converted into something more manageable when we come to interpret our data.
@@ -348,12 +314,11 @@ Individual columns from the metadata can also be accessed and printed using the 
 dds$condition
 ```
 
-Whereas `Treated` is still a character vector. 
+Whereas `Treated` is still a character vector.
 
 ```{r}
 dds$Treated
 ```
-
 
 ### Visualising library sizes
 
@@ -370,15 +335,15 @@ A convenience function `colSums` exists for calculating the sum of each column i
 ```{r dgeLibrarySizes}
 colSums(counts(dds))
 ```
+
 ### Exercise
 
-- Use an appropriate function from `dplyr` to add a column containing the number of reads for each sample to the `sampleInfo` data frame.
-- Produce a bar plot to show the Millions of reads for each sample (see below)
+-   Use an appropriate function from `dplyr` to add a column containing the number of reads for each sample to the `sampleInfo` data frame.
+-   Produce a bar plot to show the Millions of reads for each sample (see below)
 
 ![](/files/training/bulk_rnaseq/lib_size.png)
 
 :::{.callout-note collapse = "true"}
-
 
 ## Solution
 
@@ -388,9 +353,7 @@ mutate(sampleInfo, LibSize = colSums(assay(dds))/1e6) %>%
   ggplot(aes(x = Name, y = LibSize)) + geom_col(fill="steelblue") + geom_hline(yintercept = 20,col="red",lty=2)
 ```
 
-
 :::
-
 
 ### Visualising count distributions
 
@@ -400,10 +363,7 @@ We typically use a `boxplot` to visualise difference the distributions of the co
 boxplot(counts(dds))
 ```
 
-
 We can use the `vst` or `rlog` function from `DESeq2`to compensate for the effect of different library sizes and put the data on the log$_2$ scale. The effect is to remove the dependence of the variance on the mean, particularly the high variance of the logarithm of count data when the mean is low. For more details see the [DESeq2 vignette](http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#count-data-transformations)
-
-
 
 ```{r}
 # Get log2 counts
@@ -416,30 +376,25 @@ abline(h=median(assay(vsd)), col="blue")
 
 We can see that using `vst` has made the distributions more comparable, and indeed these transformed data will form the basis for most of our quality assessment. They are **not** however used for any differential analysis. `DESeq2` has it's own normalisation method
 
-# Principal components Analysis (PCA) 
+# Principal components Analysis (PCA)
 
-:::{.callout-note}
+::: callout-note
 See here for a nice explanation of PCA
 
-- [https://www.youtube.com/watch?v=0Jp4gsfOLMs](https://www.youtube.com/watch?v=0Jp4gsfOLMs)
-
-::: 
+-   <https://www.youtube.com/watch?v=0Jp4gsfOLMs>
+:::
 
 The [(Principal Components Analysis) PCA](http://setosa.io/ev/principal-component-analysis/) plot, shows the samples in the 2D plane spanned by their first two principal components. A PCA is an example of an unsupervised analysis, where we don’t need to specify the groups. Each point in the plot is a biological sample in your dataset, and crucially the points can be coloured and labeled according to your metadata. If your experiment is well-controlled and has worked well, what we hope to see is that the greatest sources of variation in the data correspond to the treatments/groups we are interested in. In other words, the points on the plot should separate according to biological conditions.
 
-It is also an incredibly useful tool for quality control and checking for outliers, and `DESeq2` has a convenient `plotPCA` function for making the PCA plot, which makes use of the `ggplot2` graphics package. As PCA is quite an abstract method not specifically-developed for biological data, when looking at a PCA plot, don't try to interpret the absolute numerical coordinates on the axes. Instead, focus on the **relationships**  between the data points and how they relate to known biological or experimental characteristics. The percent variance explained by an axis (e.g., "PC1 explains 61% of the variance") is the only quantitative measure of its importance.
-
+It is also an incredibly useful tool for quality control and checking for outliers, and `DESeq2` has a convenient `plotPCA` function for making the PCA plot, which makes use of the `ggplot2` graphics package. As PCA is quite an abstract method not specifically-developed for biological data, when looking at a PCA plot, don't try to interpret the absolute numerical coordinates on the axes. Instead, focus on the **relationships** between the data points and how they relate to known biological or experimental characteristics. The percent variance explained by an axis (e.g., "PC1 explains 61% of the variance") is the only quantitative measure of its importance.
 
 ```{r warning=FALSE}
 plotPCA(vsd,intgroup="Treated")
 ```
 
-:::{.callout-important}
-
+::: callout-important
 The principal components (PC1, PC2, etc.) are abstract linear combinations (or weighted averages) of the expression values of genes in your dataset. They don't represent the expression of any single gene, pathway, or simple biological quantity. PC1 is not "Cell Cycle," nor is it "Inflammation" (for example). It's just the direction where your samples vary the most. If the largest source of variation happens to be the difference between two experimental conditions, then PC1 separates those conditions.
-
 :::
-
 
 There is also an option to return the values used in the plot for further exploration and customisation. The `ggplot2` package is a natural choice for plotting.
 
@@ -450,25 +405,24 @@ plotPCA(vsd,intgroup="Treated",returnData = TRUE) %>%
   ggplot(aes(x = PC1, y = PC2,col=group)) + geom_point(size=3)
 ```
 
-The PCA shown above is coloured according to the `Treated` status of each sample. An interpretation of this plot would be that samples separate cleanly based on `Treated` on the y-axis (PC2), with the non-treated samples (coloured red) having y coordinates around 10 and treated samples (coloured blue) having y coordinate around -5. 
+The PCA shown above is coloured according to the `Treated` status of each sample. An interpretation of this plot would be that samples separate cleanly based on `Treated` on the y-axis (PC2), with the non-treated samples (coloured red) having y coordinates around 10 and treated samples (coloured blue) having y coordinate around -5.
 
 However, the PCA method definition means that main source of variance cannot be explained by the `Treated` variable. Along the x-axis (PC1) we see three distinct groups. You would hope that these correspond to the `condition`, and we will assess this in the following exercise.
 
 ## Exercise
 
-<div class="exercise">
-
-- Is the `plotPCA` plot based on all genes in the dataset? How can we change how many genes are used for the PCA analysis? Does this significantly change the plot? (HINT: check the documentation for the `plotPCA` function.)
-- Verify that the samples are separated based on the `condition`.
-- What problems can you see with the metadata?
-- Can you label the identify of each sample? Look for help on `geom_text`if you haven't used it before
-</div>
+::: exercise
+-   Is the `plotPCA` plot based on all genes in the dataset? How can we change how many genes are used for the PCA analysis? Does this significantly change the plot? (HINT: check the documentation for the `plotPCA` function.)
+-   Verify that the samples are separated based on the `condition`.
+-   What problems can you see with the metadata?
+-   Can you label the identify of each sample? Look for help on `geom_text`if you haven't used it before
+:::
 
 :::{.callout-note collapse = "true"}
 
 ## Solution
 
-The `plotPCA` function has an argument `ntop` which is used to specify how many genes are used to perform the PCA - so it is based on a limited set of genes in the data. The genes used are those with the highest variance. 
+The `plotPCA` function has an argument `ntop` which is used to specify how many genes are used to perform the PCA - so it is based on a limited set of genes in the data. The genes used are those with the highest variance.
 
 To make a PCA based on `condition` we need to alter the `intgroup` argument
 
@@ -477,7 +431,7 @@ plotPCA(vsd,intgroup="condition",returnData = TRUE) %>%
   ggplot(aes(x = PC1, y = PC2,col=condition)) + geom_point()
 ```
 
-This *almost* shows what we expect, but there are far too many colours used in the plot. This is because of discrepancies in the notation used for `condition`. 
+This *almost* shows what we expect, but there are far too many colours used in the plot. This is because of discrepancies in the notation used for `condition`.
 
 In order for `geom_text` to work you need to include an `aes`thetic mapping `label` in the initial `ggplot` call.
 
@@ -495,10 +449,7 @@ plotPCA(vsd,intgroup="condition",returnData = TRUE) %>%
   ggplot(aes(x = PC1, y = PC2,col=condition, label=Name)) + geom_point() + ggrepel::geom_text_repel()
 ```
 
-
 :::
-
-
 
 ## Note about batch effects
 
@@ -507,7 +458,6 @@ In our unsupervised analysis we should see that the main source of variation is 
 Below is an example of a PCA that might potentially worrying:-
 
 ![](/files/training/bulk_rnaseq/batch_effect.png)
-
 
 ## Correcting the sample information
 
@@ -523,17 +473,12 @@ sampleInfo %>%
   readr::write_tsv(file="meta_data/sampleInfo_corrected.txt")
 ```
 
-
 ### Exercise
 
-- Re-create the `DESeqDataset` object to include the corrected sample information
-- Re-run the plotPCA function on the new data and verify that the sample groups now look correct
+-   Re-create the `DESeqDataset` object to include the corrected sample information
+-   Re-run the plotPCA function on the new data and verify that the sample groups now look correct
 
-
-
-:::{.callout-note collapse="true"}
-
-
+::: {.callout-note collapse="true"}
 ## Solution
 
 We only actually need to change the code to read the meta data - the rest of the code is identical.
@@ -549,13 +494,9 @@ plotPCA(vsd, intgroup = "condition")
 ```
 
 Notice that the only that has changed in the PCA is the colouring of the points. As our counts are unchanged, the coordinates on the PCA remain the same.
-
 :::
 
-
-
-The PCA produced when we used the corrected meta data gives us some confidence that our experiment has worked. Although it is tempting, we shouldn't blindly correct errors in our meta data based on what we see on a PCA. Some detective work is required to make sure that the sample labeling is truly a mistake.  Perhaps contact the lab personnel who processed the samples and review their lab notebook/LIMS records for the sample's journey: RNA extraction -> library preparation -> index assignment.
-
+The PCA produced when we used the corrected meta data gives us some confidence that our experiment has worked. Although it is tempting, we shouldn't blindly correct errors in our meta data based on what we see on a PCA. Some detective work is required to make sure that the sample labeling is truly a mistake. Perhaps contact the lab personnel who processed the samples and review their lab notebook/LIMS records for the sample's journey: RNA extraction -\> library preparation -\> index assignment.
 
 ```{r echo=FALSE ,warning=FALSE, message=FALSE}
 sampleinfo_corrected <- read.delim("meta_data/sampleInfo_corrected.txt")
@@ -568,11 +509,17 @@ vsd <- vst(dds)
 plotPCA(vsd, intgroup = "condition")
 ```
 
-
 Sample swaps can also happen during the indexing/barcoding step of library preparation. The sample might have physically clustered with the intended group, but the sequencing machine labeled it with the wrong index.
 
-
 PCA is a critical diagnostic and exploratory tool that informs and guides the inferential analysis, not just a simple visualization technique. However, it is a descriptive technique, not an inferential one. In other words, it cannot actually be used to *prove* anything about your data such as a biological hypothesis. This will come in the next section when we look at *differential expression*.
+
+Anyway, now that we are happy with the pre-processing we will save our DESeq object to disk so we can start from this point
+
+```{r}
+dir.create("Robjects", showWarnings = FALSE)
+saveRDS(dds, "Robjects/dds.rds")
+```
+
 
 ### What about tSNE and UMAP? Aren't these the modern methods for visualising RNA-seq
 
@@ -580,9 +527,7 @@ Sort of. These are methods recommended for *single-cell* RNA-seq which are much 
 
 If you wish to explore PCA in a bit more detail, expand the next section.
 
-
-:::{.callout-note collapse="true"}
-
+::: {.callout-note collapse="true"}
 ## Greater control over PCA
 
 The `plotPCA` function is perfectly serviceable and gives a good overview of your data. However, sometimes you might want a bit more flexibility. Whilst not wishing to cover PCA in great depth we can go over the main steps.
@@ -614,7 +559,7 @@ assay(vsd)[row_var_order[length(row_var_order)],]
 most_var_rows <- row_var_order[1:ntop]
 ```
 
-The R function `prcomp` is used to perform the PCA but we need to "transpose" the data (using the `t` function) otherwise the function will attempt to do PCA on the genes rather than our samples. Scaling is also recommended 
+The R function `prcomp` is used to perform the PCA but we need to "transpose" the data (using the `t` function) otherwise the function will attempt to do PCA on the genes rather than our samples. Scaling is also recommended
 
 ```{r}
 pca_results <- prcomp(t(vst_values[most_var_rows,]),scale = TRUE)
@@ -623,11 +568,9 @@ names(pca_results)
 
 ```
 
+Without digging too much into the meaning of the resulting object, the % of variance explained (as seen on the `plotPCA` output) is calculated using the formula `pca_results$sdev^2 / sum(pca_results$sdev^2)*100`. These can then be plotted on a bar plot and due to the nature of the PCA method the variance should decrease rapidly.
 
-Without digging too much into the meaning of the resulting object, the % of variance explained (as seen on the `plotPCA` output) is calculated using the formula `pca_results$sdev^2 / sum(pca_results$sdev^2)*100`. These can then be plotted on a bar plot and due to the nature of the PCA method the variance should decrease rapidly. 
-
-- [https://scienceparkstudygroup.github.io/rna-seq-lesson/05-descriptive-plots/index.html](PCA worked example)
-
+-   [https://scienceparkstudygroup.github.io/rna-seq-lesson/05-descriptive-plots/index.html](PCA%20worked%20example)
 
 ```{r}
 var_explained <- pca_results$sdev^2 / sum(pca_results$sdev^2)*100
@@ -636,8 +579,9 @@ data.frame(PC = 1:9, var_explained) %>%
   ggplot(aes(y = var_explained, x =PC)) + geom_col(fill="steelblue")
 
 ```
+
 The values of the principal components can be found in the conveniently-named (!) `x` slot of the output. The dimensions of this matrix is 9 x 9 as we have 9 biological samples and hence 9 Principal Components
- 
+
 ```{r}
 pca_results$x
 ```
@@ -661,26 +605,27 @@ ylabel <- paste0("PC2(", round(var_explained[2],1), "%)")
 ylabel
 pca_plot + xlab(xlabel) + ylab(xlabel)
 ```
-If your data are complex and involve multiple experimental factors and conditions you may wish to expand the PCA beyond the first two components. This may show more subtle relationships between your samples. Here we show PC1 and PC3. 
+
+If your data are complex and involve multiple experimental factors and conditions you may wish to expand the PCA beyond the first two components. This may show more subtle relationships between your samples. Here we show PC1 and PC3.
 
 ```{r}
 pca_results$x %>% 
   bind_cols(sampleinfo_corrected) %>% 
   ggplot(aes(x = PC1, y = PC3, col = condition)) + geom_point()
 ```
-
 :::
 
 # Sample correlations
 
-Another common, and related visualisation, is to look at the correlation between samples in your dataset. This usually takes the form of a heatmap. This gives a bit more quantification to the how similar samples are to each other. i.e. Do your biological replicates show high correlation (e.g > 0.90) and cluster together? Does a sample show unusually low correlation with all others (an outlier)?
+Another common, and related visualisation, is to look at the correlation between samples in your dataset. This usually takes the form of a heatmap. This gives a bit more quantification to the how similar samples are to each other. i.e. Do your biological replicates show high correlation (e.g \> 0.90) and cluster together? Does a sample show unusually low correlation with all others (an outlier)?
 
-The `cor` function from "base R" (i.e. automatically included with the R installation) can be used to calculate all pairwise correlations between samples. The output is a matrix with one row and one column for each sample in our dataset. The diagonal is always 1 as each sample is perfectly correlated to itself.  The purpose of the visualisation is to see how well (or not!) samples belonging to the same experimental group correlate.
+The `cor` function from "base R" (i.e. automatically included with the R installation) can be used to calculate all pairwise correlations between samples. The output is a matrix with one row and one column for each sample in our dataset. The diagonal is always 1 as each sample is perfectly correlated to itself. The purpose of the visualisation is to see how well (or not!) samples belonging to the same experimental group correlate.
 
 ```{r}
 cor_mat <- cor(assay(vsd))
 cor_mat
 ```
+
 We will use the `pheatmap` package here, although there are many alternatives in R. It is also beneficial to create a nice colour palette to colour the tiles. Here a lighter blue will correspond to a stronger correlation
 
 ```{r}
@@ -692,6 +637,7 @@ corr_colors <- colorRampPalette(rev(brewer.pal(n = 7, name = "Blues")))(100)
 pheatmap(cor_mat, col = corr_colors)
 
 ```
+
 We can tell by the column and row labels that the heatmap shows very good agreement between experiment groups `IR`, `TGF` and `CTR`. To make this clearer a row of coloured blocks can be added under the sample dendrogram. `pheatmap` will take care of the labeling provided we supply a data frame with one row for each sample we want to label, and a column for each experimental or biological condition of interest. Lets use the `condition` and `Treated` columns.
 
 ```{r}
@@ -701,7 +647,6 @@ samp_anno <- sampleinfo_corrected %>%
 ```
 
 Now we can add the new annotations to the plot, and also use our own colour scheme for the colours.
-
 
 ```{r}
 nice_colours = brewer.pal(6, "Set1")
@@ -715,9 +660,9 @@ pheatmap(cor_mat, col = corr_colors,
 
 By this point we are reasonably confident about the quality of our dataset after tidying up some issues with the meta data. Specifically we:-
 
-- read the **raw counts** and meta data spreadsheet into R
-- converted these data into a format that `DESeq2` can use for analysis
-- checked the total number of reads across the dataset
-- looked at quality assessment to determine the `condition` is the main source of variation with no technical or experimental factors present.
+-   read the **raw counts** and meta data spreadsheet into R
+-   converted these data into a format that `DESeq2` can use for analysis
+-   checked the total number of reads across the dataset
+-   looked at quality assessment to determine the `condition` is the main source of variation with no technical or experimental factors present.
 
 Next-up, we will see how to run a differential expression analysis using `DESeq2` and assess which (if any!) genes exhibit statistically significant changes between different conditions.
