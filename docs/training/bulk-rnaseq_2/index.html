@@ -273,11 +273,11 @@ window.Quarto = {
 </section>
 <section id="differential-expression-with-deseq2" class="level1">
 <h1>Differential expression with <code>DESeq2</code></h1>
-<p>Now that we are happy that we have normalised the data and that the quality looks good, we can continue to testing for differentially expressed genes. There are a number of packages to analyse RNA-Seq data. Most people use <code>DESeq2</code> or <code>edgeR</code>. We will use <code>DESeq2</code> for the rest of this practical.</p>
+<p>Now that we are happy that we have normalised the data and that the quality looks good, we can proceed to test for differentially expressed genes. There are a number of packages to analyse RNA-Seq data. Most people use <code>DESeq2</code>, <code>edgeR</code> or <code>limma</code>. We will use <code>DESeq2</code> for the rest of this practical.</p>
 <section id="recap-of-pre-processing" class="level2">
 <h2 class="anchored" data-anchor-id="recap-of-pre-processing">Recap of pre-processing</h2>
 <p>The previous section walked-through the pre-processing and transformation of the count data. Here, for completeness, we list the minimal steps required to process the data prior to differential expression analysis.</p>
-<p>Note that although we spent some time looking at the quality of our data , these steps are not required prior to performing differential expression so are not shown here. Remember, <code>DESeq2</code> <a href="http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#why-un-normalized-counts">requires raw counts</a> so the <code>vst</code> transformation is not shown as part of this basic protocol.</p>
+<p>Note that although we spent some time looking at the quality of our data , these steps are not strictly <em>necessary</em> prior to performing differential expression so are not shown here for the sake of brecvity. Remember, <code>DESeq2</code> <a href="http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#why-un-normalized-counts">requires raw counts</a> so the <code>vst</code> transformation is not shown as part of this basic protocol.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(DESeq2)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -299,10 +299,17 @@ window.Quarto = {
 </section>
 <section id="the-deseq-workflow-in-brief" class="level1">
 <h1>The DESeq workflow in brief</h1>
-<p>We have previously defined the test condition using the <code>design</code> argument when we created the object. This can be checked using the <code>design</code> function.</p>
-<p>Typically we decide the design for the analysis when we create the DESeq2 objects, but it can be modified prior to the differential expression analysis. The design tells <code>DESeq2</code> which sample groups to compare in the differential analysis. The name specified must correspond to a column in the sample information.</p>
+<p>We have previously defined the <code>condition</code> as our factor of interest using the <code>design</code> argument when we created the object. This can be checked using the <code>design</code> function. The</p>
+<p>The current design can be retrieved using the <code>design</code> function.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colData</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">design</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>~condition</code></pre>
+</div>
+</div>
+<p>It can be changed at any point before we run the differential expression workflow, can refer to any of the variables saved in the <code>colData</code> of the <code>dds</code> object; or even a combination of different variables.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colData</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>DataFrame with 9 rows and 5 columns
                      Run condition        Name Replicate     Treated
@@ -316,13 +323,6 @@ window.Quarto = {
 7_CTR_BC_13 7_CTR_BC_13        CTR       CTR_3         3           N
 8_TGF_BC_14  8_TGF_BC_14       TGF       TGF_3         3           Y
 9_IR_BC_15    9_IR_BC_15       IR         IR_3         3           Y</code></pre>
-</div>
-</div>
-<p>The current design can be retrieved using the <code>design</code> function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">design</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>~condition</code></pre>
 </div>
 </div>
 <p>The counts that we have obtained via sequencing are subject to random sources of variation. The purpose of differential expression is to determine if potential sources of biological variation (e.g.&nbsp;counts observed from different sample groups) are greater than random noise.</p>
@@ -395,7 +395,7 @@ ENSG00000284747   0.689074
 ENSG00000284748         NA</code></pre>
 </div>
 </div>
-<p>Each row is a particular gene measured in the study (i.e.&nbsp;all genes in the organism being studied) and each column reports some aspect of the differential expression analysis for that gene. The values that I pay most attention are highlighted in <strong>bold</strong>.</p>
+<p>Each row is a particular gene measured in the study (i.e.&nbsp;all genes in the organism being studied) and each column reports some aspect of the differential expression analysis for that gene. The values that I typically pay most attention to are highlighted in <strong>bold</strong>.</p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 30%">
@@ -442,18 +442,33 @@ ENSG00000284748         NA</code></pre>
 </tr>
 </tbody>
 </table>
-<p>Note that <strong>all genes</strong> are reported. At this stage the gene identifiers are not very informative, something we will fix shortly. Furthermore, the <code>results</code> function displays results in a format which is not compatible with standard data manipulation tools (i.e.&nbsp;<code>tidyverse</code>), so we will have to convert.</p>
+<p>Note that <strong>all genes</strong> are reported. At this stage the gene identifiers are not very informative, something we will <a href="#adding-annotation-to-the-deseq2-results">fix shortly</a>. Furthermore, the <code>results</code> function displays results in a format which is not compatible with standard data manipulation tools (i.e.&nbsp;<code>tidyverse</code>), so we will have to convert.</p>
 </section>
 <section id="processing-the-de-results-using-tidyverse" class="level1">
 <h1>Processing the DE results using tidyverse</h1>
-<p>The output can be converted into a data frame and manipulated in the usual manner using the <code>tidy = TRUE</code> argument. It is recommended to use <code>dplyr</code> to manipulate the data frames with the standard set of operations detailed on the <a href="https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf">dplyr cheatsheet</a></p>
+<p>The output can be converted into a data frame and manipulated in the usual manner if we add the <code>tidy = TRUE</code> argument to <code>results</code>. It is recommended to use <code>dplyr</code> to manipulate the data frames with the standard set of operations detailed on the <a href="https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf">dplyr cheatsheet</a></p>
 <ul>
 <li><code>select</code> to pick which columns to display</li>
 <li><code>filter</code> to restrict the rows</li>
 <li><code>mutate</code> to add new variables to the data frame</li>
-<li><code>arrange</code> to order the data frame according to values of a column</li>
+<li><code>arrange</code> to order the data frame according to values of a column or columns</li>
 </ul>
-<p>The <code>%&gt;%</code> symbol refers to the <a href="https://sbc.shef.ac.uk/r-online/part2.nb.html#%E2%80%9CPiping%E2%80%9D">piping operation</a> in R, which is a way of chaining operations together.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The <code>%&gt;%</code> symbol refers to the piping operationin R, which is a way of chaining operations together. This was described in the introductory R notes found else on my pages</p>
+<ul>
+<li><a href="https://mdbioinformatics.com/training/r_part2/#piping">https://mdbioinformatics.com/training/r_part2/#piping</a></li>
+</ul>
+</div>
+</div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a> <span class="fu">results</span>(de_condition, <span class="at">tidy=</span><span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
@@ -539,11 +554,11 @@ Note
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(padj <span class="sc">&lt;</span> <span class="fl">0.05</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_csv</span>(<span class="st">"de_analysis/condition_TGF_vs_CTR_DESeq_sig.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>It is also a good idea to save the results object itself so we can re-use later.</p>
+<p>It is also a good idea to save the DESeq output object itself so we can re-use later.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(de_condition, <span class="at">file=</span><span class="st">"Robjects/de_condition.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>We can discover how many differentially-expressed genes (at a particular p-value cut-off) using the <code>count</code> function</p>
+<p>We can discover how many differentially-expressed genes (at a particular p-value cut-off) using the <code>count</code> function. I am making sure that I explictly use the <code>count</code> function from <code>dplyr</code> using the technique of putting <code>dplyr::</code> before <code>count</code>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">results</span>(de_condition,<span class="at">tidy=</span><span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">count</span>(padj <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -554,7 +569,7 @@ Note
 3          NA 39976</code></pre>
 </div>
 </div>
-<p>Another overview of the results is to use the <code>plotMA</code> function. Each point on this plot represents and individual gene with the x- and y-axes being the overall expression level and magnitude of difference respectively. Significant genes are automatically highlighted. The fanning effect at low expression levels is often seen due to high relative fold-change at low expression levels.</p>
+<p>Another overview of the results is to use the <code>plotMA</code> function. Each point on this plot represents and individual gene with the x- and y-axes being the overall expression level and magnitude of difference respectively. Statistically significant genes are automatically highlighted. The fanning effect at low expression levels is often seen due to high relative fold-change at low expression levels. Once you have run your DE analysis, an MA plot visually confirms that your DE genes are not exclusively confined to extremely low-count regions.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotMA</span>(de_condition)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
@@ -565,7 +580,7 @@ Note
 </div>
 </div>
 </div>
-<p>It is also instructive to perform a “sanity” check and plot the sample-level counts for genes with high significance. This could highlight any other technical factors that we are not currently taking into account. The plot is not particularly attractive, but is a good quick diagnostic.</p>
+<p>It is also instructive to perform a “sanity” check and plot the sample-level counts for genes with high significance. This could highlight any other technical factors that we are not currently taking into account. The plot is not particularly attractive, but is a good quick diagnostic as it confirms which direction your contrast is. i.e.&nbsp;Treatment vs Control or Control vs Treatment.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>top_up <span class="ot">&lt;-</span> <span class="fu">results</span>(de_condition, <span class="at">tidy =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(log2FoldChange <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">%&gt;%</span> </span>
@@ -611,14 +626,57 @@ Note
 </section>
 <section id="changing-the-direction-of-the-contrast-or-the-groups-being-compared" class="level1">
 <h1>Changing the direction of the contrast, or the groups being compared</h1>
-<p>In this initial analysis <code>DESeq2</code> has automatically decided which member of our sample groups to use as our baseline (<code>CTR</code> in this case). If the log2 fold changes has a positive value this means higher expression in <code>TGF</code> sample. We can alter this by changing the <code>contrast</code> argument in the <code>results</code> function</p>
+<p>You hopefully noticed that the sign of the log fold changes have been calculated using the <code>CTR</code> group as a baseline. In other words, a positive <code>log2FoldChange</code> means that a gene has higher expression in <code>TGF</code> compared to <code>CTR</code>. This is usually the direction that makes sense for biological interpretation. However, <code>DESeq2</code> has not done anything clever here. The order of the contrasts is dictated by the “levels” of the variable used in the design.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="do">## This should give the same as the table above</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">results</span>(de_condition, <span class="at">contrast=</span><span class="fu">c</span>(<span class="st">"condition"</span>,<span class="st">"TGF"</span>,<span class="st">"CTR"</span>))</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Changing the direction of the contrast</span></span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="fu">results</span>(de_condition, <span class="at">contrast=</span><span class="fu">c</span>(<span class="st">"condition"</span>,<span class="st">"CTR"</span>,<span class="st">"TGF"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>dds<span class="sc">$</span>condition</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] CTR TGF IR  CTR TGF IR  CTR TGF IR 
+Levels: CTR IR TGF</code></pre>
 </div>
-<p>If we want to perform differential expression analysis on the <code>condition</code> variable then there are various contrasts that can be made; <code>IR</code> vs <code>CTR</code>, <code>TGF</code> vs <code>CTR</code> etc. When the <code>results</code> function is run with no <code>contrast</code> argument specified, the table that is displayed is for the contrast <code>TGF vs CTR</code>. The <code>resultsNames</code> function can tell us which other contrasts we can access.</p>
+</div>
+<p>Since <code>CTR</code> is the first thing printed here it gets chosen as the baseline. It is just a fortunate coincidence that <code>CTR</code> is first alphabetically! In order that we are not relying on the defaults and for transparency, I tend to explicitly state which contrast I want to make using the <code>contrast</code> argument and have full control over what the baseline is. In the <code>contrast</code> argument you create a vector (using <code>c</code>) followed by the levels in the order you want to compare with the baseline coming last.</p>
+<p>In the below this can be read as <code>TGF</code> vs <code>CTR</code>, which is in fact the default</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="do">## This should give the same as the table above</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">results</span>(de_condition, <span class="at">contrast=</span><span class="fu">c</span>(<span class="st">"condition"</span>,<span class="st">"TGF"</span>,<span class="st">"CTR"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>log2 fold change (MLE): condition TGF vs CTR 
+Wald test p-value: condition TGF vs CTR 
+DataFrame with 57914 rows and 6 columns
+                   baseMean log2FoldChange     lfcSE      stat     pvalue
+                  &lt;numeric&gt;      &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;  &lt;numeric&gt;
+ENSG00000000003 1430.562846      -0.256207 0.0813936  -3.14775 0.00164531
+ENSG00000000005    0.113566       0.000000 4.0804559   0.00000 1.00000000
+ENSG00000000419 1790.537536      -0.144906 0.1008195  -1.43728 0.15063862
+ENSG00000000457  640.692302      -0.310636 0.1137555  -2.73073 0.00631933
+ENSG00000000460  206.179026       0.160027 0.1567963   1.02061 0.30744046
+...                     ...            ...       ...       ...        ...
+ENSG00000284744    8.307038      -0.209531  0.800702 -0.261684   0.793565
+ENSG00000284745    0.000000             NA        NA        NA         NA
+ENSG00000284746    0.101097      -1.050150  4.080456 -0.257361   0.796900
+ENSG00000284747   28.783710      -0.297530  0.448931 -0.662751   0.507490
+ENSG00000284748    0.548323       0.873372  4.080456  0.214038   0.830517
+                      padj
+                 &lt;numeric&gt;
+ENSG00000000003 0.00906995
+ENSG00000000005         NA
+ENSG00000000419 0.30807839
+ENSG00000000457 0.02685529
+ENSG00000000460 0.50350287
+...                    ...
+ENSG00000284744         NA
+ENSG00000284745         NA
+ENSG00000284746         NA
+ENSG00000284747   0.689074
+ENSG00000284748         NA</code></pre>
+</div>
+</div>
+<p>IF we wanted to change the order we can do:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Changing the direction of the contrast</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">results</span>(de_condition, <span class="at">contrast=</span><span class="fu">c</span>(<span class="st">"condition"</span>,<span class="st">"CTR"</span>,<span class="st">"TGF"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Or indeed using the same syntax you can perform contrasts using the <code>IR</code> condition.</p>
 <section id="exercise" class="level2">
 <h2 class="anchored" data-anchor-id="exercise">Exercise</h2>
 <ul>
@@ -626,6 +684,20 @@ Note
 <li>Write a csv file that contains results for the genes that have an <em>adjusted</em> p-value less than 0.05 and a log2 fold change more than 1, or less than -1 in the contrast of TGF vs CTRL.</li>
 <li>Use the <code>plotCounts</code> function to visually-inspect the most statistically-significant gene identified</li>
 </ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Use the DESeq function once and once only!
+</div>
+</div>
+<div class="callout-body-container callout-body">
+
+</div>
+</div>
+<p>You should perform the full differential expression analysis by calling DESeq(dds) only once on your combined dataset. Then, you use the results() function multiple times to extract the specific pairwise comparisons or complex contrasts you are interested in.</p>
 </section>
 </section>
 <section id="more-complex-designs" class="level1">
@@ -638,13 +710,13 @@ Note
 <p><img src="images/batch_effect.png" class="img-fluid"></p>
 <p>In the example image above the main source of variation is the batch in which the samples were sequenced. A multi-factor analysis to compare the various conditions, but “correct” for differences in batch, would be as follows.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Don't run this. It's just a code example</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">design</span>(MY_DATA) <span class="ot">&lt;-</span> <span class="er">~</span> batch <span class="sc">+</span> condition</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Don't run this. It's just a code example</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">design</span>(MY_DATA) <span class="ot">&lt;-</span> <span class="er">~</span> batch <span class="sc">+</span> condition</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Likewise, if we have different treatments applied to difference cell-lines, but the main source of variation is the cell line the following could be used.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Don't run this. It's just a code example</span></span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">design</span>(MY_DATA) <span class="ot">&lt;-</span> <span class="er">~</span>cell_line <span class="sc">+</span> treatment</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Don't run this. It's just a code example</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="fu">design</span>(MY_DATA) <span class="ot">&lt;-</span> <span class="er">~</span>cell_line <span class="sc">+</span> treatment</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="adding-annotation-to-the-deseq2-results" class="level1">
@@ -652,19 +724,19 @@ Note
 <p>We would love to share these results with our collaborators, or search for our favourite gene in the results. However, the results are not very useful in there current form as each row is named according to an <em>Ensembl</em> identifier. Whilst gene symbols are problematic and can change over time, they are the names that are most recognisable and make the results easier to navigate.</p>
 <p>There are a number of ways to add annotation, but we will demonstrate how to do this using the <em>org.Hs.eg.db</em> package. This package is one of several <em>organism-level</em> packages in Bioconductor that are re-built every 6 months. These packages are listed on the <a href="http://bioconductor.org/packages/release/BiocViews.html#___AnnotationData">annotation section</a> of the Bioconductor, and are installed in the same way as regular Bioconductor packages. An alternative approach is to use <code>biomaRt</code>, an interface to the <a href="http://www.biomart.org/">BioMart</a> resource. BioMart is much more comprehensive, but the organism packages do not require online access once downloaded.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Only execute when you need to install the package</span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"BiocManager"</span>)</span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"org.Hs.eg.db"</span>)</span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="co"># For Human</span></span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"org.Hs.eg.db"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Only execute when you need to install the package</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"BiocManager"</span>)</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"org.Hs.eg.db"</span>)</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a><span class="co"># For Human</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"org.Hs.eg.db"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The packages are larger in size that Bioconductor software packages, but essentially they are databases that can be used to make <em>offline</em> queries. An alternatve (<code>biomaRt</code>) that connects to the ensembl <a href="https://www.ensembl.org/info/data/biomart/index.html">biomart</a> resource will be discussed later.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(org.Hs.eg.db)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(org.Hs.eg.db)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>First we need to decide what information we want. In order to see what we can extract we can run the <code>columns</code> function on the annotation database.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">columns</span>(org.Hs.eg.db)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">columns</span>(org.Hs.eg.db)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "ACCNUM"       "ALIAS"        "ENSEMBL"      "ENSEMBLPROT"  "ENSEMBLTRANS"
  [6] "ENTREZID"     "ENZYME"       "EVIDENCE"     "EVIDENCEALL"  "GENENAME"    
@@ -676,7 +748,7 @@ Note
 </div>
 <p>We are going to filter the database by a key or set of keys in order to extract the information we want. Valid names for the key can be retrieved with the <code>keytypes</code> function.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">keytypes</span>(org.Hs.eg.db)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">keytypes</span>(org.Hs.eg.db)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "ACCNUM"       "ALIAS"        "ENSEMBL"      "ENSEMBLPROT"  "ENSEMBLTRANS"
  [6] "ENTREZID"     "ENZYME"       "EVIDENCE"     "EVIDENCEALL"  "GENENAME"    
@@ -688,7 +760,7 @@ Note
 </div>
 <p>We should see <code>ENSEMBL</code>, which is the type of key we are going to use in this case. If we are unsure what values are acceptable for the key, we can check what keys are valid with <code>keys</code></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">keys</span>(org.Hs.eg.db, <span class="at">keytype=</span><span class="st">"ENSEMBL"</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">keys</span>(org.Hs.eg.db, <span class="at">keytype=</span><span class="st">"ENSEMBL"</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "ENSG00000121410" "ENSG00000175899" "ENSG00000291190" "ENSG00000171428"
  [5] "ENSG00000156006" "ENSG00000196136" "ENSG00000114771" "ENSG00000127837"
@@ -697,13 +769,13 @@ Note
 </div>
 <p>For the top gene in our analysis the call to the function would be:-</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(org.Hs.eg.db, <span class="at">keys=</span>top_up,</span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">keytype =</span> <span class="st">"ENSEMBL"</span>,<span class="at">columns=</span><span class="fu">c</span>(<span class="st">"SYMBOL"</span>,<span class="st">"GENENAME"</span>)</span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(org.Hs.eg.db, <span class="at">keys=</span>top_up,</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">keytype =</span> <span class="st">"ENSEMBL"</span>,<span class="at">columns=</span><span class="fu">c</span>(<span class="st">"SYMBOL"</span>,<span class="st">"GENENAME"</span>)</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Unfortunately, the authors of <code>dplyr</code> and <code>AnnotationDbi</code> have both decided to use the name <code>select</code> in their packages. To avoid confusion and errors, the following code is sometimes used:-</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>AnnotationDbi<span class="sc">::</span><span class="fu">select</span>(org.Hs.eg.db, <span class="at">keys=</span>top_up,<span class="at">keytype =</span> <span class="st">"ENSEMBL"</span>,<span class="at">columns=</span><span class="fu">c</span>(<span class="st">"SYMBOL"</span>,<span class="st">"GENENAME"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>AnnotationDbi<span class="sc">::</span><span class="fu">select</span>(org.Hs.eg.db, <span class="at">keys=</span>top_up,<span class="at">keytype =</span> <span class="st">"ENSEMBL"</span>,<span class="at">columns=</span><span class="fu">c</span>(<span class="st">"SYMBOL"</span>,<span class="st">"GENENAME"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>'select()' returned 1:1 mapping between keys and columns</code></pre>
 </div>
@@ -716,14 +788,14 @@ Note
 </div>
 <p>To annotate our results, we definitely want gene symbols and perhaps the full gene name. Let’s build up our annotation information into a new data frame using the <code>select</code> function.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>anno <span class="ot">&lt;-</span> AnnotationDbi<span class="sc">::</span><span class="fu">select</span>(org.Hs.eg.db,<span class="at">keys=</span><span class="fu">rownames</span>(dds),</span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">columns=</span><span class="fu">c</span>(<span class="st">"SYMBOL"</span>,<span class="st">"GENENAME"</span>),</span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">keytype=</span><span class="st">"ENSEMBL"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>anno <span class="ot">&lt;-</span> AnnotationDbi<span class="sc">::</span><span class="fu">select</span>(org.Hs.eg.db,<span class="at">keys=</span><span class="fu">rownames</span>(dds),</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">columns=</span><span class="fu">c</span>(<span class="st">"SYMBOL"</span>,<span class="st">"GENENAME"</span>),</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">keytype=</span><span class="st">"ENSEMBL"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>'select()' returned 1:many mapping between keys and columns</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Have a look at the annotation</span></span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Have a look at the annotation</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          ENSEMBL SYMBOL
 1 ENSG00000000003 TSPAN6
@@ -743,35 +815,35 @@ Note
 </div>
 <p>However, we have a problem that the resulting data frame has more rows than our results table. This is due to the <em>one-to-many</em> relationships that often occur when mapping between various identifiers.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 58969     3</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 57914     9</code></pre>
 </div>
 </div>
 <p>Such duplicated entries can be identified using the <code>duplicated</code> function. Fortunately, there are not too many so hopefully we won’t lose too much information if we discard the entries that are duplicated. The first occurrence of the duplicated ID will still be included in the table.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>anno <span class="ot">&lt;-</span> AnnotationDbi<span class="sc">::</span><span class="fu">select</span>(org.Hs.eg.db,<span class="at">keys=</span><span class="fu">rownames</span>(dds),</span>
-<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">columns=</span><span class="fu">c</span>(<span class="st">"ENSEMBL"</span>,<span class="st">"SYMBOL"</span>,<span class="st">"GENENAME"</span>,<span class="st">"ENTREZID"</span>),</span>
-<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">keytype=</span><span class="st">"ENSEMBL"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">duplicated</span>(ENSEMBL))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>anno <span class="ot">&lt;-</span> AnnotationDbi<span class="sc">::</span><span class="fu">select</span>(org.Hs.eg.db,<span class="at">keys=</span><span class="fu">rownames</span>(dds),</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">columns=</span><span class="fu">c</span>(<span class="st">"ENSEMBL"</span>,<span class="st">"SYMBOL"</span>,<span class="st">"GENENAME"</span>,<span class="st">"ENTREZID"</span>),</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">keytype=</span><span class="st">"ENSEMBL"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">duplicated</span>(ENSEMBL))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>'select()' returned 1:many mapping between keys and columns</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(anno)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 57914     4</code></pre>
 </div>
 </div>
 <p>We can bind in the annotation information to the <code>results</code> data frame.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>results_annotated <span class="ot">&lt;-</span> <span class="fu">results</span>(de_condition,<span class="at">tidy=</span><span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(anno, <span class="at">by=</span><span class="fu">c</span>(<span class="st">"row"</span><span class="ot">=</span><span class="st">"ENSEMBL"</span>))</span>
-<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(results_annotated)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>results_annotated <span class="ot">&lt;-</span> <span class="fu">results</span>(de_condition,<span class="at">tidy=</span><span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(anno, <span class="at">by=</span><span class="fu">c</span>(<span class="st">"row"</span><span class="ot">=</span><span class="st">"ENSEMBL"</span>))</span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(results_annotated)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>              row     baseMean log2FoldChange      lfcSE       stat      pvalue
 1 ENSG00000000003 1430.5628457     -0.2562067 0.08139356 -3.1477521 0.001645312
@@ -798,7 +870,7 @@ Note
 </div>
 <p>We can save the results table using the <code>write.csv</code> function, which writes the results out to a csv file that you can open in excel.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(results_annotated,<span class="at">file=</span><span class="st">"de_analysis/condition_TGF_vs_CTR_DESeq_annotated.csv"</span>,<span class="at">row.names=</span><span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(results_annotated,<span class="at">file=</span><span class="st">"de_analysis/condition_TGF_vs_CTR_DESeq_annotated.csv"</span>,<span class="at">row.names=</span><span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <section id="exercise-1" class="level2">
 <h2 class="anchored" data-anchor-id="exercise-1">Exercise</h2>
@@ -813,14 +885,14 @@ Note
 <section id="the-volcano-plot" class="level2">
 <h2 class="anchored" data-anchor-id="the-volcano-plot">The volcano plot</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EnhancedVolcano)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EnhancedVolcano)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Loading required package: ggplot2</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Loading required package: ggrepel</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">EnhancedVolcano</span>(results_annotated, <span class="at">x =</span> <span class="st">"log2FoldChange"</span>, <span class="at">y =</span> <span class="st">"padj"</span>, <span class="at">lab =</span> results_annotated<span class="sc">$</span>SYMBOL)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">EnhancedVolcano</span>(results_annotated, <span class="at">x =</span> <span class="st">"log2FoldChange"</span>, <span class="at">y =</span> <span class="st">"padj"</span>, <span class="at">lab =</span> results_annotated<span class="sc">$</span>SYMBOL)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
 ℹ Please use `linewidth` instead.
@@ -836,7 +908,7 @@ Note
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/unnamed-chunk-35-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -845,9 +917,9 @@ Note
 <h3 class="anchored" data-anchor-id="exporting-normalized-counts">Exporting normalized counts</h3>
 <p>The <code>DESeq</code> workflow applies <em>median of ratios normalization</em> that accounts for differences in sequencing depth between samples. The user does not usually need to run this step. However, if you want a matrix of counts for some application outside of Bioconductor the values can be extracted from the <code>dds</code> object.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactors</span>(dds) </span>
-<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>countMatrix <span class="ot">&lt;-</span><span class="fu">counts</span>(dds, <span class="at">normalized=</span><span class="cn">TRUE</span>) </span>
-<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(countMatrix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactors</span>(dds) </span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>countMatrix <span class="ot">&lt;-</span><span class="fu">counts</span>(dds, <span class="at">normalized=</span><span class="cn">TRUE</span>) </span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(countMatrix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                 1_CTR_BC_2  2_TGF_BC_4  3_IR_BC_5  4_CTR_BC_6   5_TGF_BC_7
 ENSG00000000003 1496.753711 1309.582900 1503.06012 1550.428865 1326.3138781
@@ -864,7 +936,7 @@ ENSG00000000457  622.515941   791.26495  557.148855  641.875643
 ENSG00000000460  125.198737   258.13570  271.527857  129.806062
 ENSG00000000938    2.318495    20.01869    3.758171    8.176760</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(countMatrix,<span class="at">file=</span><span class="st">"normalized_counts.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(countMatrix,<span class="at">file=</span><span class="st">"normalized_counts.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
@@ -873,11 +945,11 @@ ENSG00000000938    2.318495    20.01869    3.758171    8.176760</code></pre>
 <h1>Full DESeq workflow</h1>
 <p>The median of ratios normalisation method is employed in DESeq2 to account for <em>sequencing depth</em> and <em>RNA composition</em>. Let’s go through a short worked example (courtesy of <a href="here">https://hbctraining.github.io/DGE_workshop/lessons/02_DGE_count_normalization.html</a>) to explain the process.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="do">## create a small example matrix of "counts"</span></span>
-<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>test_data <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1489</span>,<span class="dv">22</span>,<span class="dv">793</span>,<span class="dv">76</span>,<span class="dv">521</span>,<span class="dv">906</span>,<span class="dv">13</span>,<span class="dv">410</span>,<span class="dv">42</span>,<span class="dv">1196</span>),<span class="at">nrow=</span><span class="dv">5</span>)</span>
-<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(test_data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"EF2A"</span>,<span class="st">"ABCD1"</span>,<span class="st">"MEFV"</span>,<span class="st">"BAG1"</span>,<span class="st">"MOV10"</span>)</span>
-<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(test_data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"SampleA"</span>,<span class="st">"SampleB"</span>)</span>
-<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a>test_data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="do">## create a small example matrix of "counts"</span></span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>test_data <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1489</span>,<span class="dv">22</span>,<span class="dv">793</span>,<span class="dv">76</span>,<span class="dv">521</span>,<span class="dv">906</span>,<span class="dv">13</span>,<span class="dv">410</span>,<span class="dv">42</span>,<span class="dv">1196</span>),<span class="at">nrow=</span><span class="dv">5</span>)</span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(test_data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"EF2A"</span>,<span class="st">"ABCD1"</span>,<span class="st">"MEFV"</span>,<span class="st">"BAG1"</span>,<span class="st">"MOV10"</span>)</span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(test_data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"SampleA"</span>,<span class="st">"SampleB"</span>)</span>
+<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a>test_data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      SampleA SampleB
 EF2A     1489     906
@@ -889,8 +961,8 @@ MOV10     521    1196</code></pre>
 </div>
 <p>Firstly, an “average” or reference sample is created that represents the counts on a typical sample in the dataset. The <em>geometric mean</em> is used rather than the <em>arithmetic</em> mean. In other words the individual counts are multiplied rather than summed and the measure should be more robust to outliers.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>psuedo_ref <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">rowProds</span>(test_data))</span>
-<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>psuedo_ref</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>psuedo_ref <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">rowProds</span>(test_data))</span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>psuedo_ref</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      EF2A      ABCD1       MEFV       BAG1      MOV10 
 1161.47923   16.91153  570.20172   56.49779  789.37697 </code></pre>
@@ -898,7 +970,7 @@ MOV10     521    1196</code></pre>
 </div>
 <p>A ratios of sample to “psuedo reference” are then calculated for each gene. We are assuming that most genes are not changing dramatically, so this ratio should be somewhere around 1.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>test_data<span class="sc">/</span>psuedo_ref</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>test_data<span class="sc">/</span>psuedo_ref</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>        SampleA   SampleB
 EF2A  1.2819859 0.7800398
@@ -910,8 +982,8 @@ MOV10 0.6600142 1.5151189</code></pre>
 </div>
 <p><code>DESeq2</code> defines size factors as being the <em>median</em> of these ratios for each sample (median is used so any outlier genes will not affect the normalisation).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>norm_factors <span class="ot">&lt;-</span> <span class="fu">colMedians</span>(test_data<span class="sc">/</span>psuedo_ref)</span>
-<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>norm_factors</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>norm_factors <span class="ot">&lt;-</span> <span class="fu">colMedians</span>(test_data<span class="sc">/</span>psuedo_ref)</span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a>norm_factors</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  SampleA   SampleB 
 1.3008873 0.7687061 </code></pre>
@@ -919,7 +991,7 @@ MOV10 0.6600142 1.5151189</code></pre>
 </div>
 <p>Individual samples can then normalised by dividing the count for each gene by the corresponding normalization factor.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>test_data[,<span class="dv">1</span>] <span class="sc">/</span> norm_factors[<span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a>test_data[,<span class="dv">1</span>] <span class="sc">/</span> norm_factors[<span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      EF2A      ABCD1       MEFV       BAG1      MOV10 
 1144.60340   16.91153  609.58395   58.42166  400.49589 </code></pre>
@@ -927,7 +999,7 @@ MOV10 0.6600142 1.5151189</code></pre>
 </div>
 <p>and for the second sample…</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>test_data[,<span class="dv">2</span>] <span class="sc">/</span> norm_factors[<span class="dv">2</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a>test_data[,<span class="dv">2</span>] <span class="sc">/</span> norm_factors[<span class="dv">2</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      EF2A      ABCD1       MEFV       BAG1      MOV10 
 1178.60387   16.91153  533.36378   54.63727 1555.86118 </code></pre>
@@ -935,8 +1007,8 @@ MOV10 0.6600142 1.5151189</code></pre>
 </div>
 <p>The size factors for each sample in our dataset can be calculated using the <code>estimateSizeFactorsForMatrix</code> function.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a>sf <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactorsForMatrix</span>(<span class="fu">assay</span>(dds))</span>
-<span id="cb82-2"><a href="#cb82-2" aria-hidden="true" tabindex="-1"></a>sf</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>sf <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactorsForMatrix</span>(<span class="fu">assay</span>(dds))</span>
+<span id="cb86-2"><a href="#cb86-2" aria-hidden="true" tabindex="-1"></a>sf</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> 1_CTR_BC_2  2_TGF_BC_4   3_IR_BC_5  4_CTR_BC_6  5_TGF_BC_7  6_IR_BC_12 
   1.0549498   1.1812922   0.8928452   1.0990507   1.0517872   0.8626285 
@@ -946,17 +1018,17 @@ MOV10 0.6600142 1.5151189</code></pre>
 </div>
 <p>The estimation of these factors can also take gene-lengths into account, and this is implemented in the <code>estimateSizeFactors</code> function. Extra normalization factor data is added to the <code>dds</code> object.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactors</span>(dds)</span>
-<span id="cb84-2"><a href="#cb84-2" aria-hidden="true" tabindex="-1"></a>dds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactors</span>(dds)</span>
+<span id="cb88-2"><a href="#cb88-2" aria-hidden="true" tabindex="-1"></a>dds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>In preparation for differential expression DESeq2 also need a reliable estimate of the variability of each gene; which it calls <em>dispersion</em>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateDispersions</span>(dds)</span>
-<span id="cb85-2"><a href="#cb85-2" aria-hidden="true" tabindex="-1"></a>dds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb89"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateDispersions</span>(dds)</span>
+<span id="cb89-2"><a href="#cb89-2" aria-hidden="true" tabindex="-1"></a>dds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>A statistical test can then be applied. As the data are count-based and not normally-distributed a t-test would not be appropriate. Most tests are based on a <em>Poisson</em> or <em>negative-binomial</em> distribution; negative binomial in the case of <code>DESeq2</code>. Although you might not be familiar with the negative binomial, the results should be in a familiar form with fold-changes and p-values for each gene.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">nbinomWaldTest</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">nbinomWaldTest</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>It may seem like there is a lot to remember, but fortunately there is one convenient function that will apply the three steps (<code>DESeq</code>). The messages printed serve as reminders of the steps included.</p>
 

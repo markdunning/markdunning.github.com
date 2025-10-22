@@ -23,13 +23,13 @@ download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/he
 
 # Differential expression with `DESeq2`
 
-Now that we are happy that we have normalised the data and that the quality looks good, we can proceed to test for differentially expressed genes. There are a number of packages to analyse RNA-Seq data. Most people use `DESeq2` or `edgeR`. We will use `DESeq2` for the rest of this practical.
+Now that we are happy that we have normalised the data and that the quality looks good, we can proceed to test for differentially expressed genes. There are a number of packages to analyse RNA-Seq data. Most people use `DESeq2`, `edgeR` or `limma`. We will use `DESeq2` for the rest of this practical.
 
 ## Recap of pre-processing
 
 The previous section walked-through the pre-processing and transformation of the count data. Here, for completeness, we list the minimal steps required to process the data prior to differential expression analysis.
 
-Note that although we spent some time looking at the quality of our data , these steps are not required prior to performing differential expression so are not shown here. Remember, `DESeq2` [requires raw counts](http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#why-un-normalized-counts) so the `vst` transformation is not shown as part of this basic protocol.
+Note that although we spent some time looking at the quality of our data , these steps are not strictly *necessary* prior to performing differential expression so are not shown here for the sake of brecvity. Remember, `DESeq2` [requires raw counts](http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#why-un-normalized-counts) so the `vst` transformation is not shown as part of this basic protocol.
 
 ```{r eval=FALSE}
 library(DESeq2)
@@ -57,19 +57,20 @@ library(DESeq2)
 dds <- readRDS("Robjects/dds.rds")
 ```
 
-We have previously defined the test condition using the `design` argument when we created the object. This can be checked using the `design` function.
-
-Typically we decide the design for the analysis when we create the DESeq2 objects, but it can be modified prior to the differential expression analysis. The design tells `DESeq2` which sample groups to compare in the differential analysis. The name specified must correspond to a column in the sample information.
-
-```{r}
-colData(dds)
-```
+We have previously defined the `condition` as our factor of interest using the `design` argument when we created the object. This can be checked using the `design` function. The 
 
 The current design can be retrieved using the `design` function.
 
 ```{r}
 design(dds)
 ```
+
+It can be changed at any point before we run the differential expression workflow, can refer to any of the variables saved in the `colData` of the `dds` object; or even a combination of different variables.
+
+```{r}
+colData(dds)
+```
+
 
 The counts that we have obtained via sequencing are subject to random sources of variation. The purpose of differential expression is to determine if potential sources of biological variation (e.g. counts observed from different sample groups) are greater than random noise.
 
@@ -86,7 +87,7 @@ The results of the analysis are not immediately accessible, but can be obtained 
 results(de_condition)
 ```
 
-Each row is a particular gene measured in the study (i.e. all genes in the organism being studied) and each column reports some aspect of the differential expression analysis for that gene. The values that I pay most attention are highlighted in **bold**.
+Each row is a particular gene measured in the study (i.e. all genes in the organism being studied) and each column reports some aspect of the differential expression analysis for that gene. The values that I typically pay most attention to are highlighted in **bold**.
 
 | Column Name | Description | Importance |
 |------------------------|------------------------------|------------------------|
@@ -98,19 +99,26 @@ Each row is a particular gene measured in the study (i.e. all genes in the organ
 | **padj** | The Benjamini-Hochberg adjusted $p$-value (False Discovery Rate, FDR).CRITICAL for significance. This corrects for multiple testing | CRITICAL for statistical significance. This corrects for multiple testing. Genes are considered differentially expressed if this value is below your threshold (e.g., 0.05). |
 
 
-Note that **all genes** are reported. At this stage the gene identifiers are not very informative, something we will fix shortly. Furthermore, the `results` function displays results in a format which is not compatible with standard data manipulation tools (i.e. `tidyverse`), so we will have to convert.
+Note that **all genes** are reported. At this stage the gene identifiers are not very informative, something we will [fix shortly](#adding-annotation-to-the-deseq2-results). Furthermore, the `results` function displays results in a format which is not compatible with standard data manipulation tools (i.e. `tidyverse`), so we will have to convert.
 
 
 # Processing the DE results using tidyverse
 
-The output can be converted into a data frame and manipulated in the usual manner using the `tidy = TRUE` argument. It is recommended to use `dplyr` to manipulate the data frames with the standard set of operations detailed on the [dplyr cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
+The output can be converted into a data frame and manipulated in the usual manner if we add the `tidy = TRUE` argument to `results`. It is recommended to use `dplyr` to manipulate the data frames with the standard set of operations detailed on the [dplyr cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
 
 -   `select` to pick which columns to display
 -   `filter` to restrict the rows
 -   `mutate` to add new variables to the data frame
--   `arrange` to order the data frame according to values of a column
+-   `arrange` to order the data frame according to values of a column or columns
 
-The `%>%` symbol refers to the [piping operation](https://sbc.shef.ac.uk/r-online/part2.nb.html#%E2%80%9CPiping%E2%80%9D) in R, which is a way of chaining operations together.
+:::{.callout-note}
+
+The `%>%` symbol refers to the  piping operationin R, which is a way of chaining operations together. This was described in the introductory R notes found else on my pages
+
+- [https://mdbioinformatics.com/training/r_part2/#piping](https://mdbioinformatics.com/training/r_part2/#piping)
+
+:::
+
 
 ```{r warning=FALSE, message=FALSE}
 library(dplyr)
@@ -147,26 +155,26 @@ Filtering to the differentially-expressed genes can be achieved using the `filte
   readr::write_csv("de_analysis/condition_TGF_vs_CTR_DESeq_sig.csv")
 ```
 
-It is also a good idea to save the results object itself so we can re-use later.
+It is also a good idea to save the DESeq output object itself so we can re-use later.
 
 ```{r}
 saveRDS(de_condition, file="Robjects/de_condition.rds")
 ```
 
-We can discover how many differentially-expressed genes (at a particular p-value cut-off) using the `count` function
+We can discover how many differentially-expressed genes (at a particular p-value cut-off) using the `count` function. I am making sure that I explictly use the `count` function from `dplyr` using the technique of putting `dplyr::` before `count`.
 
 ```{r}
 results(de_condition,tidy=TRUE) %>%
   dplyr::count(padj < 0.05)
 ```
 
-Another overview of the results is to use the `plotMA` function. Each point on this plot represents and individual gene with the x- and y-axes being the overall expression level and magnitude of difference respectively. Significant genes are automatically highlighted. The fanning effect at low expression levels is often seen due to high relative fold-change at low expression levels.
+Another overview of the results is to use the `plotMA` function. Each point on this plot represents and individual gene with the x- and y-axes being the overall expression level and magnitude of difference respectively. Statistically significant genes are automatically highlighted. The fanning effect at low expression levels is often seen due to high relative fold-change at low expression levels. Once you have run your DE analysis, an MA plot visually confirms that your DE genes are not exclusively confined to extremely low-count regions.
 
 ```{r}
 plotMA(de_condition)
 ```
 
-It is also instructive to perform a "sanity" check and plot the sample-level counts for genes with high significance. This could highlight any other technical factors that we are not currently taking into account. The plot is not particularly attractive, but is a good quick diagnostic.
+It is also instructive to perform a "sanity" check and plot the sample-level counts for genes with high significance. This could highlight any other technical factors that we are not currently taking into account. The plot is not particularly attractive, but is a good quick diagnostic as it confirms which direction your contrast is. i.e. Treatment vs Control or Control vs Treatment.
 
 ```{r}
 
@@ -192,23 +200,46 @@ If your study involves knocking-out a particular gene, or you have some positive
 
 # Changing the direction of the contrast, or the groups being compared
 
-In this initial analysis `DESeq2` has automatically decided which member of our sample groups to use as our baseline (`CTR` in this case). If the log2 fold changes has a positive value this means higher expression in `TGF` sample. We can alter this by changing the `contrast` argument in the `results` function
+You hopefully noticed that the sign of the log fold changes have been calculated using the `CTR` group as a baseline. In other words, a positive `log2FoldChange` means that a gene has higher expression in `TGF` compared to `CTR`. This is usually the direction that makes sense for biological interpretation. However, `DESeq2` has not done anything clever here. The order of the contrasts is dictated by the "levels" of the variable used in the design.
 
-```{r eval=FALSE}
+
+```{r}
+dds$condition
+```
+
+Since `CTR` is the first thing printed here it gets chosen as the baseline. It is just a fortunate coincidence that `CTR` is first alphabetically! In order that we are not relying on the defaults and for transparency, I tend to explicitly state which contrast I want to make using the `contrast` argument and have full control over what the baseline is. In the `contrast` argument you create a vector (using `c`) followed by the levels in the order you want to compare with the baseline coming last.
+
+In the below this can be read as `TGF` vs `CTR`, which is in fact the default
+```{r}
 ## This should give the same as the table above
 results(de_condition, contrast=c("condition","TGF","CTR"))
+
+```
+
+IF we wanted to change the order we can do:-
+
+```{r eval=FALSE}
 ## Changing the direction of the contrast
 results(de_condition, contrast=c("condition","CTR","TGF"))
 ```
 
-If we want to perform differential expression analysis on the `condition` variable then there are various contrasts that can be made; `IR` vs `CTR`, `TGF` vs `CTR` etc. When the `results` function is run with no `contrast` argument specified, the table that is displayed is for the contrast `TGF vs CTR`. The `resultsNames` function can tell us which other contrasts we can access.
-
+Or indeed using the same syntax you can perform contrasts using the `IR` condition.
 
 ## Exercise
 
 -   Re-run the analysis to find differentially-expressed genes between the `IR` treated samples and `CTR`
 -   Write a csv file that contains results for the genes that have an *adjusted* p-value less than 0.05 and a log2 fold change more than 1, or less than -1 in the contrast of TGF vs CTRL.
 -   Use the `plotCounts` function to visually-inspect the most statistically-significant gene identified
+
+
+
+:::{.callout-important}
+
+# Use the DESeq function once and once only!
+
+:::
+
+You should perform the full differential expression analysis by calling DESeq(dds) only once on your combined dataset. Then, you use the results() function multiple times to extract the specific pairwise comparisons or complex contrasts you are interested in.
 
 
 # More complex designs
@@ -219,7 +250,7 @@ The examples we have used so far have performed a differential expression analys
 
 The use of such a design could be motivated by discovering sources of technical variation in our data that might obscure the biological differences we would like to compare. e.g.
 
-![](images/batch_effect.png)
+![](/files/training/bulk_rnaseq/batch_effect.png)
 
 In the example image above the main source of variation is the batch in which the samples were sequenced. A multi-factor analysis to compare the various conditions, but "correct" for differences in batch, would be as follows.
 
