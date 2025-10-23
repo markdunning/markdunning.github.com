@@ -3,6 +3,7 @@ title: "Reading 10X Spatial Data from GEO into R"
 author: Mark Dunning
 date: today
 theme: darkly
+image: preview.png
 ---
 
 # Overview
@@ -66,7 +67,7 @@ getGEOSuppFiles("GSE230207")
 
 You should now have a file called `GSE230207_RAW.tar` in a folder called `GSE230207`. This `tar` file is essentially a way of transferring a dataset consisting many separate files into a single download.
 
-:::{.callout-information}
+:::{.callout-note}
 
 The name tar is short for **T**ape **AR**chive and harks back to the early days of computing.
 
@@ -118,6 +119,8 @@ Sample_1
 ```
 
 In other words, we need to create a separate folder for each of the four samples named according to the sample name. The "h5" file should be placed here and all other image data should be in a folder named `spatial`. As the IDs created by GEO are completely arbitrary and not related to the underlying question we will rename to some relating to the sample groups. This labels for this are found in the `title` column of the meta data.
+
+# The code to rename and move files 
 
 First we'll define a few variables
 
@@ -191,6 +194,7 @@ We can check for a particular sample if the correct structure is in place
 ```{r}
 list.files("TME_cold/",recursive = TRUE)
 ```
+# Loading into Seurat
 
 We can load `Seurat` and hopefully it will be able to read the data 🤞
 
