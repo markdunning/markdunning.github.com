@@ -1,0 +1,210 @@
+---
+title: "Reading 10X Spatial Data from GEO into R"
+author: Mark Dunning
+date: today
+theme: darkly
+---
+
+# Overview
+
+Lots of spatial transcriptomics data is becoming available in R, but how do you load it into R for analysis? I will discuss an example of a dataset uploaded to Gene Expression Omnibus
+
+## The data
+
+The dataset I will be looking comes from [Spatial single cell analysis of tumor microenvironment remodeling pattern in primary central nervous system lymphoma](https://pmc.ncbi.nlm.nih.gov/articles/PMC10317840/)
+
+Here is an overview of the study.
+
+![](paper_abstract.jpg) If we are interested in tumour microenvironment we might want to explore the dataset for ourselves and test some hypotheses. The data are available in Gene Expression Onmibus (GEO), but unfortunately not in a form that we can immediately use.
+
+-   [The GEO entry for the dataset](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE230207)
+
+## Packages required
+
+The following packages will handle the download and re-organisation of the data
+
+```{r eval=FALSE}
+if(!require("BiocManager")) install.packages("BiocManager")
+BiocManager::install("GEOquery")
+install.packages("R.utils")
+```
+
+Our eventual aim will be to load the data into `Seurat`, so if you want to start looking at the data you can download this too.
+
+```{r eval=FALSE}
+install.packages("Seurat")
+```
+
+## Downloading using GEOquery
+
+The `GEOquery` package has long been a favourite of mine for downloading data from GEO. However, don't get too excited because it was developed during the days of microarrays and has limited functionality for sequencing datasets. The `getGEO` function will download some meta data about this dataset.
+
+```{r message=FALSE}
+library(GEOquery)
+geo <- getGEO("GSE230207")
+geo
+```
+
+Since `getGEO` is also capable of downloading datasets that comprise multiple different technologies, the result is in the form a list. The particular dataset we want only have one type of data (spatial transcriptomics), so we subset the first item in the list. We can access the meta, or phenotypic data, using the `pData` function.
+
+```{r}
+meta <- pData(geo[[1]])
+meta[,1:5]
+```
+
+The data we are interested have been uploaded as supplementary material, and conveniently `GEOquery` has a function for downloading these data. Depending on the speed of your network connection this may take a while. If the download fails, you might need to increase the `timeout` option in R.
+
+```{r eval=FALSE}
+
+# You may need to un-comment the next line to increase the download timeout
+#options(timeout = 10000)
+
+getGEOSuppFiles("GSE230207")
+```
+
+You should now have a file called `GSE230207_RAW.tar` in a folder called `GSE230207`. This `tar` file is essentially a way of transferring a dataset consisting many separate files into a single download.
+
+::: callout-information
+## Fun fact
+
+The name tar is short for **T**ape **AR**chive and harks back to the early days of computing.
+
+The format and its associated command-line utility were originally developed for archiving files onto magnetic tape drives on Unix systems in the early days of computing.
+
+Although its original purpose was tape backup, the tar utility is now widely used on Unix-like systems (like Linux) as a general-purpose archive format (often called a tarball) to bundle multiple files and directories into a single file for distribution, backup, and transport, regardless of the storage medium.
+:::
+
+```{r}
+file.exists("GSE230207/GSE230207_RAW.tar")
+```
+
+R has a built-in function, `untar` for extracting all the files contained in the archive to a folder of our choosing (`exdir`). We'll just extract to the current working directory. After `untar` has finished we can list the contents of the working directory.
+
+```{r eval=FALSE}
+untar("GSE230207/GSE230207_RAW.tar", exdir = ".")
+list.files("./")
+```
+
+You'll notice that lots of files have appeared, and futhermore they are prefixed by the GEO IDs that we discovered using `GEOquery` (`GSM7192449`, `GSM7192450`, `GSM7192451` and `GSM7192452`)
+
+With `list.files` we can list everything that contains one of these IDs and notice that the files are named very predictably. This means for a given GEO ID we know what files to expect, which will be helpful to organise our files in a way that Seurat expects.
+
+```{r}
+list.files(pattern = "GSM7192449")
+```
+
+```{r}
+list.files(pattern = "GSM7192450")
+```
+
+## Folder structure expected by Seurat
+
+Our eventual goal is to use a function called `Load10X_Spatial` in the `Seurat` package, which data to be organised and named in a very specific manner. For a sample called `Sample_1` it should look like this:-
+
+```{=html}
+<pre>
+
+Sample_1
+├── filtered_feature_bc_matrix.h5/ 
+└── spatial/                   
+    ├── tissue_hires_image.png
+    ├── tissue_lowres_image.png
+    ├── scalefactors_json.json
+    └── tissue_positions_list.csv
+    └── ... + other images files if required
+    
+</pre>
+```
+
+In other words, we need to create a separate folder for each of the four samples named according to the sample name. The "h5" file should be placed here and all other image data should be in a folder named `spatial`. As the IDs created by GEO are completely arbitrary and not related to the underlying question we will rename to some relating to the sample groups. This labels for this are found in the `title` column of the meta data.
+
+First we'll define a few variables
+
+```{r}
+## The GEO IDs that are used in the original naming scheme
+geo_ids <- rownames(meta)
+
+## Get more meaningful names
+titles <- meta$title
+
+## Make new sample names that we will use in Seurat
+new_names <- paste("TME", meta$title, sep = "_")
+
+## These are the common names of the image files we are going to copy (each will be prefixed by a sample name)
+
+required_files <- c("aligned_fiducials.jpg.gz", 
+                   "detected_tissue_image.jpg.gz",
+                   "scalefactors_json.json.gz", 
+                   "tissue_hires_image.png.gz",
+                   "tissue_lowres_image.png.gz",
+                   "tissue_positions_list.csv.gz")
+```
+
+A `for` loop is now used to copy the files for each sample. The code is probably a bit old fashioned, but it seems to do the job and doesn't take too long. 🤷 Maybe at some point I could rewrite using `purrr`....
+
+The code also prints messages to the screen to keep track of the copying and renaming process.
+
+```{r}
+
+## Do this for all samples
+
+for(i in 1:length(geo_ids)){
+  
+  new_dir <- new_names[i]
+  new_spatial_dir <- paste0(new_names[i], "/spatial")
+  
+  message(paste("Creating new folder", new_dir, "to copy files prefixed with", geo_ids[i]))
+  dir.create(new_dir, showWarnings = FALSE)
+  dir.create(new_spatial_dir, showWarnings = FALSE)
+  
+  
+  ## Copy the h5 file
+  
+  h5_file <- paste0(geo_ids[i], "_",titles[i],".h5")
+  new_h5_file <- paste0(new_dir, "/filtered_feature_bc_matrix.h5")
+  message(paste("Copying h5 file", h5_file, "to", new_h5_file))
+  file.copy(h5_file, new_h5_file)
+  
+  ## Copy all the image files
+  
+  for(j in 1:length(required_files)){
+    from <- paste0(geo_ids[i], "_", required_files[j])
+    to <- paste0(new_names[i], "/spatial/", required_files[j])
+      
+    message(paste("Copying", from, "to", to))
+    
+    file.copy(from, to)
+    R.utils::gunzip(to, skip=TRUE)
+  }
+
+}
+
+
+```
+
+We can check for a particular sample if the correct structure is in place
+
+```{r}
+list.files("TME_cold/",recursive = TRUE)
+```
+
+We can load `Seurat` and hopefully it will be able to read the data 🤞
+
+```{r}
+library(Seurat)
+tme_cold <- Load10X_Spatial("TME_cold/")
+```
+
+Success! 🎉 Of course, there is much that we can do with these data and this will be a topic for another time. As a quick preview we can perform QC and look at distribution of counts
+
+```{r}
+VlnPlot(tme_cold, features = "nCount_Spatial", pt.size = 0.1) + NoLegend()
+```
+
+And what we will be interested in is how these counts are distributed across the tissue.
+
+
+```{r}
+SpatialFeaturePlot(tme_cold, features = "nCount_Spatial")
+```
+More next time!
