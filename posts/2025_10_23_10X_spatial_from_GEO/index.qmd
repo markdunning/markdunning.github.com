@@ -15,7 +15,9 @@ The dataset I will be looking comes from [Spatial single cell analysis of tumor 
 
 Here is an overview of the study.
 
-![](paper_abstract.jpg) If we are interested in tumour microenvironment we might want to explore the dataset for ourselves and test some hypotheses. The data are available in Gene Expression Onmibus (GEO), but unfortunately not in a form that we can immediately use.
+![](paper_abstract.jpg) 
+
+If we are interested in tumour microenvironment we might want to explore the dataset for ourselves and test some hypotheses. The data are available in Gene Expression Onmibus (GEO), but unfortunately not in a form that we can immediately use.
 
 -   [The GEO entry for the dataset](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE230207)
 
@@ -64,8 +66,7 @@ getGEOSuppFiles("GSE230207")
 
 You should now have a file called `GSE230207_RAW.tar` in a folder called `GSE230207`. This `tar` file is essentially a way of transferring a dataset consisting many separate files into a single download.
 
-::: callout-information
-## Fun fact
+:::{.callout-information}
 
 The name tar is short for **T**ape **AR**chive and harks back to the early days of computing.
 
@@ -144,7 +145,7 @@ A `for` loop is now used to copy the files for each sample. The code is probably
 
 The code also prints messages to the screen to keep track of the copying and renaming process.
 
-```{r}
+```{r message=FALSE}
 
 ## Do this for all samples
 
@@ -171,10 +172,13 @@ for(i in 1:length(geo_ids)){
     from <- paste0(geo_ids[i], "_", required_files[j])
     to <- paste0(new_names[i], "/spatial/", required_files[j])
       
-    message(paste("Copying", from, "to", to))
-    
-    file.copy(from, to)
-    R.utils::gunzip(to, skip=TRUE)
+    ## Check if extracted file exists, and use gunzip if not
+    if(!file.exists(gsub(".gz", "", to))) {
+      message(paste("Copying", from, "to", to))
+
+      file.copy(from, to)
+      R.utils::gunzip(to)
+    } else (paste(to, "has already been copied"))
   }
 
 }
@@ -197,14 +201,14 @@ tme_cold <- Load10X_Spatial("TME_cold/")
 
 Success! 🎉 Of course, there is much that we can do with these data and this will be a topic for another time. As a quick preview we can perform QC and look at distribution of counts
 
-```{r}
+```{r warning=FALSE,message=FALSE}
 VlnPlot(tme_cold, features = "nCount_Spatial", pt.size = 0.1) + NoLegend()
 ```
 
 And what we will be interested in is how these counts are distributed across the tissue.
 
 
-```{r}
+```{r warning=FALSE,message=FALSE}
 SpatialFeaturePlot(tme_cold, features = "nCount_Spatial")
 ```
 More next time!
