@@ -12,9 +12,13 @@ Performing differential expression on Bulk RNA-seq data using DESeq2
 
 ## Quick Start
 
+This section follows on from [Part 1](/training/bulk-rnaseq_part1/index.html) where we saw how to import raw RNA-seq counts into `DESeq2` and perform some quality assessment. Several packages are required, which can be downloaded with this code:-
+
 ```{r eval=FALSE}
 source("https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/install_bioc_packages.R")
 ```
+
+The following will also assume you have created a `DESeq2` object in a folder called `Robjects` in your working directory. This can be downloaded with the following.
 
 ```{r eval=FALSE}
 dir.create("Robjects/",showWarnings = FALSE)
@@ -23,13 +27,13 @@ download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/he
 
 # Differential expression with `DESeq2`
 
-Now that we are happy that we have normalised the data and that the quality looks good, we can proceed to test for differentially expressed genes. There are a number of packages to analyse RNA-Seq data. Most people use `DESeq2`, `edgeR` or `limma`. We will use `DESeq2` for the rest of this practical.
+Now that we are happy that the data quality looks good, we can proceed to test for differentially expressed genes. There are a number of packages to analyse RNA-Seq data. Most people use `DESeq2`, `edgeR` or `limma`. We will use `DESeq2` for the rest of this practical.
 
 ## Recap of pre-processing
 
 The previous section walked-through the pre-processing and transformation of the count data. Here, for completeness, we list the minimal steps required to process the data prior to differential expression analysis.
 
-Note that although we spent some time looking at the quality of our data , these steps are not strictly *necessary* prior to performing differential expression so are not shown here for the sake of brecvity. Remember, `DESeq2` [requires raw counts](http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#why-un-normalized-counts) so the `vst` transformation is not shown as part of this basic protocol.
+Note that although we spent some time looking at the quality of our data , these steps are not strictly *necessary* prior to performing differential expression so are not shown here for the sake of brevity. Remember, `DESeq2` [requires raw counts](http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#why-un-normalized-counts) so the `vst` transformation is not shown as part of this basic protocol.
 
 ```{r eval=FALSE}
 library(DESeq2)

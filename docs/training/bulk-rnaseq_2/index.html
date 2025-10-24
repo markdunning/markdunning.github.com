@@ -262,9 +262,11 @@ window.Quarto = {
 <p>Performing differential expression on Bulk RNA-seq data using DESeq2</p>
 <section id="quick-start" class="level2">
 <h2 class="anchored" data-anchor-id="quick-start">Quick Start</h2>
+<p>This section follows on from <a href="../..\training/bulk-rnaseq_part1/index.html">Part 1</a> where we saw how to import raw RNA-seq counts into <code>DESeq2</code> and perform some quality assessment. Several packages are required, which can be downloaded with this code:-</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/install_bioc_packages.R"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>The following will also assume you have created a <code>DESeq2</code> object in a folder called <code>Robjects</code> in your working directory. This can be downloaded with the following.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"Robjects/"</span>,<span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/files/training/bulk_rnaseq/dds.rds"</span>,<span class="at">destfile =</span> <span class="st">"Robjects/dds.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -273,11 +275,11 @@ window.Quarto = {
 </section>
 <section id="differential-expression-with-deseq2" class="level1">
 <h1>Differential expression with <code>DESeq2</code></h1>
-<p>Now that we are happy that we have normalised the data and that the quality looks good, we can proceed to test for differentially expressed genes. There are a number of packages to analyse RNA-Seq data. Most people use <code>DESeq2</code>, <code>edgeR</code> or <code>limma</code>. We will use <code>DESeq2</code> for the rest of this practical.</p>
+<p>Now that we are happy that the data quality looks good, we can proceed to test for differentially expressed genes. There are a number of packages to analyse RNA-Seq data. Most people use <code>DESeq2</code>, <code>edgeR</code> or <code>limma</code>. We will use <code>DESeq2</code> for the rest of this practical.</p>
 <section id="recap-of-pre-processing" class="level2">
 <h2 class="anchored" data-anchor-id="recap-of-pre-processing">Recap of pre-processing</h2>
 <p>The previous section walked-through the pre-processing and transformation of the count data. Here, for completeness, we list the minimal steps required to process the data prior to differential expression analysis.</p>
-<p>Note that although we spent some time looking at the quality of our data , these steps are not strictly <em>necessary</em> prior to performing differential expression so are not shown here for the sake of brecvity. Remember, <code>DESeq2</code> <a href="http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#why-un-normalized-counts">requires raw counts</a> so the <code>vst</code> transformation is not shown as part of this basic protocol.</p>
+<p>Note that although we spent some time looking at the quality of our data , these steps are not strictly <em>necessary</em> prior to performing differential expression so are not shown here for the sake of brevity. Remember, <code>DESeq2</code> <a href="http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#why-un-normalized-counts">requires raw counts</a> so the <code>vst</code> transformation is not shown as part of this basic protocol.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(DESeq2)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>

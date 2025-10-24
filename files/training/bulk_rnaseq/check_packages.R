@@ -16,11 +16,6 @@ if (require(readr,quietly = TRUE)) {
 }
 
 
-if (require(tximport,quietly = TRUE)) {
-  message("The tximport package has been installed")
-} else {
-  message("The tximport package has NOT been installed. Please try typing the command 'BiocManager::install('tximport')' again")
-} 
 
 if (suppressPackageStartupMessages(require(DESeq2,quietly = TRUE))) {
   message("The DESeq2 package has been installed")
