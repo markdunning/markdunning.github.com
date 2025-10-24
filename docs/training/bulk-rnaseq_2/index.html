@@ -314,17 +314,17 @@ window.Quarto = {
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colData</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>DataFrame with 9 rows and 5 columns
-                     Run condition        Name Replicate     Treated
-             &lt;character&gt;  &lt;factor&gt; &lt;character&gt; &lt;integer&gt; &lt;character&gt;
-1_CTR_BC_2   1_CTR_BC_2        CTR       CTR_1         1           N
-2_TGF_BC_4    2_TGF_BC_4       TGF       TGF_1         1           Y
-3_IR_BC_5      3_IR_BC_5       IR         IR_1         1           Y
-4_CTR_BC_6    4_CTR_BC_6       CTR       CTR_2         2           N
-5_TGF_BC_7    5_TGF_BC_7       TGF       TGF_2         2           Y
-6_IR_BC_12    6_IR_BC_12       IR         IR_2         2           Y
-7_CTR_BC_13 7_CTR_BC_13        CTR       CTR_3         3           N
-8_TGF_BC_14  8_TGF_BC_14       TGF       TGF_3         3           Y
-9_IR_BC_15    9_IR_BC_15       IR         IR_3         3           Y</code></pre>
+                    Run condition        Name Replicate     Treated
+            &lt;character&gt;  &lt;factor&gt; &lt;character&gt; &lt;integer&gt; &lt;character&gt;
+1_CTR_BC_2   1_CTR_BC_2       CTR       CTR_1         1           N
+2_TGF_BC_4   2_TGF_BC_4       TGF       TGF_1         1           Y
+3_IR_BC_5     3_IR_BC_5       IR         IR_1         1           Y
+4_CTR_BC_6   4_CTR_BC_6       CTR       CTR_2         2           N
+5_TGF_BC_7   5_TGF_BC_7       TGF       TGF_2         2           Y
+6_IR_BC_12   6_IR_BC_12       IR         IR_2         2           Y
+7_CTR_BC_13 7_CTR_BC_13       CTR       CTR_3         3           N
+8_TGF_BC_14 8_TGF_BC_14       TGF       TGF_3         3           Y
+9_IR_BC_15   9_IR_BC_15       IR         IR_3         3           Y</code></pre>
 </div>
 </div>
 <p>The counts that we have obtained via sequencing are subject to random sources of variation. The purpose of differential expression is to determine if potential sources of biological variation (e.g.&nbsp;counts observed from different sample groups) are greater than random noise.</p>
@@ -974,45 +974,71 @@ ENSG00000284748          NA</code></pre>
 <li>plotting the counts for these genes</li>
 </ol></li>
 </ul>
-</section>
-<section id="the-volcano-plot" class="level2">
-<h2 class="anchored" data-anchor-id="the-volcano-plot">The volcano plot</h2>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>We already have the differential expression statistics for the contrast <code>TGF</code> vs <code>CTR</code> and have just added gene names (<code>SYMBOL</code>) into the <code>results_annotated</code>. We can therefore filter our results to rows that match any of these genes of interest.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EnhancedVolcano)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: ggplot2</code></pre>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>genes_of_interest <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"COL1A1"</span>, <span class="st">"COL1A2"</span>, <span class="st">"COL3A1"</span>)</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a><span class="do">## To make the output a bit cleaner I will select a few columns of interest. </span></span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(results_annotated, SYMBOL <span class="sc">%in%</span> genes_of_interest) <span class="sc">%&gt;%</span> </span>
+<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(log2FoldChange, padj, SYMBOL)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  log2FoldChange         padj SYMBOL
+1      1.4077294 4.902831e-44 COL1A1
+2      0.4442566 6.458329e-08 COL1A2
+3      0.3552021 9.398496e-05 COL3A1</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: ggrepel</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="fu">EnhancedVolcano</span>(results_annotated, <span class="at">x =</span> <span class="st">"log2FoldChange"</span>, <span class="at">y =</span> <span class="st">"padj"</span>, <span class="at">lab =</span> results_annotated<span class="sc">$</span>SYMBOL)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
-ℹ Please use `linewidth` instead.
-ℹ The deprecated feature was likely used in the EnhancedVolcano package.
-  Please report the issue to the authors.</code></pre>
+<p>Indeed they all are significant with a positive fold-change indicating higher expression in <code>TGF</code>-treated samples. Plotting the counts for genes requires a bit more thought, as the following does not work as we might hope</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotCounts</span>(dds, <span class="st">"COL1A1"</span>, <span class="at">intgroup =</span> <span class="st">"condition"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: The `size` argument of `element_line()` is deprecated as of ggplot2 3.4.0.
-ℹ Please use the `linewidth` argument instead.
-ℹ The deprecated feature was likely used in the EnhancedVolcano package.
-  Please report the issue to the authors.</code></pre>
+<pre>
+`Error in counts(dds, normalized = normalized, replaced = replaced)[gene,  : 
+  subscript out of bounds`
+</pre>
+<p>The error is not particularly helpful, but it basically means that it cannot find counts for <code>COL1A1</code> in the <code>dds</code> object. Although we have added gene names to the analysis, they only appear in our results table and the gene counts are still referred to by ensembl IDS.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>ens_ids <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_annotated, SYMBOL <span class="sc">%in%</span> genes_of_interest) <span class="sc">%&gt;%</span> </span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(row)</span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>ens_ids</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "ENSG00000108821" "ENSG00000164692" "ENSG00000168542"</code></pre>
 </div>
+</div>
+<p>This code works, but is a bit clunky. N.B. <code>par(mfrow=c(1,3))</code> is the base R plotting way of making a panel with one row and three columns</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>))</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plotCounts</span>(dds, ens_ids[<span class="dv">1</span>], <span class="at">intgroup =</span> <span class="st">"condition"</span>)</span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plotCounts</span>(dds, ens_ids[<span class="dv">2</span>], <span class="at">intgroup =</span> <span class="st">"condition"</span>)</span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plotCounts</span>(dds, ens_ids[<span class="dv">3</span>], <span class="at">intgroup =</span> <span class="st">"condition"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-36-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/unnamed-chunk-39-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<section id="exporting-normalized-counts" class="level3">
-<h3 class="anchored" data-anchor-id="exporting-normalized-counts">Exporting normalized counts</h3>
-<p>The <code>DESeq</code> workflow applies <em>median of ratios normalization</em> that accounts for differences in sequencing depth between samples. The user does not usually need to run this step. However, if you want a matrix of counts for some application outside of Bioconductor the values can be extracted from the <code>dds</code> object.</p>
+<p>To do a nicer job we can use <code>ggplot2</code> after some data manipulation. The first step is to get normalized counts for all genes after explicitly using the <code>estimateSizeFactors</code>. We don’t normally need to use this function as it is part of the <code>DESeq</code> workflow.</p>
+<p>The results is a data frame with ensembl IDs in the rows.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactors</span>(dds) </span>
-<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>countMatrix <span class="ot">&lt;-</span><span class="fu">counts</span>(dds, <span class="at">normalized=</span><span class="cn">TRUE</span>) </span>
-<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(countMatrix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactors</span>(dds)</span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>norm_counts <span class="ot">&lt;-</span> <span class="fu">counts</span>(dds, <span class="at">normalized =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(norm_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                 1_CTR_BC_2  2_TGF_BC_4  3_IR_BC_5  4_CTR_BC_6   5_TGF_BC_7
 ENSG00000000003 1496.753711 1309.582900 1503.06012 1550.428865 1326.3138781
@@ -1029,7 +1055,158 @@ ENSG00000000457  622.515941   791.26495  557.148855  641.875643
 ENSG00000000460  125.198737   258.13570  271.527857  129.806062
 ENSG00000000938    2.318495    20.01869    3.758171    8.176760</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(countMatrix,<span class="at">file=</span><span class="st">"normalized_counts.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can filter these counts by the ensembl IDs we identified for these genes; provided that the ensembl ID appears as a column name.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>norm_counts <span class="sc">%&gt;%</span> </span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>  tibble<span class="sc">:::</span><span class="fu">rownames_to_column</span>(<span class="st">"row"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(row <span class="sc">%in%</span> ens_ids)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              row X1_CTR_BC_2 X2_TGF_BC_4 X3_IR_BC_5 X4_CTR_BC_6 X5_TGF_BC_7
+1 ENSG00000108821    250216.6    646241.5  158906.61   241050.74    530262.2
+2 ENSG00000164692    431598.7    556886.8  344485.25   399621.22    498829.0
+3 ENSG00000168542    100729.0    118220.5   46646.38    88590.09    109123.8
+  X6_IR_BC_12 X7_CTR_BC_13 X8_TGF_BC_14 X9_IR_BC_15
+1   159665.49    193788.27     641086.7   177323.26
+2   336490.15    354051.56     556982.6   353092.93
+3    47357.58     79414.13     116412.2    43879.56</code></pre>
+</div>
+</div>
+<p>However, these are not in the tidy form that <code>ggplot2</code> requires so we have to reshape the data using <code>tidyr</code>’s <code>pivot_longer</code> function. Turning the counts into a data frame introduced an “X” at the start of the column names, so we better remove that.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>norm_counts <span class="sc">%&gt;%</span> </span>
+<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb78-3"><a href="#cb78-3" aria-hidden="true" tabindex="-1"></a>  tibble<span class="sc">:::</span><span class="fu">rownames_to_column</span>(<span class="st">"row"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb78-4"><a href="#cb78-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(row <span class="sc">%in%</span> ens_ids) <span class="sc">%&gt;%</span> </span>
+<span id="cb78-5"><a href="#cb78-5" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">-</span>row, <span class="at">names_to =</span> <span class="st">"Run"</span>, <span class="at">values_to =</span> <span class="st">"count"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb78-6"><a href="#cb78-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Run =</span> stringr<span class="sc">::</span><span class="fu">str_remove_all</span>(Run, <span class="st">"X"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 27 × 3
+   row             Run           count
+   &lt;chr&gt;           &lt;chr&gt;         &lt;dbl&gt;
+ 1 ENSG00000108821 1_CTR_BC_2  250217.
+ 2 ENSG00000108821 2_TGF_BC_4  646241.
+ 3 ENSG00000108821 3_IR_BC_5   158907.
+ 4 ENSG00000108821 4_CTR_BC_6  241051.
+ 5 ENSG00000108821 5_TGF_BC_7  530262.
+ 6 ENSG00000108821 6_IR_BC_12  159665.
+ 7 ENSG00000108821 7_CTR_BC_13 193788.
+ 8 ENSG00000108821 8_TGF_BC_14 641087.
+ 9 ENSG00000108821 9_IR_BC_15  177323.
+10 ENSG00000164692 1_CTR_BC_2  431599.
+# ℹ 17 more rows</code></pre>
+</div>
+</div>
+<p>Now we have the counts in a tidy form, but we don’t know the sample groupings. The groupings can be obtained from the <code>colData</code></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>sampleInfo <span class="ot">&lt;-</span> <span class="fu">colData</span>(dds) <span class="sc">%&gt;%</span> data.frame</span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-3"><a href="#cb80-3" aria-hidden="true" tabindex="-1"></a>norm_counts <span class="sc">%&gt;%</span> </span>
+<span id="cb80-4"><a href="#cb80-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb80-5"><a href="#cb80-5" aria-hidden="true" tabindex="-1"></a>  tibble<span class="sc">:::</span><span class="fu">rownames_to_column</span>(<span class="st">"row"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb80-6"><a href="#cb80-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(row <span class="sc">%in%</span> ens_ids) <span class="sc">%&gt;%</span> </span>
+<span id="cb80-7"><a href="#cb80-7" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">-</span>row, <span class="at">names_to =</span> <span class="st">"Run"</span>, <span class="at">values_to =</span> <span class="st">"count"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb80-8"><a href="#cb80-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Run =</span> stringr<span class="sc">::</span><span class="fu">str_remove_all</span>(Run, <span class="st">"X"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb80-9"><a href="#cb80-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(sampleInfo, <span class="at">by =</span> <span class="st">"Run"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 27 × 8
+   row             Run        count condition Name  Replicate Treated sizeFactor
+   &lt;chr&gt;           &lt;chr&gt;      &lt;dbl&gt; &lt;fct&gt;     &lt;chr&gt;     &lt;int&gt; &lt;chr&gt;        &lt;dbl&gt;
+ 1 ENSG00000108821 1_CTR_BC… 2.50e5 CTR       CTR_1         1 N            1.05 
+ 2 ENSG00000108821 2_TGF_BC… 6.46e5 TGF       TGF_1         1 Y            1.18 
+ 3 ENSG00000108821 3_IR_BC_5 1.59e5 IR        IR_1          1 Y            0.893
+ 4 ENSG00000108821 4_CTR_BC… 2.41e5 CTR       CTR_2         2 N            1.10 
+ 5 ENSG00000108821 5_TGF_BC… 5.30e5 TGF       TGF_2         2 Y            1.05 
+ 6 ENSG00000108821 6_IR_BC_… 1.60e5 IR        IR_2          2 Y            0.863
+ 7 ENSG00000108821 7_CTR_BC… 1.94e5 CTR       CTR_3         3 N            0.949
+ 8 ENSG00000108821 8_TGF_BC… 6.41e5 TGF       TGF_3         3 Y            1.06 
+ 9 ENSG00000108821 9_IR_BC_… 1.77e5 IR        IR_3          3 Y            0.978
+10 ENSG00000164692 1_CTR_BC… 4.32e5 CTR       CTR_1         1 N            1.05 
+# ℹ 17 more rows</code></pre>
+</div>
+</div>
+<p>Finally, we can make the plot of count against condition</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb82-2"><a href="#cb82-2" aria-hidden="true" tabindex="-1"></a>norm_counts <span class="sc">%&gt;%</span> </span>
+<span id="cb82-3"><a href="#cb82-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb82-4"><a href="#cb82-4" aria-hidden="true" tabindex="-1"></a>  tibble<span class="sc">:::</span><span class="fu">rownames_to_column</span>(<span class="st">"row"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb82-5"><a href="#cb82-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(row <span class="sc">%in%</span> ens_ids) <span class="sc">%&gt;%</span> </span>
+<span id="cb82-6"><a href="#cb82-6" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">-</span>row, <span class="at">names_to =</span> <span class="st">"Run"</span>, <span class="at">values_to =</span> <span class="st">"count"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb82-7"><a href="#cb82-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Run =</span> stringr<span class="sc">::</span><span class="fu">str_remove_all</span>(Run, <span class="st">"X"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb82-8"><a href="#cb82-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(sampleInfo, <span class="at">by =</span> <span class="st">"Run"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb82-9"><a href="#cb82-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> condition, <span class="at">y =</span> count, <span class="at">col =</span> condition)) <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="at">width=</span><span class="fl">0.1</span>) <span class="sc">+</span> <span class="fu">facet_wrap</span>(<span class="sc">~</span>row)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-44-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>But what are the most recognisable names for these genes? We could use the <code>results_annotated</code> table that we already made and we could then <code>facet</code> using the <code>SYMBOL</code> which will print the gene names automatically.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>norm_counts <span class="sc">%&gt;%</span> </span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>  tibble<span class="sc">:::</span><span class="fu">rownames_to_column</span>(<span class="st">"row"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(row <span class="sc">%in%</span> ens_ids) <span class="sc">%&gt;%</span> </span>
+<span id="cb83-5"><a href="#cb83-5" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="sc">-</span>row, <span class="at">names_to =</span> <span class="st">"Run"</span>, <span class="at">values_to =</span> <span class="st">"count"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb83-6"><a href="#cb83-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Run =</span> stringr<span class="sc">::</span><span class="fu">str_remove_all</span>(Run, <span class="st">"X"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb83-7"><a href="#cb83-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(sampleInfo, <span class="at">by =</span> <span class="st">"Run"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb83-8"><a href="#cb83-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(results_annotated, <span class="at">by =</span> <span class="st">"row"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb83-9"><a href="#cb83-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> condition, <span class="at">y =</span> count, <span class="at">col =</span> condition)) <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="at">width=</span><span class="fl">0.1</span>) <span class="sc">+</span> <span class="fu">facet_wrap</span>(<span class="sc">~</span>SYMBOL)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-45-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Admittedly, that <em>was</em> quite a bit of effort and would have been simpler with a <code>tidybulk</code> approach from the start. If you were interested in lots of gene sets like <code>genes_of_interest</code> then it would we worth making the code into a function that could be run without having to repeat the code all the time.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="the-volcano-plot" class="level2">
+<h2 class="anchored" data-anchor-id="the-volcano-plot">The volcano plot</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EnhancedVolcano)</span>
+<span id="cb84-2"><a href="#cb84-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb84-3"><a href="#cb84-3" aria-hidden="true" tabindex="-1"></a><span class="fu">EnhancedVolcano</span>(results_annotated, <span class="at">x =</span> <span class="st">"log2FoldChange"</span>, <span class="at">y =</span> <span class="st">"padj"</span>, <span class="at">lab =</span> results_annotated<span class="sc">$</span>SYMBOL)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-46-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<section id="exporting-normalized-counts" class="level3">
+<h3 class="anchored" data-anchor-id="exporting-normalized-counts">Exporting normalized counts</h3>
+<p>The <code>DESeq</code> workflow applies <em>median of ratios normalization</em> that accounts for differences in sequencing depth between samples. The user does not usually need to run this step. However, if you want a matrix of counts for some application outside of Bioconductor the values can be extracted from the <code>dds</code> object.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactors</span>(dds) </span>
+<span id="cb85-2"><a href="#cb85-2" aria-hidden="true" tabindex="-1"></a>countMatrix <span class="ot">&lt;-</span><span class="fu">counts</span>(dds, <span class="at">normalized=</span><span class="cn">TRUE</span>) </span>
+<span id="cb85-3"><a href="#cb85-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(countMatrix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 1_CTR_BC_2  2_TGF_BC_4  3_IR_BC_5  4_CTR_BC_6   5_TGF_BC_7
+ENSG00000000003 1496.753711 1309.582900 1503.06012 1550.428865 1326.3138781
+ENSG00000000005    0.000000    0.000000    0.00000    0.000000    0.0000000
+ENSG00000000419 1681.596633 1502.591885 2089.94798 1645.965855 1826.4150250
+ENSG00000000457  661.642869  522.309405  673.12901  666.939177  629.4048655
+ENSG00000000460  233.186455  261.577968  129.92174  203.812245  242.4444723
+ENSG00000000938    9.479124    4.232653   12.32016    5.459257    0.9507626
+                 6_IR_BC_12 7_CTR_BC_13 8_TGF_BC_14  9_IR_BC_15
+ENSG00000000003 1465.288919  1639.42512 1287.173576 1297.038521
+ENSG00000000005    0.000000     0.00000    0.000000    1.022095
+ENSG00000000419 2058.823670  1893.34636 1392.402365 2023.748047
+ENSG00000000457  622.515941   791.26495  557.148855  641.875643
+ENSG00000000460  125.198737   258.13570  271.527857  129.806062
+ENSG00000000938    2.318495    20.01869    3.758171    8.176760</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb87"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(countMatrix,<span class="at">file=</span><span class="st">"normalized_counts.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
@@ -1038,11 +1215,11 @@ ENSG00000000938    2.318495    20.01869    3.758171    8.176760</code></pre>
 <h1>Full DESeq workflow</h1>
 <p>The median of ratios normalisation method is employed in DESeq2 to account for <em>sequencing depth</em> and <em>RNA composition</em>. Let’s go through a short worked example (courtesy of <a href="here">https://hbctraining.github.io/DGE_workshop/lessons/02_DGE_count_normalization.html</a>) to explain the process.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="do">## create a small example matrix of "counts"</span></span>
-<span id="cb77-2"><a href="#cb77-2" aria-hidden="true" tabindex="-1"></a>test_data <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1489</span>,<span class="dv">22</span>,<span class="dv">793</span>,<span class="dv">76</span>,<span class="dv">521</span>,<span class="dv">906</span>,<span class="dv">13</span>,<span class="dv">410</span>,<span class="dv">42</span>,<span class="dv">1196</span>),<span class="at">nrow=</span><span class="dv">5</span>)</span>
-<span id="cb77-3"><a href="#cb77-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(test_data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"EF2A"</span>,<span class="st">"ABCD1"</span>,<span class="st">"MEFV"</span>,<span class="st">"BAG1"</span>,<span class="st">"MOV10"</span>)</span>
-<span id="cb77-4"><a href="#cb77-4" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(test_data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"SampleA"</span>,<span class="st">"SampleB"</span>)</span>
-<span id="cb77-5"><a href="#cb77-5" aria-hidden="true" tabindex="-1"></a>test_data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="do">## create a small example matrix of "counts"</span></span>
+<span id="cb88-2"><a href="#cb88-2" aria-hidden="true" tabindex="-1"></a>test_data <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1489</span>,<span class="dv">22</span>,<span class="dv">793</span>,<span class="dv">76</span>,<span class="dv">521</span>,<span class="dv">906</span>,<span class="dv">13</span>,<span class="dv">410</span>,<span class="dv">42</span>,<span class="dv">1196</span>),<span class="at">nrow=</span><span class="dv">5</span>)</span>
+<span id="cb88-3"><a href="#cb88-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(test_data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"EF2A"</span>,<span class="st">"ABCD1"</span>,<span class="st">"MEFV"</span>,<span class="st">"BAG1"</span>,<span class="st">"MOV10"</span>)</span>
+<span id="cb88-4"><a href="#cb88-4" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(test_data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"SampleA"</span>,<span class="st">"SampleB"</span>)</span>
+<span id="cb88-5"><a href="#cb88-5" aria-hidden="true" tabindex="-1"></a>test_data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      SampleA SampleB
 EF2A     1489     906
@@ -1054,8 +1231,8 @@ MOV10     521    1196</code></pre>
 </div>
 <p>Firstly, an “average” or reference sample is created that represents the counts on a typical sample in the dataset. The <em>geometric mean</em> is used rather than the <em>arithmetic</em> mean. In other words the individual counts are multiplied rather than summed and the measure should be more robust to outliers.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb79"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a>psuedo_ref <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">rowProds</span>(test_data))</span>
-<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a>psuedo_ref</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a>psuedo_ref <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">rowProds</span>(test_data))</span>
+<span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a>psuedo_ref</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      EF2A      ABCD1       MEFV       BAG1      MOV10 
 1161.47923   16.91153  570.20172   56.49779  789.37697 </code></pre>
@@ -1063,7 +1240,7 @@ MOV10     521    1196</code></pre>
 </div>
 <p>A ratios of sample to “psuedo reference” are then calculated for each gene. We are assuming that most genes are not changing dramatically, so this ratio should be somewhere around 1.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a>test_data<span class="sc">/</span>psuedo_ref</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>test_data<span class="sc">/</span>psuedo_ref</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>        SampleA   SampleB
 EF2A  1.2819859 0.7800398
@@ -1075,8 +1252,8 @@ MOV10 0.6600142 1.5151189</code></pre>
 </div>
 <p><code>DESeq2</code> defines size factors as being the <em>median</em> of these ratios for each sample (median is used so any outlier genes will not affect the normalisation).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>norm_factors <span class="ot">&lt;-</span> <span class="fu">colMedians</span>(test_data<span class="sc">/</span>psuedo_ref)</span>
-<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>norm_factors</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>norm_factors <span class="ot">&lt;-</span> <span class="fu">colMedians</span>(test_data<span class="sc">/</span>psuedo_ref)</span>
+<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a>norm_factors</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  SampleA   SampleB 
 1.3008873 0.7687061 </code></pre>
@@ -1084,7 +1261,7 @@ MOV10 0.6600142 1.5151189</code></pre>
 </div>
 <p>Individual samples can then normalised by dividing the count for each gene by the corresponding normalization factor.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>test_data[,<span class="dv">1</span>] <span class="sc">/</span> norm_factors[<span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>test_data[,<span class="dv">1</span>] <span class="sc">/</span> norm_factors[<span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      EF2A      ABCD1       MEFV       BAG1      MOV10 
 1144.60340   16.91153  609.58395   58.42166  400.49589 </code></pre>
@@ -1092,7 +1269,7 @@ MOV10 0.6600142 1.5151189</code></pre>
 </div>
 <p>and for the second sample…</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb87"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true" tabindex="-1"></a>test_data[,<span class="dv">2</span>] <span class="sc">/</span> norm_factors[<span class="dv">2</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a>test_data[,<span class="dv">2</span>] <span class="sc">/</span> norm_factors[<span class="dv">2</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      EF2A      ABCD1       MEFV       BAG1      MOV10 
 1178.60387   16.91153  533.36378   54.63727 1555.86118 </code></pre>
@@ -1100,8 +1277,8 @@ MOV10 0.6600142 1.5151189</code></pre>
 </div>
 <p>The size factors for each sample in our dataset can be calculated using the <code>estimateSizeFactorsForMatrix</code> function.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb89"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a>sf <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactorsForMatrix</span>(<span class="fu">assay</span>(dds))</span>
-<span id="cb89-2"><a href="#cb89-2" aria-hidden="true" tabindex="-1"></a>sf</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb100"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a>sf <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactorsForMatrix</span>(<span class="fu">assay</span>(dds))</span>
+<span id="cb100-2"><a href="#cb100-2" aria-hidden="true" tabindex="-1"></a>sf</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> 1_CTR_BC_2  2_TGF_BC_4   3_IR_BC_5  4_CTR_BC_6  5_TGF_BC_7  6_IR_BC_12 
   1.0549498   1.1812922   0.8928452   1.0990507   1.0517872   0.8626285 
@@ -1111,17 +1288,17 @@ MOV10 0.6600142 1.5151189</code></pre>
 </div>
 <p>The estimation of these factors can also take gene-lengths into account, and this is implemented in the <code>estimateSizeFactors</code> function. Extra normalization factor data is added to the <code>dds</code> object.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb91"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactors</span>(dds)</span>
-<span id="cb91-2"><a href="#cb91-2" aria-hidden="true" tabindex="-1"></a>dds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb102"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateSizeFactors</span>(dds)</span>
+<span id="cb102-2"><a href="#cb102-2" aria-hidden="true" tabindex="-1"></a>dds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>In preparation for differential expression DESeq2 also need a reliable estimate of the variability of each gene; which it calls <em>dispersion</em>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateDispersions</span>(dds)</span>
-<span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a>dds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb103"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">estimateDispersions</span>(dds)</span>
+<span id="cb103-2"><a href="#cb103-2" aria-hidden="true" tabindex="-1"></a>dds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>A statistical test can then be applied. As the data are count-based and not normally-distributed a t-test would not be appropriate. Most tests are based on a <em>Poisson</em> or <em>negative-binomial</em> distribution; negative binomial in the case of <code>DESeq2</code>. Although you might not be familiar with the negative binomial, the results should be in a familiar form with fold-changes and p-values for each gene.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb93"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">nbinomWaldTest</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb104"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">nbinomWaldTest</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>It may seem like there is a lot to remember, but fortunately there is one convenient function that will apply the three steps (<code>DESeq</code>). The messages printed serve as reminders of the steps included.</p>
 

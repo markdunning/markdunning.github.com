@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Mark Dunning">
-<meta name="dcterms.date" content="2025-10-22">
+<meta name="dcterms.date" content="2025-10-23">
 
 <title>Introduction to RNA-Seq - Part 1 – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
 <style>
@@ -250,7 +250,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 22, 2025</p>
+      <p class="date">October 23, 2025</p>
     </div>
   </div>
   
@@ -500,16 +500,16 @@ Note
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>sampleInfo <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"meta_data/sampleInfo.csv"</span>)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>sampleInfo</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>           Run condition  Name Replicate Treated
-1  1_CTR_BC_2        CTR CTR_1         1       N
-2   2_TGF_BC_4       TGF TGF_1         1       Y
-3    3_IR_BC_5        IR  IR_1         1       Y
-4   4_CTR_BC_6       CTR CTR_2         2       N
-5   5_TGF_BC_7       TGF TGF_2         2       Y
-6   6_IR_BC_12        IR  IR_2         2       Y
-7 7_CTR_BC_13        ctr CTR_3         3       N
-8  8_TGF_BC_14       tgf TGF_3         3       Y
-9   9_IR_BC_15        ir  IR_3         3       Y</code></pre>
+<pre><code>          Run condition  Name Replicate Treated
+1  1_CTR_BC_2       CTR CTR_1         1       N
+2  2_TGF_BC_4       TGF TGF_1         1       Y
+3   3_IR_BC_5        IR  IR_1         1       Y
+4  4_CTR_BC_6       CTR CTR_2         2       N
+5  5_TGF_BC_7       TGF TGF_2         2       Y
+6  6_IR_BC_12        IR  IR_2         2       Y
+7 7_CTR_BC_13       ctr CTR_3         3       N
+8 8_TGF_BC_14       tgf TGF_3         3       Y
+9  9_IR_BC_15        ir  IR_3         3       Y</code></pre>
 </div>
 </div>
 <p>If you want to know how to create such a data frame based on the column names alone (i.e.&nbsp;if no csv file was provided), read the following note.</p>
@@ -648,17 +648,17 @@ ENSG00000000938          2          19           4          8</code></pre>
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colData</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>DataFrame with 9 rows and 5 columns
-                     Run condition        Name Replicate     Treated
-             &lt;character&gt;  &lt;factor&gt; &lt;character&gt; &lt;integer&gt; &lt;character&gt;
-1_CTR_BC_2   1_CTR_BC_2        CTR       CTR_1         1           N
-2_TGF_BC_4    2_TGF_BC_4       TGF       TGF_1         1           Y
-3_IR_BC_5      3_IR_BC_5       IR         IR_1         1           Y
-4_CTR_BC_6    4_CTR_BC_6       CTR       CTR_2         2           N
-5_TGF_BC_7    5_TGF_BC_7       TGF       TGF_2         2           Y
-6_IR_BC_12    6_IR_BC_12       IR         IR_2         2           Y
-7_CTR_BC_13 7_CTR_BC_13        ctr       CTR_3         3           N
-8_TGF_BC_14  8_TGF_BC_14       tgf       TGF_3         3           Y
-9_IR_BC_15    9_IR_BC_15       ir         IR_3         3           Y</code></pre>
+                    Run condition        Name Replicate     Treated
+            &lt;character&gt;  &lt;factor&gt; &lt;character&gt; &lt;integer&gt; &lt;character&gt;
+1_CTR_BC_2   1_CTR_BC_2       CTR       CTR_1         1           N
+2_TGF_BC_4   2_TGF_BC_4       TGF       TGF_1         1           Y
+3_IR_BC_5     3_IR_BC_5       IR         IR_1         1           Y
+4_CTR_BC_6   4_CTR_BC_6       CTR       CTR_2         2           N
+5_TGF_BC_7   5_TGF_BC_7       TGF       TGF_2         2           Y
+6_IR_BC_12   6_IR_BC_12       IR         IR_2         2           Y
+7_CTR_BC_13 7_CTR_BC_13       ctr       CTR_3         3           N
+8_TGF_BC_14 8_TGF_BC_14       tgf       TGF_3         3           Y
+9_IR_BC_15   9_IR_BC_15       ir         IR_3         3           Y</code></pre>
 </div>
 </div>
 <p>Individual columns from the metadata can also be accessed and printed using the <code>$</code> notation. From the warning message that appeared when we created <code>dds</code> we saw that it already converted <code>Treated</code> into a factor</p>
