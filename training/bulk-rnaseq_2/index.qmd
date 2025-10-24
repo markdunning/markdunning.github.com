@@ -1,7 +1,7 @@
 ---
 title: "Introduction to RNA-Seq - Part 2"
 author: Mark Dunning
-date: today
+date: 2025-10-23
 theme: darkly
 image: "/files/training/bulk_rnaseq/part2_preview.png"
 ---
@@ -57,7 +57,7 @@ library(DESeq2)
 dds <- readRDS("Robjects/dds.rds")
 ```
 
-We have previously defined the `condition` as our factor of interest using the `design` argument when we created the object. This can be checked using the `design` function. The 
+We have previously defined the `condition` as our factor of interest using the `design` argument when we created the object. This can be checked using the `design` function. The
 
 The current design can be retrieved using the `design` function.
 
@@ -71,7 +71,6 @@ It can be changed at any point before we run the differential expression workflo
 colData(dds)
 ```
 
-
 The counts that we have obtained via sequencing are subject to random sources of variation. The purpose of differential expression is to determine if potential sources of biological variation (e.g. counts observed from different sample groups) are greater than random noise.
 
 The `DESeq` function runs a couple of processing steps automatically to adjust for different library size and gene-wise variability, which you can read about in the [DESeq2 vignette](http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#the-deseq2-model) and run some example code at the [end of this session](#full-deseq-workflow).
@@ -81,7 +80,7 @@ de_condition <- DESeq(dds)
 de_condition
 ```
 
-The results of the analysis are not immediately accessible, but can be obtained using the `results` function. 
+The results of the analysis are not immediately accessible, but can be obtained using the `results` function.
 
 ```{r}
 results(de_condition)
@@ -90,7 +89,7 @@ results(de_condition)
 Each row is a particular gene measured in the study (i.e. all genes in the organism being studied) and each column reports some aspect of the differential expression analysis for that gene. The values that I typically pay most attention to are highlighted in **bold**.
 
 | Column Name | Description | Importance |
-|------------------------|------------------------------|------------------------|
+|----------------------|----------------------------|----------------------|
 | **baseMean** | The average of normalized count values (size-factor corrected) across all samples in the comparison. | Measures the average expression magnitude of the gene and useful for basic filtering |
 | **log2FoldChange** | The estimated log base 2 fold change between the two groups being contrasted (e.g., Treatment / Control). | The primary measure of the effect size or magnitude of the difference. |
 | lfcSE | The standard error estimate for the $\text{log}_2\text{FoldChange}$. | Measures the precision of the $\text{log}_2\text{FC}$ estimate. Smaller values indicate higher reliability. |
@@ -98,9 +97,7 @@ Each row is a particular gene measured in the study (i.e. all genes in the organ
 | pvalue | The $p$-value derived from the Wald test statistic. | The unadjusted probability of observing the effect by chance. Do not use this for filtering. |
 | **padj** | The Benjamini-Hochberg adjusted $p$-value (False Discovery Rate, FDR).CRITICAL for significance. This corrects for multiple testing | CRITICAL for statistical significance. This corrects for multiple testing. Genes are considered differentially expressed if this value is below your threshold (e.g., 0.05). |
 
-
 Note that **all genes** are reported. At this stage the gene identifiers are not very informative, something we will [fix shortly](#adding-annotation-to-the-deseq2-results). Furthermore, the `results` function displays results in a format which is not compatible with standard data manipulation tools (i.e. `tidyverse`), so we will have to convert.
-
 
 # Processing the DE results using tidyverse
 
@@ -111,14 +108,11 @@ The output can be converted into a data frame and manipulated in the usual manne
 -   `mutate` to add new variables to the data frame
 -   `arrange` to order the data frame according to values of a column or columns
 
-:::{.callout-note}
+::: callout-note
+The `%>%` symbol refers to the piping operationin R, which is a way of chaining operations together. This was described in the introductory R notes found else on my pages
 
-The `%>%` symbol refers to the  piping operationin R, which is a way of chaining operations together. This was described in the introductory R notes found else on my pages
-
-- [https://mdbioinformatics.com/training/r_part2/#piping](https://mdbioinformatics.com/training/r_part2/#piping)
-
+-   <https://mdbioinformatics.com/training/r_part2/#piping>
 :::
-
 
 ```{r warning=FALSE, message=FALSE}
 library(dplyr)
@@ -202,7 +196,6 @@ If your study involves knocking-out a particular gene, or you have some positive
 
 You hopefully noticed that the sign of the log fold changes have been calculated using the `CTR` group as a baseline. In other words, a positive `log2FoldChange` means that a gene has higher expression in `TGF` compared to `CTR`. This is usually the direction that makes sense for biological interpretation. However, `DESeq2` has not done anything clever here. The order of the contrasts is dictated by the "levels" of the variable used in the design.
 
-
 ```{r}
 dds$condition
 ```
@@ -210,6 +203,7 @@ dds$condition
 Since `CTR` is the first thing printed here it gets chosen as the baseline. It is just a fortunate coincidence that `CTR` is first alphabetically! In order that we are not relying on the defaults and for transparency, I tend to explicitly state which contrast I want to make using the `contrast` argument and have full control over what the baseline is. In the `contrast` argument you create a vector (using `c`) followed by the levels in the order you want to compare with the baseline coming last.
 
 In the below this can be read as `TGF` vs `CTR`, which is in fact the default
+
 ```{r}
 ## This should give the same as the table above
 results(de_condition, contrast=c("condition","TGF","CTR"))
@@ -231,16 +225,11 @@ Or indeed using the same syntax you can perform contrasts using the `IR` conditi
 -   Write a csv file that contains results for the genes that have an *adjusted* p-value less than 0.05 and a log2 fold change more than 1, or less than -1 in the contrast of TGF vs CTRL.
 -   Use the `plotCounts` function to visually-inspect the most statistically-significant gene identified
 
-
-
-:::{.callout-important}
-
+::: callout-important
 # Use the DESeq function once and once only!
-
 :::
 
 You should perform the full differential expression analysis by calling DESeq(dds) only once on your combined dataset. Then, you use the results() function multiple times to extract the specific pairwise comparisons or complex contrasts you are interested in.
-
 
 # More complex designs
 
@@ -266,7 +255,7 @@ Likewise, if we have different treatments applied to difference cell-lines, but 
 design(MY_DATA) <- ~cell_line + treatment
 ```
 
-# Adding annotation to the DESeq2 results
+# Adding annotation to the DESeq2 results {#adding-annotation-to-the-deseq2-results}
 
 We would love to share these results with our collaborators, or search for our favourite gene in the results. However, the results are not very useful in there current form as each row is named according to an *Ensembl* identifier. Whilst gene symbols are problematic and can change over time, they are the names that are most recognisable and make the results easier to navigate.
 
@@ -366,7 +355,6 @@ write.csv(results_annotated,file="de_analysis/condition_TGF_vs_CTR_DESeq_annotat
     i)  extracting their p-values
     ii) plotting the counts for these genes
 
-
 ## The volcano plot
 
 ```{r}
@@ -375,8 +363,6 @@ library(EnhancedVolcano)
 EnhancedVolcano(results_annotated, x = "log2FoldChange", y = "padj", lab = results_annotated$SYMBOL)
 
 ```
-
-
 
 ### Exporting normalized counts
 
@@ -389,7 +375,7 @@ head(countMatrix)
 write.csv(countMatrix,file="normalized_counts.csv")
 ```
 
-# Full DESeq workflow
+# Full DESeq workflow {#full-deseq-workflow}
 
 The median of ratios normalisation method is employed in DESeq2 to account for *sequencing depth* and *RNA composition*. Let's go through a short worked example (courtesy of [https://hbctraining.github.io/DGE_workshop/lessons/02_DGE_count_normalization.html](here)) to explain the process.
 

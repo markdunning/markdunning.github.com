@@ -32,7 +32,7 @@
     "href": "training.html",
     "title": "Training Materials",
     "section": "",
-    "text": "Here is a collection of Bioinformatics and Data Analysis materials that I have created and taught over the years. Please feel free to browse, and get in touch if you would like them to be taught at your institute.\n\n\n\n\n\n\n\n\n\n\n\n\nIntroduction to R - Part 1\n\n\n\n\n\n\nMark Dunning\n\n\nOct 23, 2025\n\n\n\n\n\n\n\n\n\n\n\n\n\nIntroduction to R - Part 2\n\n\n\n\n\n\nMark Dunning\n\n\nOct 23, 2025\n\n\n\n\n\n\n\n\n\n\n\n\n\nIntroduction to R - Part 3\n\n\n\n\n\n\nMark Dunning\n\n\nOct 23, 2025\n\n\n\n\n\n\n\n\n\n\n\n\n\nIntroduction to RNA-Seq - Part 1\n\n\n\n\n\n\nMark Dunning\n\n\nOct 23, 2025\n\n\n\n\n\n\n\n\n\n\n\n\n\nIntroduction to RNA-Seq - Part 2\n\n\n\n\n\n\nMark Dunning\n\n\nOct 23, 2025\n\n\n\n\n\n\nNo matching items"
+    "text": "Here is a collection of Bioinformatics and Data Analysis materials that I have created and taught over the years. Please feel free to browse, and get in touch if you would like them to be taught at your institute.\n\n\n\n\n\n\n\n\n\n\n\n\nIntroduction to R - Part 1\n\n\n\n\n\n\nMark Dunning\n\n\nOct 16, 2025\n\n\n\n\n\n\n\n\n\n\n\n\n\nIntroduction to R - Part 2\n\n\n\n\n\n\nMark Dunning\n\n\nOct 16, 2025\n\n\n\n\n\n\n\n\n\n\n\n\n\nIntroduction to R - Part 3\n\n\n\n\n\n\nMark Dunning\n\n\nOct 16, 2025\n\n\n\n\n\n\n\n\n\n\n\n\n\nIntroduction to RNA-Seq - Part 1\n\n\n\n\n\n\nMark Dunning\n\n\nOct 23, 2025\n\n\n\n\n\n\n\n\n\n\n\n\n\nIntroduction to RNA-Seq - Part 2\n\n\n\n\n\n\nMark Dunning\n\n\nOct 23, 2025\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "training/r_part2/index.html",
@@ -291,7 +291,7 @@
     "href": "posts.html",
     "title": "Posts",
     "section": "",
-    "text": "You will find some comprehensive training materials on this site, and here I will add some shorter musings on other aspects of data analysis and Bioinformatics that I have found useful\n\n\n\n\n\n\n\n\n\n\n\n\nAlways check your input data\n\n\n\n\n\n\nMark Dunning\n\n\nOct 23, 2025\n\n\n\n\n\n\n\n\n\n\n\nExploring Single-cell RNA-seq\n\n\n\n\n\n\nMark Dunning\n\n\nOct 23, 2025\n\n\n\n\n\n\n\n\n\n\n\n\n\nReading 10X Spatial Data from GEO into R\n\n\n\n\n\n\nMark Dunning\n\n\nOct 23, 2025\n\n\n\n\n\n\nNo matching items"
+    "text": "You will find some comprehensive training materials on this site, and here I will add some shorter musings on other aspects of data analysis and Bioinformatics that I have found useful\n\n\n\n\n\n\n\n\n\n\n\n\nAlways check your input data\n\n\n\n\n\n\nMark Dunning\n\n\nOct 24, 2025\n\n\n\n\n\n\n\n\n\n\n\n\n\nReading 10X Spatial Data from GEO into R\n\n\n\n\n\n\nMark Dunning\n\n\nOct 24, 2025\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "posts/2025_10_16_check_data/index.html#overview-of-the-code",

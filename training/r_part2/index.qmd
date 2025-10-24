@@ -1,7 +1,7 @@
 ---
 title: "Introduction to R - Part 2"
 author: Mark Dunning
-date: today
+date: 2025-10-16
 image: /files/training/r/part2_preview.png
 theme: darkly
 ---
@@ -249,8 +249,7 @@ mutate(gapminder, PopInMillions = pop / 1e6,
        lifeExp = round(lifeExp))
 ```
 
-::: {.callout-note appearance="simple"}
-
+:::: {.callout-note appearance="simple"}
 ## Something to think about
 
 In the previous code we created a new column called `PopInMillions`. Why does the following code now produce an error?
@@ -260,8 +259,8 @@ select(gapminder, PopInMillions)
 ```
 
 ::: {.callout-note collapse="true"}
-
 This code shows what a data frame looks like with a new column called PopInMillions.
+
 ```{r}
 mutate(gapminder, PopInMillions = pop / 1e6,
        lifeExp = round(lifeExp))
@@ -275,13 +274,8 @@ gapminder2 <- mutate(gapminder, PopInMillions = pop / 1e6,
 
 select(gapminder2, PopInMillions)
 ```
-
-
-
 :::
-
-:::
-
+::::
 
 Similar to `mutate`, if we want to rename existing columns, and not create any extra columns, we can use the `rename` function.
 
@@ -354,10 +348,7 @@ We will now try an exercise that involves using several steps of these operation
 -   Write the data frame out to a file in `out_data/` folder
 :::
 
-
-
 ::: {.callout-note collapse="true"}
-
 ## Solution
 
 ```{r eval=FALSE}
@@ -366,8 +357,6 @@ gapminder3 <- arrange(gapminder2, continent, country, desc(gdpPercap))
 gapminder4 <- select(gapminder3, -year)
 write_csv(gapminder4, "out_data/gapminder_2002.csv")
 ```
-
-
 :::
 
 ------------------------------------------------------------------------
@@ -389,7 +378,6 @@ tmp <- filter(gapminder, continent == "Europe")
 tmp2 <- select(tmp, -continent)
 tmp2
 ```
-
 
 In R, `dplyr` commands to be linked together and form a workflow. The symbol `%>%` is pronounced **then**. With a `%>%` the input to a function is assumed to be the output of the previous line. All the `dplyr` functions that we have seen so far take a data frame as an input and return an altered data frame as an output, so are amenable to this type of programming.
 
@@ -419,9 +407,7 @@ Hopefully you will agree that the code is much cleaner and easier to read and wr
 
 ```
 
-
 ::: {.callout-note collapse="true"}
-
 ## Solution
 
 ```{r}
@@ -430,14 +416,11 @@ filter(gapminder, year == 2002) %>%
   select(-year) %>% 
 write_csv("out_data/gapminder_piped_2002.csv")
 ```
-
-
 :::
 
 We will leave `dplyr` for the moment (although it will never be far away from us, since it is such a fundamental tool...) and start to look at making some nice graphs to understand our data.
 
-::: {.callout-note}
-
+::: callout-note
 ## Ceci n'est pas une pipe
 
 The `%>%` operation was introduced as part of the `magrittr` package, which gets loaded automatically as part of `dplyr`. However, the `dplyr` package is quite large and involves a lot of dependencies. If you *only* wanted to use the `%>%` and not any other part of `dplyr` it would be quite inefficient to load the entire `dplyr` package as part of your code.
@@ -449,8 +432,6 @@ filter(gapminder, year == 2002) |>
   arrange(continent, desc(gdpPercap)) |>
   select(-year)
 ```
-
-
 :::
 
 ------------------------------------------------------------------------
@@ -479,17 +460,14 @@ On top of this central philosophy ggplot2 has:
 -   Large user base – Great documentation and active mailing list.
 
 ::: {.callout-tip appearance="simple"}
-
 ## Top tip
 
 It is always useful to think about the message you want to convey and the appropriate plot before writing any R code. Resources like [data-to-viz.com](https://www.data-to-viz.com/) should help. Don't be afraid to even sketch out the plot on paper or a whiteboard!
-
 :::
 
 With some practice, `ggplot2` makes it easier to go from the figure you are imagining in our head (or on paper) to a publication-ready image in R.
 
 ::: {.callout-tip appearance="simple"}
-
 ## Another "cheatsheet"
 
 As with `dplyr`, we won't have time to cover all details of `ggplot2`. This is however a useful [cheatsheet](https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-visualization.pdf) that can be printed as a reference. The cheatsheet is also available through the RStudio Help menu.
@@ -555,20 +533,15 @@ ggplot(gapminder, aes(x = continent, y=gdpPercap)) + geom_boxplot()
 
 A histogram is a common method for visualising a *distribution* of numeric values. Your data are split into a number of bins (which can be altered in the code) across the whole data range, and the number of observations in each bin is shown on the y-axis. Thus you can see where the majority of your data points are
 
-
-
 ```{r}
 ggplot(gapminder, aes(x = gdpPercap)) + geom_histogram()
 ```
 
-
 For *categorical* data, e.g. the country of continent columns in our case, a barplot will show the number of times each category is observed. The `geom_bar` will do the job of counting and plotting.
-
 
 ```{r}
 ggplot(gapminder, aes(x=continent)) + geom_bar()
 ```
-
 
 If you have particular numeric values you want to display in a barplot you can use `geom_col`. To give an example we will first filter the data to a particular year and continent. The `gdpPercap` values for each country can then be plotted. In the below plot the axis labels will be messy and difficult to read. This is something that can be customised with some of the `ggplot2` options we will explore later.
 
@@ -610,9 +583,7 @@ ggplot(gapminder, aes(x = continent, y=gdpPercap)) + geom_boxplot() + geom_jitte
     -   Look at the message `ggplot2` prints above the plot and try to modify the code to give a separate boxplot for each year
 :::
 
-
 ::: {.callout-tip collapse="true"}
-
 ## Solution
 
 ```{r eval=FALSE}
@@ -656,8 +627,6 @@ ggplot(gapminder, aes(x = year, y = gdpPercap, group=year)) + geom_boxplot()
 ggplot(gapminder, aes(x = as.factor(year), y = gdpPercap)) + geom_boxplot()
 
 ```
-
-
 :::
 
 ------------------------------------------------------------------------
@@ -665,8 +634,6 @@ ggplot(gapminder, aes(x = as.factor(year), y = gdpPercap)) + geom_boxplot()
 ------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
-
-
 
 As we have seen already, `ggplot` offers an interface to create many popular plot types. It is up to the user to decide what the best way to visualise the data.
 
@@ -711,7 +678,6 @@ When used in the construction of a boxplot, the `col` argument will change the c
 ggplot(gapminder, aes(x = continent, y=gdpPercap,fill=continent)) + geom_boxplot()
 ```
 
-
 ------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
@@ -722,20 +688,20 @@ ggplot(gapminder, aes(x = continent, y=gdpPercap,fill=continent)) + geom_boxplot
 
 We have covered a *lot* about manipulating and visualising data, but have only just scratched the surface. In the [next part](/training/r_part3/index.html) we will conclude with
 
-- Choosing colour palettes
-- (Some ways to) customise our plots
-- Automatically plot different subsets / categories in our data using "faceting"
-- Producing summary statistics from our data, and for different subsets / categories
-- Joining two data frames
-- (Briefly) how to clean "messy" data
+-   Choosing colour palettes
+-   (Some ways to) customise our plots
+-   Automatically plot different subsets / categories in our data using "faceting"
+-   Producing summary statistics from our data, and for different subsets / categories
+-   Joining two data frames
+-   (Briefly) how to clean "messy" data
 
 ## Bonus Exercise
 
 These are a bit more challenging, but please feel free to have a go
 
-- Using the `filter` function, find all countries that start with the letter Z
-  + Hint: You can find the first letter of each country using the `substr` function. The `mutate` function can then be used to add a new column to the data.
-- Use `geom_tile` to create a heatmap visualising life expectancy over time for European countries. You will need to work out what `aes`thetics to specify for a `geom_tile` plot
+-   Using the `filter` function, find all countries that start with the letter Z
+    -   Hint: You can find the first letter of each country using the `substr` function. The `mutate` function can then be used to add a new column to the data.
+-   Use `geom_tile` to create a heatmap visualising life expectancy over time for European countries. You will need to work out what `aes`thetics to specify for a `geom_tile` plot
 
 ![](/files/training/r/tile_example.png)
 
@@ -746,7 +712,6 @@ These are a bit more challenging, but please feel free to have a go
 ------------------------------------------------------------------------
 
 ::: {.callout-tip collapse="true"}
-
 ## Solution
 
 ### Part 1
@@ -772,7 +737,6 @@ gapminder3 <- filter(gapminder2, FirstLetter == "Z")
 gapminder3
 ```
 
-
 ```{r eval=FALSE}
 ## Get the European countries
 filter(gapminder, continent == "Europe") %>% 
@@ -780,5 +744,4 @@ filter(gapminder, continent == "Europe") %>%
 ggplot(aes(x=year,y=country,fill=lifeExp)) + geom_tile()
 
 ```
-
 :::

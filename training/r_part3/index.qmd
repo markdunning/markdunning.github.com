@@ -1,7 +1,7 @@
 ---
 title: "Introduction to R - Part 3"
 author: Mark Dunning
-date: today
+date: 2025-10-16
 image: /files/training/r/part3_preview.png
 theme: darkly
 ---
@@ -150,7 +150,6 @@ Use a boxplot to compare the life expectancy values of Australia and New Zealand
 ![](/files/training/r/oceania_le_boxplot.png)
 
 ::: {.callout-tip collapse="true"}
-
 ## Solution
 
 ```{r eval=FALSE}
@@ -490,7 +489,7 @@ To finish the workshop we will look at the analysis of some relevant data that w
 
 Data for global COVID-19 cases are available online from CSSE at Johns Hopkins University on their github repository.
 
-::: {.callout-note}
+::: callout-note
 [github](www.github.com) is an excellent way of making your code and analysis available for others to reuse and share. Private repositories with restricted access are also available. Here is a useful beginners guide.
 
 \-[Friendly github intro](https://kirstiejane.github.io/friendly-github-intro/)
@@ -511,8 +510,6 @@ covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv")
 covid
 ```
 
-
-
 Much of the analysis of this dataset has looked at trends over time (e.g. increasing /decreasing case numbers, comparing trajectories). As we know by now, the `ggplot2` package allows us to map columns (variables) in our dataset to aspects of the plot.
 
 In other words, we would expect to create plots by writing code such as:-
@@ -528,8 +525,7 @@ Unfortunately such plots are not possible with the data in it's current format. 
 install.packages("tidyr")
 ```
 
-::: {.callout-note}
-
+::: callout-note
 ## About "tidy data"
 
 For more information on *tidy data*, and how to convert between long and wide data, see
@@ -555,20 +551,16 @@ Another point to note is that the dates are not in an internationally recognised
 
 ![](http://images3.memedroid.com/images/UPLOADED951/62d545f80a3d6.jpeg)
 
- We can fix by explicitly converting to YYYY-MM-DD format. The `as.Date` function can be used to convert an existing column into standardised dates. It needs to know how the months, days and years are being specified which might look a bit obtuse. The specification needed for these data is `%m/%d/%y`. This means months(`%m`) separated by a  `/` followed by a day (`%d`) followed by another `/` followed by the year represented by two digits (`%y`). Other conversions are possible including if you have dates with month names (`Jan`, `Feb`...) or four digit years. See the link below for more information.
+We can fix by explicitly converting to YYYY-MM-DD format. The `as.Date` function can be used to convert an existing column into standardised dates. It needs to know how the months, days and years are being specified which might look a bit obtuse. The specification needed for these data is `%m/%d/%y`. This means months(`%m`) separated by a `/` followed by a day (`%d`) followed by another `/` followed by the year represented by two digits (`%y`). Other conversions are possible including if you have dates with month names (`Jan`, `Feb`...) or four digit years. See the link below for more information.
 
-
-
-::: {.callout-tip}
-
+::: callout-tip
 ## Dealing with dates
 
 See this website for more about representing and converting dates in R.
 
-- [https://www.statology.org/r-date-format/](https://www.statology.org/r-date-format/)
+-   <https://www.statology.org/r-date-format/>
 
 For more ways of dealing with dates in R see the `lubridate` package which can handle tasks such as calculating intervals between dates and much more
-
 :::
 
 ```{r}
@@ -580,8 +572,6 @@ covid
 ```
 
 Another useful modification is to make sure only one row exists for each country. If we look at the data for some countries (e.g. China and UK) there are different entries for provinces and oversees territories. So we can change the Cases to be the `sum` of all cases for that country on a particular day. We can do this using the `group_by` and `summarise` functions from above.
-
-
 
 ```{r}
 covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv", show_col_types = FALSE) %>% 
@@ -598,30 +588,26 @@ covid
 covid
 ```
 
-Since we previously renamed the country column in `covid` and both data frames now have a column called `country` we can use a `left_join`. 
+Since we previously renamed the country column in `covid` and both data frames now have a column called `country` we can use a `left_join`.
 
 ```{r}
 left_join(gapminder, covid)
 ```
 
 ::: {callout-tip}
-
 If we hadn't used `rename` previously, the joining code would look like this
 
 ```{r eval=FALSE}
 left_join(gapminder, covid, by = c("county" = "Country/Region"))
 ```
-
-
 :::
 
-Furthermore, we might also want to just use the `2007` rows from `gapminder`. 
+Furthermore, we might also want to just use the `2007` rows from `gapminder`.
 
 ```{r}
 filter(gapminder, year == 2007) %>% 
   left_join(covid)
 ```
-
 
 ### Exercise
 
@@ -642,12 +628,9 @@ What plots and summaries can you make from these data?
 ```
 
 ::: {.callout-tip collapse="true"}
-
 ## Some solutions
 
-
 Compare trajectories of different countries. The `%in%` operator is an alternative to or (`|`) to find a country name that can have a number of possibilities.
-
 
 ```{r}
 covid <- read_csv("raw_data/time_series_covid19_confirmed_global.csv") %>% 
@@ -671,10 +654,9 @@ filter(gapminder, year == 2007,continent=="Europe") %>%
   mutate(Cases = round(Cases / (pop / 1e5)))
 ```
 
-Try to make example similar to [https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/](https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/). We're not using up-to-date figures for population so there will be some differences. The two data frames can be joined because they have a column name in common (`country`). Most of the country names that appear in `gapminder` also appear in the `covid` dataset, so not much data is lost in the join. 
+Try to make example similar to <https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/>. We're not using up-to-date figures for population so there will be some differences. The two data frames can be joined because they have a column name in common (`country`). Most of the country names that appear in `gapminder` also appear in the `covid` dataset, so not much data is lost in the join.
 
 Since we are interested in European countries for this dataset, we pre-filter the `gapminder` data. Also, we only need the population values from 2007.
-
 
 ```{r}
 filter(gapminder, year == 2007,continent=="Europe") %>% 
@@ -684,10 +666,9 @@ filter(gapminder, year == 2007,continent=="Europe") %>%
   ggplot(aes(x = Cases, y = country)) + geom_col()
 ```
 
-
 The default ordering for the bars is alphabetical, which is probably not a natural choice. The `forcats` package, which is part of `tidyverse` allows *factors* in a data frame to be re-ordered and re-labeled.
 
-- [forcats package](https://forcats.tidyverse.org/)
+-   [forcats package](https://forcats.tidyverse.org/)
 
 In particular, we can use the `fct_reorder` function to reorder the country names according to the number of cases. This can be done inside the `ggplot2` function itself.
 
@@ -714,5 +695,4 @@ filter(gapminder, year ==  2007, continent=="Europe") %>%
   ggplot(aes(x = Date, y = country,fill=Cases)) + geom_tile() + scale_fill_viridis_c()
   
 ```
-
 :::

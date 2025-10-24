@@ -1,7 +1,7 @@
 ---
 title: "Introduction to R - Part 1"
 author: Mark Dunning
-date: today
+date: 2025-10-16
 theme: darkly
 ---
 

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Mark Dunning">
-<meta name="dcterms.date" content="2025-10-22">
+<meta name="dcterms.date" content="2025-10-23">
 
 <title>Introduction to RNA-Seq - Part 2 – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
 <style>
@@ -245,7 +245,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 22, 2025</p>
+      <p class="date">October 23, 2025</p>
     </div>
   </div>
   
@@ -465,7 +465,7 @@ Note
 <div class="callout-body-container callout-body">
 <p>The <code>%&gt;%</code> symbol refers to the piping operationin R, which is a way of chaining operations together. This was described in the introductory R notes found else on my pages</p>
 <ul>
-<li><a href="https://mdbioinformatics.com/training/r_part2/#piping">https://mdbioinformatics.com/training/r_part2/#piping</a></li>
+<li><a href="https://mdbioinformatics.com/training/r_part2/#piping" class="uri">https://mdbioinformatics.com/training/r_part2/#piping</a></li>
 </ul>
 </div>
 </div>
@@ -707,7 +707,7 @@ Use the DESeq function once and once only!
 <li><a href="http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#multi-factor-designs">Multi-factor designs in DESeq2</a></li>
 </ul>
 <p>The use of such a design could be motivated by discovering sources of technical variation in our data that might obscure the biological differences we would like to compare. e.g.</p>
-<p><img src="images/batch_effect.png" class="img-fluid"></p>
+<p><img src="../..\files/training/bulk_rnaseq/batch_effect.png" class="img-fluid"></p>
 <p>In the example image above the main source of variation is the batch in which the samples were sequenced. A multi-factor analysis to compare the various conditions, but “correct” for differences in batch, would be as follows.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Don't run this. It's just a code example</span></span>
