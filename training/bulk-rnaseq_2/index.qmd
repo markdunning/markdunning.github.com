@@ -61,15 +61,13 @@ library(DESeq2)
 dds <- readRDS("Robjects/dds.rds")
 ```
 
-We have previously defined the `condition` as our factor of interest using the `design` argument when we created the object. This can be checked using the `design` function. The
-
-The current design can be retrieved using the `design` function.
+We have previously defined the `condition` as our factor of interest using the `design` argument when we created the object. This can be checked using the `design` function. The current design can be queried using the `design` function.
 
 ```{r}
 design(dds)
 ```
 
-It can be changed at any point before we run the differential expression workflow, can refer to any of the variables saved in the `colData` of the `dds` object; or even a combination of different variables.
+It can be changed at any point before we run the differential expression workflow, can refer to any of the variables saved in the `colData` of the `dds` object, or even a combination of different variables.
 
 ```{r}
 colData(dds)
@@ -321,8 +319,8 @@ There are a number of ways to add annotation, but we will demonstrate how to do 
 ### Only execute when you need to install the package
 install.packages("BiocManager")
 BiocManager::install("org.Hs.eg.db")
-# For Human
-BiocManager::install("org.Hs.eg.db")
+# For Mouse
+BiocManager::install("org.Mm.eg.db")
 ```
 
 The packages are larger in size that Bioconductor software packages, but essentially they are databases that can be used to make *offline* queries. An alternatve (`biomaRt`) that connects to the ensembl [biomart](https://www.ensembl.org/info/data/biomart/index.html) resource will be discussed later.

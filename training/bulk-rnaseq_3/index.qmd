@@ -32,9 +32,9 @@ dds <- readRDS("Robjects/dds.rds")
 ```
 
 
-In [Part 2](/training/bulk-rnaseq_part2/index.html) we dissected the `DESeq` workflow for differential expression in some detail. We also created a data frame for `annotating` the results with biological identifiers that are more recognisable.
+In [Part 2](/training/bulk-rnaseq_part2/index.html) we dissected the `DESeq` workflow for differential expression in some detail. We also created a data frame for "annotating" the results with biological identifiers that are more recognisable.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(org.Hs.eg.db)
 anno <- AnnotationDbi::select(org.Hs.eg.db,keys=rownames(dds),
               columns=c("SYMBOL","GENENAME"),
@@ -44,7 +44,7 @@ head(anno)
 ```
 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(DESeq2)
 library(dplyr)
 library(ggplot2)
@@ -59,7 +59,8 @@ results_annotated <- results(de_condition,
   arrange(padj) %>% 
   dplyr::select(-lfcSE)
 
-results_annotated
+results_annotated %>% 
+  slice_head()
 ```
 
 
@@ -69,11 +70,9 @@ results_annotated
 
 ## Why are some adjusted p-values "`NA`"?
 
-`DESeq2` has already done some kind of processing on the results
+`DESeq2` has already done some kind of processing on the results to exclude genes with low expression level across the dataset that are probably unreliable. The genes it filters out (those that have `NA` adjusted p-value) tend to have a lower value of `baseMean`
 
-
-
-
+If we think this behaviour isn't desirable, we can set the argument  `independentFiltering = FALSE` in `results`
 
 ```{r}
 results_annotated %>% 
@@ -83,14 +82,27 @@ results_annotated %>%
 
 ## Shrinking the log fold-changes
 
+When we made the MA-plot in the previous section we saw a fanning effect at lower expression levels. Creates much cleaner, less noisy MA plots and heatmaps. A technique called "shrinkage" helps to address this as the "shrunken" log fold-change is a better measure of biological magnitude for ranking genes
+
+Log fold-change shrinkage, implemented in `DESeq2` via the `lfcShrink()` function, uses a statistical technique called Bayesian shrinkage (or an Empirical Bayes approach) to address this.
+
+It works by:
+
+- "Borrowing" Information: It assumes that most genes are not differentially expressed (i.e., most true LFCs are near zero).
+
+- "Shrinking": For genes with low counts (low confidence in the LFC), it shrinks their estimated LFC closer to zero.
+
+- Leaving Alone: For genes with high counts (high confidence in the LFC), the shrinkage effect is minimal, leaving the raw LFC largely untouched.
+
+
 ```{r}
 resultsNames(de_condition)
 
 results_final <- lfcShrink(de_condition, coef = 3)
 results_final
-
 ```
 
+Let's remind ourselves of the MA- plot of the raw differential expression results
 
 ```{r}
 results_raw <- results(de_condition)
@@ -105,12 +117,14 @@ Looking at the "shrunken" results
 plotMA(results_final)
 ```
 
+The shrinkage technique will only change the log$_2$ fold-changes and not the adjusted p-values. The purpose of shrinkage is to make the magnitude of the effect reliable for ranking genes, visualizing them in an MA plot, and filtering based on a minimum LFC threshold (e.g., $|\text{LFC}| > 1$).
+
 ```{r}
-as.data.frame(results_final) %>% 
+results_final <- as.data.frame(results_final) %>% 
   tibble::rownames_to_column("ENSEMBL") %>% 
   left_join(anno) %>% 
   filter(!duplicated(ENSEMBL)) %>% 
-  arrange(padj)
+  arrange(padj) 
 ```
 
 
@@ -261,7 +275,8 @@ enrich_go <- enrichGO(
 The result of `enrichGo` can be turned into a data frame for easier interpretation.
 
 ```{r}
-enrich_go %>% data.frame
+enrich_go %>% data.frame %>% 
+  slice_head()
 ```
 
 A dot plot can show us the most enriched pathways, and the size of each.
@@ -308,7 +323,8 @@ gse_GO  <- gseGO(geneList = geneList,
 ```
 
 ```{r}
-gse_GO %>% as.data.frame
+gse_GO %>% as.data.frame %>% 
+  slice_head()
 ```
 
 An overview of the results can be provided by a "ridge plot". This allows comparison of the test statistics for each of the top enriched pathways. 
@@ -353,57 +369,6 @@ Other visualisation methods using the clusterProfiler output can be found here:-
 
 https://yulab-smu.top/biomedical-knowledge-mining-book/enrichplot.html
 
-
-# Interactive Visualisation
-
-At this point we might be faced with lots tables and plots that we have to try and digest in order to gain insights into our data. This can be over-whelming.
-
-One way to navigate our results is using the GeneTonic package. This will produce an interactive interface to our dataset that we can use to explore the results.
-
-- [GeneTonic User Guide](https://bioconductor.org/packages/release/bioc/vignettes/GeneTonic/inst/doc/GeneTonic_manual.html)
-
-The inputs are as follows (most of which we already have, or can easily generate)
-
-- a `DESeqDataSet` object.
-- a `DESeq` results (i.e. generated using the `DESeq` function followed by `results`)
-- an enrichment results table 
-- an Annotation table giving a mapping between the gene identifers used in our dataset to something more recognisable
-
-We already have a `dds` object, and can re-compute the differential results with a few commands. Note the `GeneTonic` requires the `results` output and NOT the results data frame that we have been working.
-
-```{r}
-library(GeneTonic)
-design(dds) <- ~condition
-de <- DESeq(dds)
-##Don't use the tidy=TRUE option so the output stays as a DESeq object
-res_de <- results(de,contrast = c("condition", "TGF","CTR"))
-```
-
-`GeneTonic` is compatible with many types of enrichment analysis, but they first have to be converted into common format via a `shake_` function. `clusterProfiler` is one of the tools that is already supported and the associated function to use is `shake_enrichResult`.
-
-```{r}
-res_enrich <- shake_enrichResult(enrich_go)
-```
-
-Finally, we need a table with two columns that can be used to map our gene ids (`ENSEMBL`) to a more-interpretable naming scheme. We have already generated such a table to accompany our differential expression results. The annotation table required by `GeneTonic` needs to be only columns with specific column names.
-
-```{r}
-anno_df <- AnnotationDbi::select(org.Hs.eg.db,keys=rownames(dds),columns="SYMBOL",keytype = "ENSEMBL")  %>% 
-  dplyr::rename(gene_id = ENSEMBL,gene_name=SYMBOL)
-```
-
-We can now run the `GeneTonic` function. If sucessful, this should open up a new RStudio window which can also be opened in a web browser.
-
-
-
-```{r warning=FALSE,message=FALSE,eval=FALSE}
-GeneTonic(dds,
-  res_de,
-  res_enrich,
-  anno_df)
-```
-
-![](images/gt_home.png)
 
 
 # Appendix: Annotation with the biomaRt resource

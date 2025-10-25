@@ -301,15 +301,14 @@ window.Quarto = {
 </section>
 <section id="the-deseq-workflow-in-brief" class="level1">
 <h1>The DESeq workflow in brief</h1>
-<p>We have previously defined the <code>condition</code> as our factor of interest using the <code>design</code> argument when we created the object. This can be checked using the <code>design</code> function. The</p>
-<p>The current design can be retrieved using the <code>design</code> function.</p>
+<p>We have previously defined the <code>condition</code> as our factor of interest using the <code>design</code> argument when we created the object. This can be checked using the <code>design</code> function. The current design can be queried using the <code>design</code> function.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">design</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>~condition</code></pre>
 </div>
 </div>
-<p>It can be changed at any point before we run the differential expression workflow, can refer to any of the variables saved in the <code>colData</code> of the <code>dds</code> object; or even a combination of different variables.</p>
+<p>It can be changed at any point before we run the differential expression workflow, can refer to any of the variables saved in the <code>colData</code> of the <code>dds</code> object, or even a combination of different variables.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colData</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -820,8 +819,8 @@ ENSG00000284748          NA</code></pre>
 <div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Only execute when you need to install the package</span></span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"BiocManager"</span>)</span>
 <span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"org.Hs.eg.db"</span>)</span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a><span class="co"># For Human</span></span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"org.Hs.eg.db"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a><span class="co"># For Mouse</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"org.Mm.eg.db"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The packages are larger in size that Bioconductor software packages, but essentially they are databases that can be used to make <em>offline</em> queries. An alternatve (<code>biomaRt</code>) that connects to the ensembl <a href="https://www.ensembl.org/info/data/biomart/index.html">biomart</a> resource will be discussed later.</p>
 <div class="cell">
