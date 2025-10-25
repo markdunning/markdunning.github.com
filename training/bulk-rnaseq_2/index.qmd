@@ -1,7 +1,7 @@
 ---
 title: "Introduction to RNA-Seq - Part 2"
 author: Mark Dunning
-date: 2025-10-23
+date: 2025-10-25
 theme: darkly
 image: "/files/training/bulk_rnaseq/TGF_Vs_CTR_volcano.png"
 ---
