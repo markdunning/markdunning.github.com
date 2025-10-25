@@ -3,7 +3,7 @@ title: "Introduction to RNA-Seq - Part 2"
 author: Mark Dunning
 date: 2025-10-23
 theme: darkly
-image: "/files/training/bulk_rnaseq/part2_preview.png"
+image: "/files/training/bulk_rnaseq/TGF_Vs_CTR_volcano.png"
 ---
 
 # Overview
@@ -545,16 +545,52 @@ Admittedly, that *was* quite a bit of effort and would have been simpler with a 
 :::
 
 
-## The volcano plot
+# The volcano plot
 
-```{r message=FALSE, warning=FALSE}
-library(EnhancedVolcano)
+The last visualisation we will cover in this section is the *volcano plot* which is another way of looking at all your results. Similar to the MA plot, it shows the `log2FoldChange` on the x-axis and the statistical significance is shown so that the most significant genes are the highest on the y-axis.
 
-EnhancedVolcano(results_annotated, x = "log2FoldChange", y = "padj", lab = results_annotated$SYMBOL)
+It's perfectly possible to make this plot using standard `ggplot2` commands, but the package `EnhancedVolcano` does a really good job out of the box. If you don't have `EnhancedVolcano` installed you can use the following code:-
+
+```{r eval=FALSE}
+if(!require(BiocManager)) install.packages("BiocManager")
+if(!require(EnhancedVolcano)) BiocManager::install("EnhancedVolcano")
 
 ```
 
-### Exporting normalized counts
+
+`EnhancedVolcano` is useful as it will automatically label the names of the most significant genes and apply a colour scheme.
+
+```{r message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+library(EnhancedVolcano)
+
+EnhancedVolcano(results_annotated, x = "log2FoldChange", 
+                y = "padj", 
+                lab = results_annotated$SYMBOL, 
+                title = "TGF vs CTRL",
+                subtitle = "")
+```
+This is quite a nice result using the defaults. As the function is using `ggplot2` under the hood it can be saved in the same ways as ordinary `ggplot2` figures.
+
+
+```{r}
+ggsave("TGF_vs_CTR_volcano.png")
+```
+Rather than labeling all the genes, we can just highlight some of interest
+
+```{r fig.width=10, fig.height=8}
+EnhancedVolcano(results_annotated, x = "log2FoldChange", 
+                y = "padj", 
+                lab = results_annotated$SYMBOL, 
+                title = "TGF vs CTRL",
+                selectLab = genes_of_interest,
+                drawConnectors = TRUE,
+                FCcutoff = 0.5,
+                pCutoff = 0.05,
+                subtitle  = "Selected ECM Genes")
+```
+
+
+## Exporting normalized counts
 
 The `DESeq` workflow applies *median of ratios normalization* that accounts for differences in sequencing depth between samples. The user does not usually need to run this step. However, if you want a matrix of counts for some application outside of Bioconductor the values can be extracted from the `dds` object.
 
@@ -565,9 +601,12 @@ head(countMatrix)
 write.csv(countMatrix,file="normalized_counts.csv")
 ```
 
+
+Let's wrap-up for now and continue our exploration of the differential expression in the next section. If you want to find out more about the `DESeq` workflow then read on.
+
 # Full DESeq workflow {#full-deseq-workflow}
 
-The median of ratios normalisation method is employed in DESeq2 to account for *sequencing depth* and *RNA composition*. Let's go through a short worked example (courtesy of [https://hbctraining.github.io/DGE_workshop/lessons/02_DGE_count_normalization.html](here)) to explain the process.
+The median of ratios normalisation method is employed in `DESeq2` to account for *sequencing depth* and *RNA composition*. Let's go through a short worked example (courtesy of [https://hbctraining.github.io/DGE_workshop/lessons/02_DGE_count_normalization.html](here)) to explain the process.
 
 ```{r}
 ## create a small example matrix of "counts"

@@ -176,6 +176,10 @@ window.Quarto = {
     <a class="nav-link" href="../../training.html"> 
 <span class="menu-text">Training Materials</span></a>
   </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -1123,7 +1127,7 @@ Dealing with dates
 <div class="callout-body-container callout-body">
 <p>See this website for more about representing and converting dates in R.</p>
 <ul>
-<li><a href="https://www.statology.org/r-date-format/">https://www.statology.org/r-date-format/</a></li>
+<li><a href="https://www.statology.org/r-date-format/" class="uri">https://www.statology.org/r-date-format/</a></li>
 </ul>
 <p>For more ways of dealing with dates in R see the <code>lubridate</code> package which can handle tasks such as calculating intervals between dates and much more</p>
 </div>
@@ -1346,7 +1350,7 @@ dbl (1145): Lat, Long, 1/22/20, 1/23/20, 1/24/20, 1/25/20, 1/26/20, 1/27/20,...
 # ℹ 18 more rows</code></pre>
 </div>
 </div>
-<p>Try to make example similar to <a href="https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/">https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/</a>. We’re not using up-to-date figures for population so there will be some differences. The two data frames can be joined because they have a column name in common (<code>country</code>). Most of the country names that appear in <code>gapminder</code> also appear in the <code>covid</code> dataset, so not much data is lost in the join.</p>
+<p>Try to make example similar to <a href="https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/" class="uri">https://www.statista.com/statistics/1110187/coronavirus-incidence-europe-by-country/</a>. We’re not using up-to-date figures for population so there will be some differences. The two data frames can be joined because they have a column name in common (<code>country</code>). Most of the country names that appear in <code>gapminder</code> also appear in the <code>covid</code> dataset, so not much data is lost in the join.</p>
 <p>Since we are interested in European countries for this dataset, we pre-filter the <code>gapminder</code> data. Also, we only need the population values from 2007.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb114"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(gapminder, year <span class="sc">==</span> <span class="dv">2007</span>,continent<span class="sc">==</span><span class="st">"Europe"</span>) <span class="sc">%&gt;%</span> </span>
