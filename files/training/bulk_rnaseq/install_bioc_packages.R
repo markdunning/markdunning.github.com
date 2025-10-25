@@ -16,4 +16,5 @@ BiocManager::install(c("limma",
          "GeneTonic",
          "ggupset",
          "ggridges",
-        "EnhancedVolcano"),suppressUpdates=TRUE)
+        "EnhancedVolcano",
+        "apeglm"),suppressUpdates=TRUE)
