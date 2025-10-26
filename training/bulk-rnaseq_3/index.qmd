@@ -8,11 +8,11 @@ image: "/files/training/bulk_rnaseq/part3_preview.png"
 
 # Overview
 
-Further exploration of differential expression followed by identifcation of biological pathways of interest
+Further exploration of differential expression, followed by identifcation of biological pathways of interest
 
 ## Quick Start
 
-This section follows on from [Part 1](/training/bulk-rnaseq_part1/index.html) and [Part 2](/training/bulk-rnaseq_part2/index.html) where we saw how to import raw RNA-seq counts into `DESeq2`,  perform some quality assessment and then differential expression. Several packages are required, which can be downloaded with this code:-
+This section follows on from [Part 1](/training/bulk-rnaseq_part1/index.html) and [Part 2](/training/bulk-rnaseq_part2/index.html) where we saw how to import raw RNA-seq counts into `DESeq2`, perform some quality assessment and then differential expression. Several packages are required, which can be downloaded with this code:-
 
 ```{r eval=FALSE}
 source("https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/install_bioc_packages.R")
@@ -31,7 +31,6 @@ download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/he
 dds <- readRDS("Robjects/dds.rds")
 ```
 
-
 In [Part 2](/training/bulk-rnaseq_part2/index.html) we dissected the `DESeq` workflow for differential expression in some detail. We also created a data frame for "annotating" the results with biological identifiers that are more recognisable.
 
 ```{r message=FALSE, warning=FALSE}
@@ -43,6 +42,7 @@ anno <- AnnotationDbi::select(org.Hs.eg.db,keys=rownames(dds),
 head(anno)
 ```
 
+The code to perform differential expression and incorporate the annotations is given below.
 
 ```{r message=FALSE, warning=FALSE}
 library(DESeq2)
@@ -57,30 +57,57 @@ results_annotated <- results(de_condition,
   left_join(anno, by = c("row" = "ENSEMBL")) %>% 
   filter(!duplicated(row)) %>% 
   arrange(padj) %>% 
+  ## removing the lfcSE column
   dplyr::select(-lfcSE)
 
 results_annotated %>% 
-  slice_head()
+  slice_head(n = 10)
 ```
-
 
 # Filtering the differential expression results
 
+The `results_annotated` tibble contains results for *all* the genes that appeared in our counts data, which could be many 10,000s of potential candidates for being biologically meaningful. Deciding which genes to take forward for further investigation can be quite subtle, and can depend on what your question of interest is. With the simplest criteria applied (e.g. an adjusted p-value of 0.05) you can still be faced with 1000s of genes to interpret. Of course, there are methods for identifying biological themes (see later). 
 
+
+The `padj` and `log2FoldChange` in the results table are common quantities for filtering representing the statistical certainty and effect size respectively. In an ideal world, genes of interest should have a high degree of statistical certainty (extremely low p-value) and large effect size. We can be reasonably confident about the p-value adjustments that `DESeq2` performed, and we will discuss the `log2FoldChange` later.
+
+At the moment we have almost 5,000 genes with an arbitrary `0.05` cutoff, but not all of them are going to be relevant to our question.
+
+```{r}
+dplyr::count(results_annotated, padj <0.05)
+```
+
+But wait, we also have some `NA` values. What's the deal with those?
 
 ## Why are some adjusted p-values "`NA`"?
 
-`DESeq2` has already done some kind of processing on the results to exclude genes with low expression level across the dataset that are probably unreliable. The genes it filters out (those that have `NA` adjusted p-value) tend to have a lower value of `baseMean`
-
-If we think this behaviour isn't desirable, we can set the argument  `independentFiltering = FALSE` in `results`
+`DESeq2` has already done some processing on the results to exclude genes with low expression level across the dataset that it deems to be unreliable and unlikely to be differential-expressed. The genes it filters out (those that have `NA` adjusted p-value) tend to have a lower value of `baseMean`.
 
 ```{r}
 results_annotated %>% 
   ggplot(aes(x = is.na(padj), y = baseMean)) + geom_boxplot() + scale_y_log10()
 ```
 
+The core principle is that genes with very low expression (low average normalized counts) have little power to be called differentially expressed, even if their true $\log_2$ fold change is comparatively large. By testing all genes, you incur a multiple testing penalty for these low-power genes, which reduces the number of genes that can be called significant overall.
+
+The procedure first uses the mean of normalized counts (`baseMean`) across all samples as a filtering mechanism. Genes with very low expression have high $p$-values due to low statistical power (high variance relative to the mean), regardless of their true fold change. `DESeq2` determines an optimal cutoff for the `baseMean` that maximizes the number of genes called significant (`padj` < $\alpha$, where $\alpha$ is usually $0.1$ or $0.05$). This is done by testing a range of cutoffs and picking the one that yields the largest number of discoveries. Genes with mean counts below this optimal cutoff are removed (in practice their `padj` is set to `NA`). The remaining genes are then subjected to the Benjamini-Hochberg procedure.The benefit is a gain in statistical power. By reducing the total number of hypotheses tested, the multiple testing penalty is less severe, allowing more true positives (expressed genes with actual differential expression) to pass the adjusted $p$-value threshold.
+
+The effect of filtering can be seen in the following histogram:-
+
+```{r}
+mutate(results_annotated, Filtered = is.na(padj)) %>% 
+  ggplot(aes(x = pvalue, fill = Filtered)) + geom_histogram(alpha = 0.4)
+```
+
+The filtered group (in blue) represents the low-count genes that were removed. The distribution is often nearly uniform or even shows a slight peak towards the lower $p$-values. If these low-power genes were included, the overall flat null distribution needed for accurate FDR control would be slightly inflated near zero, leading to a harsher multiple testing penalty.
+
+Non-Filtered Group (e.g., shown in `r #red`): This histogram represents the genes with sufficient expression to be tested. This is the set of $p$-values actually used for the Benjamini-Hochberg adjustment. This distribution should show a clear, desirable pattern: a strong peak near $p=0$ (the true differentially expressed genes) and a flat, uniform distribution from $\sim0.05$ to $1$ (the true null hypotheses).Conclusion: By removing the "Filtered" genes, the adjusted $p$-values ($\text{padj}$) are calculated only on the well-behaved "Non-Filtered" set, resulting in more significant calls for the well-expressed genes.
+
+If the details above seem complex, rememeber that `DESeq2` will do these automatically without you having to think about them. If we think this behaviour isn't desirable, or are curious to see the results without any adjustment, we can set the argument `independentFiltering = FALSE` in the `results` function.
 
 ## Shrinking the log fold-changes
+
+`DESeq2` provides an estimate, for each gene, of the difference in mean expression between our groups. However, in the same way that the raw pvalues can be improved by the adjustment described about, we can also get better estimates of the log fold-changes (LFC).
 
 When we made the MA-plot in the previous section we saw a fanning effect at lower expression levels. Creates much cleaner, less noisy MA plots and heatmaps. A technique called "shrinkage" helps to address this as the "shrunken" log fold-change is a better measure of biological magnitude for ranking genes
 
@@ -88,16 +115,16 @@ Log fold-change shrinkage, implemented in `DESeq2` via the `lfcShrink()` functio
 
 It works by:
 
-- "Borrowing" Information: It assumes that most genes are not differentially expressed (i.e., most true LFCs are near zero).
+-   "Borrowing" Information: It assumes that most genes are not differentially expressed (i.e., most true LFCs are near zero).
 
-- "Shrinking": For genes with low counts (low confidence in the LFC), it shrinks their estimated LFC closer to zero.
+-   "Shrinking": For genes with low counts (low confidence in the LFC), it shrinks their estimated LFC closer to zero.
 
-- Leaving Alone: For genes with high counts (high confidence in the LFC), the shrinkage effect is minimal, leaving the raw LFC largely untouched.
+-   Leaving Alone: For genes with high counts (high confidence in the LFC), the shrinkage effect is minimal, leaving the raw LFC largely untouched.
 
+To use `lfcShrink` we have to supply the initial run of the `DESeq` pipeline (saved as `de_condition` in our case) and pay careful attention to the number of the coefficient that we want to apply shrinkage to. Running the `resultsNames` function prints that names of the coefficients, so `TGF_vs_CTR` is numbered coefficient 3. Printing the `results_final` object allows us to check as name of the contrast is printed to the screen.
 
 ```{r}
 resultsNames(de_condition)
-
 results_final <- lfcShrink(de_condition, coef = 3)
 results_final
 ```
@@ -109,15 +136,13 @@ results_raw <- results(de_condition)
 plotMA(results_raw)
 ```
 
-
-
 Looking at the "shrunken" results
 
 ```{r}
 plotMA(results_final)
 ```
 
-The shrinkage technique will only change the log$_2$ fold-changes and not the adjusted p-values. The purpose of shrinkage is to make the magnitude of the effect reliable for ranking genes, visualizing them in an MA plot, and filtering based on a minimum LFC threshold (e.g., $|\text{LFC}| > 1$).
+The shrinkage technique will only change the log$_2$ fold-changes and **not the adjusted or raw p-values**. The purpose of shrinkage is to make the magnitude of the effect reliable for ranking genes, visualizing them in an MA plot, and filtering based on a minimum LFC threshold (e.g., $|\text{LFC}| > 1$). We can create a finalised results table by joining the annotation as before.
 
 ```{r}
 results_final <- as.data.frame(results_final) %>% 
@@ -126,8 +151,6 @@ results_final <- as.data.frame(results_final) %>%
   filter(!duplicated(ENSEMBL)) %>% 
   arrange(padj) 
 ```
-
-
 # Heatmaps
 
 You may have already seen the use of a heatmap as a quality assessment tool to visualise the relationship between samples in an experiment. Another common use-case for such a plot is to visualise the results of a differential expression analysis. Although `ggplot2` has a `geom_tile` function to make heatmaps, specialised packages such as `pheatmaps` offer more functionality such as clustering the samples.
@@ -136,15 +159,12 @@ The counts we are visualising are the *variance-stablised* counts, which are mor
 
 Here we will take the top 10 genes from the differential expression analysis and produce a heatmap with the `pheatmap` package. We can take advantage of the fact the our counts table contains Ensembl gene names in the rows. Standard subset operations in R can then be used.
 
-
 The default colour palette goes from low expression in blue to high expression in red, which is a good alternative to the traditional red/green heatmaps which are not suitable for those with forms of colour-blindness.
-
-
 
 ```{r}
 # pheatmap is a specialised package to make heatmaps
 library(pheatmap)
-top_genes <- dplyr::slice(results_annotated, 1:10) %>% pull(row)
+top_genes <- dplyr::slice(results_final, 1:10) %>% pull(row)
 vsd <- vst(dds)
 
 # top_genes is a vector containing ENSEMBL names of the genes we want to see in the heatmap
@@ -162,7 +182,7 @@ pheatmap(assay(vsd)[top_genes,],
          scale="row")
 ```
 
-Any plot we create in RStudio can be saved as a png or pdf file. We use the `png` or `pdf` function to create a file for the plot to be saved into and run the rest of the code as normal. The plot does not get displayed in RStudio, but printed to the specified file. 
+Any plot we create in RStudio can be saved as a png or pdf file. We use the `png` or `pdf` function to create a file for the plot to be saved into and run the rest of the code as normal. The plot does not get displayed in RStudio, but printed to the specified file.
 
 ```{r}
 png("heatmap_top10_genes.png",width=800,height=800)
@@ -175,7 +195,7 @@ There are many arguments to explore in `pheatmap`. For example, we might want to
 
 ```{r}
 N <- 50
-gene_labels <- dplyr::slice(results_annotated, 1:N) %>% pull(SYMBOL)
+gene_labels <- dplyr::slice(results_final, 1:N) %>% pull(SYMBOL)
 
 pheatmap(assay(vsd)[top_genes,],
          annotation_col = sampleInfo,
@@ -187,12 +207,11 @@ Given the nature of how the genes were selected for the heatmap, we shouldn't be
 
 # Exercise
 
-<div class="exercise">
-
-- Produce a heatmap using the top 30 genes with the most extreme *log2 Fold-Change*
-  + HINT: The `abs` function can be used to convert all negative values to positive.
-- Label the heatmap with the gene `SYMBOL` of the genes
-- Is this heatmap as effective as separating the samples into groups?
+::: exercise
+-   Produce a heatmap using the top 30 genes with the most extreme *log2 Fold-Change*
+    -   HINT: The `abs` function can be used to convert all negative values to positive.
+-   Label the heatmap with the gene `SYMBOL` of the genes
+-   Is this heatmap as effective as separating the samples into groups?
 
 ```{r eval=FALSE}
 
@@ -200,18 +219,17 @@ Given the nature of how the genes were selected for the heatmap, we shouldn't be
 
 
 ```
-  
-</div>
+:::
 
 # Pathways analysis
 
-In this section we move towards discovering if our results are ***biologically significant***. Are the genes that we have picked statistical flukes, or are there some commonalities. 
+In this section we move towards discovering if our results are ***biologically significant***. Are the genes that we have picked statistical flukes, or are there some commonalities.
 
 There are two different approaches one might use, and we will cover the theory behind both.
 
 ## Threshold-based Gene Set Testing
 
- For a particular pathway we need to calculate how many genes were identified as differentially-expressed and compare to *how many we would be expect by chance*. Or in other words, if we repeatedly generated a list of differentially-expressed genes at random how many genes from this pathway would be expect to see.
+For a particular pathway we need to calculate how many genes were identified as differentially-expressed and compare to *how many we would be expect by chance*. Or in other words, if we repeatedly generated a list of differentially-expressed genes at random how many genes from this pathway would be expect to see.
 
 For the ECM pathway we can extract all genes as follows:-
 
@@ -227,10 +245,11 @@ pathway_genes <- AnnotationDbi::select(org.Hs.eg.db,
 We can then annotate each gene in our results according to whether it belongs to this pathway, and whether it is differentially-expressed.
 
 ```{r}
-go_table <- mutate(results_annotated, 
+go_table <- mutate(results_final, 
                    inPathway = row %in% pathway_genes,
                    isDE = padj < 0.05 & abs(log2FoldChange) > 1)
-go_table
+go_table %>% 
+  slice_head(n = 10)
 ```
 
 Cross-tabulating the two new columns gives a basis for a statistical test
@@ -244,9 +263,8 @@ The Fisher's exact test or chi-squared test (as seen here) can then be used
 ```{r}
 chisq.test(table(go_table$inPathway, go_table$isDE))
 ```
-    
-In reality it would be impractical to test all possible pathways in this manner, so there are a number of Bioconductor packages that automate the process
 
+In reality it would be impractical to test all possible pathways in this manner, so there are a number of Bioconductor packages that automate the process
 
 ## Analysis with clusterProfiler
 
@@ -256,8 +274,8 @@ The main function is `enrichGO` which requires the IDs of genes found to be diff
 
 ```{r message=FALSE, warning=FALSE}
 library(clusterProfiler)
-universe <- results_annotated %>% pull(row)
-sigGenes <- results_annotated %>% 
+universe <- results_final %>% pull(row)
+sigGenes <- results_final %>% 
   filter(padj < 0.05) %>% pull(row)
 
 enrich_go <- enrichGO(
@@ -300,16 +318,13 @@ enrichplot::upsetplot(enrich_go)
 
 ## Gene set enrichment analysis (GSEA)
 
-
-
 An appealing feature of the **GSEA** method is that it does not require us to impose arbitrary cut-offs on the dataset to decide what is differentially-expressed or not. The steps in producing the input required for GSEA are i) retrieving the ranked statistics ii) naming each one according to a chosen identifier (`ENSEMBL` or `ENTREZID` for example).
 
 The `clusterProfiler` package also includes an implementation of the GSEA algorithm, and the function works in much the same way as `enrichGO` from above.
 
-
 ```{r}
 
-ranked_genes <- results_annotated %>% 
+ranked_genes <- results_final %>% 
   arrange(desc(stat)) %>% 
   filter(!is.na(stat))
   
@@ -324,25 +339,27 @@ gse_GO  <- gseGO(geneList = geneList,
 
 ```{r}
 gse_GO %>% as.data.frame %>% 
-  slice_head()
+  slice_head(n = 10)
 ```
 
-An overview of the results can be provided by a "ridge plot". This allows comparison of the test statistics for each of the top enriched pathways. 
+An overview of the results can be provided by a "ridge plot". This allows comparison of the test statistics for each of the top enriched pathways.
 
 ```{r}
 ridgeplot(gse_GO)
 ```
+
 An upset plot can still be produced, but this time the distribution of statistics for overlapping categories can be produced.
 
 ```{r}
 enrichplot::upsetplot(gse_GO)
 ```
 
-The results confirm that the ECM pathway has many differentially-expressed genes (more than we would expect by chance). Moreover, there is a tendancy for these genes to be up-regulated; as indicated by the high positive enrichment score. Another way to visualise the GSEA results, that is typically produced from the GSEA java app, is the so-called enrichment plot. 
+The results confirm that the ECM pathway has many differentially-expressed genes (more than we would expect by chance). Moreover, there is a tendancy for these genes to be up-regulated; as indicated by the high positive enrichment score. Another way to visualise the GSEA results, that is typically produced from the GSEA java app, is the so-called enrichment plot.
 
 ```{r}
 gseaplot(gse_GO,geneSetID = "GO:0030198")
 ```
+
 The enrichment plot for a gene set with a high negative enrichment score reveals a different pattern.
 
 ```{r}
@@ -351,15 +368,13 @@ gseaplot(gse_GO,geneSetID = "GO:0002283")
 
 ## Exercise
 
-<div class="exercise">
-
-- In addition to enriched GO terms, `clusterProfiler` can also find enriched [KEGG](https://www.genome.jp/kegg/) terms using the `enrichKEGG` function. There are a couple of changes that are required from `enrichGO`
-  - `ENTREZID` have to be used as the identifer type
-  - the user must input an appropriate [organism code](https://www.genome.jp/kegg/catalog/org_list.html). The code for humans is `hsa`.
-- Use the `enrichKEGG` function to identify enriched KEGG terms in the analysis.
-- (Optional) If you have time, use the gseKEGG to perform GSEA using KEGG terms.
-
-</div>
+::: exercise
+-   In addition to enriched GO terms, `clusterProfiler` can also find enriched [KEGG](https://www.genome.jp/kegg/) terms using the `enrichKEGG` function. There are a couple of changes that are required from `enrichGO`
+    -   `ENTREZID` have to be used as the identifer type
+    -   the user must input an appropriate [organism code](https://www.genome.jp/kegg/catalog/org_list.html). The code for humans is `hsa`.
+-   Use the `enrichKEGG` function to identify enriched KEGG terms in the analysis.
+-   (Optional) If you have time, use the gseKEGG to perform GSEA using KEGG terms.
+:::
 
 ```{r}
 
@@ -369,11 +384,9 @@ Other visualisation methods using the clusterProfiler output can be found here:-
 
 https://yulab-smu.top/biomedical-knowledge-mining-book/enrichplot.html
 
-
-
 # Appendix: Annotation with the biomaRt resource
 
-The Bioconductor package have the convenience of being able to make queries offline. However, they are only available for certain organisms. If your organism does not have an `org.XX.eg.db` package listed on the Bioconductor annotation page (http://bioconductor.org/packages/release/BiocViews.html#___AnnotationData), an alternative is to use biomaRt which provides an interface to the popular biomart annotation resource. 
+The Bioconductor package have the convenience of being able to make queries offline. However, they are only available for certain organisms. If your organism does not have an `org.XX.eg.db` package listed on the Bioconductor annotation page (http://bioconductor.org/packages/release/BiocViews.html#\_\_\_AnnotationData), an alternative is to use biomaRt which provides an interface to the popular biomart annotation resource.
 
 The first step is to find the name of a database that you want to connect to.
 
@@ -396,7 +409,6 @@ listFilters(ensembl) %>%
     filter(grepl("ensembl",name))
 ```
 
-
 ```{r eval=FALSE}
 listAttributes(ensembl) %>% 
     filter(grepl("gene",name))
@@ -412,5 +424,3 @@ getBM(attributes = attributeNames,
       values=top_genes,
       mart=ensembl)
 ```
-
-
