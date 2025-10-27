@@ -213,7 +213,6 @@ window.Quarto = {
   <li><a href="#pathways-analysis" id="toc-pathways-analysis" class="nav-link" data-scroll-target="#pathways-analysis">Pathways analysis</a>
   <ul class="collapse">
   <li><a href="#threshold-based-gene-set-testing" id="toc-threshold-based-gene-set-testing" class="nav-link" data-scroll-target="#threshold-based-gene-set-testing">Threshold-based Gene Set Testing</a></li>
-  <li><a href="#analysis-with-clusterprofiler" id="toc-analysis-with-clusterprofiler" class="nav-link" data-scroll-target="#analysis-with-clusterprofiler">Analysis with clusterProfiler</a></li>
   <li><a href="#gene-set-enrichment-analysis-gsea" id="toc-gene-set-enrichment-analysis-gsea" class="nav-link" data-scroll-target="#gene-set-enrichment-analysis-gsea">Gene set enrichment analysis (GSEA)</a></li>
   <li><a href="#exercise-1" id="toc-exercise-1" class="nav-link" data-scroll-target="#exercise-1">Exercise</a></li>
   </ul></li>
@@ -413,7 +412,7 @@ window.Quarto = {
 </div>
 <p>The filtered group (in blue) represents the low-count genes that were removed. The distribution is often nearly uniform or even shows a slight peak towards the lower <span class="math inline">\(p\)</span>-values. If these low-power genes were included, the overall flat null distribution needed for accurate FDR control would be slightly inflated near zero, leading to a harsher multiple testing penalty.</p>
 <p>Non-Filtered Group (e.g., shown in ): This histogram represents the genes with sufficient expression to be tested. This is the set of <span class="math inline">\(p\)</span>-values actually used for the Benjamini-Hochberg adjustment. This distribution should show a clear, desirable pattern: a strong peak near <span class="math inline">\(p=0\)</span> (the true differentially expressed genes) and a flat, uniform distribution from <span class="math inline">\(\sim0.05\)</span> to <span class="math inline">\(1\)</span> (the true null hypotheses).Conclusion: By removing the “Filtered” genes, the adjusted <span class="math inline">\(p\)</span>-values (<span class="math inline">\(\text{padj}\)</span>) are calculated only on the well-behaved “Non-Filtered” set, resulting in more significant calls for the well-expressed genes.</p>
-<p>If the details above seem complex, rememeber that <code>DESeq2</code> will do these automatically without you having to think about them. If we think this behaviour isn’t desirable, or are curious to see the results without any adjustment, we can set the argument <code>independentFiltering = FALSE</code> in the <code>results</code> function.</p>
+<p>If the details above seem complex, remember that <code>DESeq2</code> will do these automatically without you having to think about them. If we think this behaviour isn’t desirable, or are curious to see the results without any adjustment, we can set the argument <code>independentFiltering = FALSE</code> in the <code>results</code> function.</p>
 </section>
 <section id="shrinking-the-log-fold-changes" class="level2">
 <h2 class="anchored" data-anchor-id="shrinking-the-log-fold-changes">Shrinking the log fold-changes</h2>
@@ -527,7 +526,7 @@ ENSG00000284748    0.548323     0.00647730  0.236572   0.830517         NA</code
 </div>
 </div>
 </div>
-<p>It certainly <em>looks</em> like these genes are more significant than we might expect. Another related plot is to look at the statistical significance (-log$_{10} adjusted p-value) for ECM and other genes separately.</p>
+<p>It certainly <em>looks</em> like these genes are more significant than we might expect. Another related plot is to look at the statistical significance (-log<span class="math inline">\(_{10}\)</span> adjusted p-value) for ECM and other genes separately.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>results_final <span class="sc">%&gt;%</span> </span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ECM_Gene =</span> ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> </span>
@@ -562,15 +561,13 @@ ENSG00000284748    0.548323     0.00647730  0.236572   0.830517         NA</code
 <span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>row_labs <span class="ot">&lt;-</span> heatmap_data <span class="sc">%&gt;%</span> <span class="fu">data.frame</span>() <span class="sc">%&gt;%</span> tibble<span class="sc">::</span><span class="fu">rownames_to_column</span>(<span class="st">"ENSEMBL"</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(results_final) <span class="sc">%&gt;%</span> </span>
-<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(SYMBOL)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Joining with `by = join_by(ENSEMBL)`</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>samp_anno <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="fu">colData</span>(dds)) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(condition, Treated)</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pheatmap</span>(heatmap_data,</span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">annotation_col =</span> samp_anno,<span class="at">scale=</span><span class="st">"row"</span>,</span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">labels_row =</span> row_labs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(SYMBOL)</span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a>samp_anno <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="fu">colData</span>(dds)) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(condition, Treated)</span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a><span class="fu">pheatmap</span>(heatmap_data,</span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">annotation_col =</span> samp_anno,<span class="at">scale=</span><span class="st">"row"</span>,</span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">labels_row =</span> row_labs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -582,41 +579,41 @@ ENSG00000284748    0.548323     0.00647730  0.236572   0.830517         NA</code
 <p>Again, this shows genes whose expression seems to be affected by TGF. All these plots are interesting observations, but not concrete scientific proof.</p>
 <p>To start to ascribe some significance to the finding we start by defining how many ECM genes we have in our data:-</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>n_ECM_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> nrow</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>n_ECM_genes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>n_ECM_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> nrow</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>n_ECM_genes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 158</code></pre>
 </div>
 </div>
 <p>How many genes are differentially-expressed. Let’s use a loose definition of an adjusted p-value less than 0.05.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>n_DE_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, padj <span class="sc">&lt;</span> <span class="fl">0.05</span>) <span class="sc">%&gt;%</span> <span class="fu">nrow</span>()</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>n_DE_genes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>n_DE_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, padj <span class="sc">&lt;</span> <span class="fl">0.05</span>) <span class="sc">%&gt;%</span> <span class="fu">nrow</span>()</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>n_DE_genes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 4899</code></pre>
 </div>
 </div>
 <p>Finally, how many of our ECM genes are also differentially-expressed</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>n_ECM_DE_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, padj <span class="sc">&lt;</span> <span class="fl">0.05</span>,ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> <span class="fu">nrow</span>()</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>n_ECM_DE_genes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>n_ECM_DE_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, padj <span class="sc">&lt;</span> <span class="fl">0.05</span>,ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> <span class="fu">nrow</span>()</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>n_ECM_DE_genes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 69</code></pre>
 </div>
 </div>
 <p>If our gene list was just a really random set of genes with no relation to the underlying biology, then we would naturally expect some number of ECM genes to occur <strong>by chance alone</strong>. To get a handle on how many we might expect we can run a small simulation.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>n_ECM_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> nrow</span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>n_DE_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, padj <span class="sc">&lt;</span> <span class="fl">0.05</span>) <span class="sc">%&gt;%</span> <span class="fu">nrow</span>()</span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>ECM_rand <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>){</span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>ECM_rand[i] <span class="ot">&lt;-</span> results_final <span class="sc">%&gt;%</span> </span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> n_DE_genes) <span class="sc">%&gt;%</span> </span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> </span>
-<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nrow</span>()</span>
-<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>n_ECM_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> nrow</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>n_DE_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, padj <span class="sc">&lt;</span> <span class="fl">0.05</span>) <span class="sc">%&gt;%</span> <span class="fu">nrow</span>()</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>ECM_rand <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>){</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>ECM_rand[i] <span class="ot">&lt;-</span> results_final <span class="sc">%&gt;%</span> </span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> n_DE_genes) <span class="sc">%&gt;%</span> </span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> </span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nrow</span>()</span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <section id="exercise" class="level3">
 <h3 class="anchored" data-anchor-id="exercise">Exercise</h3>
@@ -634,22 +631,22 @@ Note
 <div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Running the code</span></span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>n_ECM_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> nrow</span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>n_DE_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, padj <span class="sc">&lt;</span> <span class="fl">0.05</span>) <span class="sc">%&gt;%</span> <span class="fu">nrow</span>()</span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>ECM_rand <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>){</span>
-<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>ECM_rand[i] <span class="ot">&lt;-</span> results_final <span class="sc">%&gt;%</span> </span>
-<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> n_DE_genes) <span class="sc">%&gt;%</span> </span>
-<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> </span>
-<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nrow</span>()</span>
-<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(ECM_rand) <span class="sc">%&gt;%</span> </span>
-<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> ECM_rand)) <span class="sc">+</span> <span class="fu">geom_histogram</span>() <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> n_ECM_DE_genes, <span class="at">col =</span> <span class="st">"red"</span>) <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fu">median</span>(ECM_rand),<span class="at">col=</span><span class="st">"blue"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Running the code</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>n_ECM_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> nrow</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>n_DE_genes <span class="ot">&lt;-</span> <span class="fu">filter</span>(results_final, padj <span class="sc">&lt;</span> <span class="fl">0.05</span>) <span class="sc">%&gt;%</span> <span class="fu">nrow</span>()</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>ECM_rand <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>){</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>ECM_rand[i] <span class="ot">&lt;-</span> results_final <span class="sc">%&gt;%</span> </span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> n_DE_genes) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(ENSEMBL <span class="sc">%in%</span> pathway_genes) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nrow</span>()</span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(ECM_rand) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> ECM_rand)) <span class="sc">+</span> <span class="fu">geom_histogram</span>() <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> n_ECM_DE_genes, <span class="at">col =</span> <span class="st">"red"</span>) <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fu">median</span>(ECM_rand),<span class="at">col=</span><span class="st">"blue"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>`stat_bin()` using `bins = 30`. Pick better value `binwidth`.</code></pre>
 </div>
@@ -667,12 +664,12 @@ Note
 </div>
 <p>To formalise the test, we can then annotate each gene in our results according to whether it belongs to this pathway, and whether it is differentially-expressed or not.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>go_table <span class="ot">&lt;-</span> <span class="fu">mutate</span>(results_final, </span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">inPathway =</span> ENSEMBL <span class="sc">%in%</span> pathway_genes,</span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">isDE =</span> padj <span class="sc">&lt;</span> <span class="fl">0.05</span> )</span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>go_table <span class="sc">%&gt;%</span> </span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(SYMBOL, inPathway, isDE)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>go_table <span class="ot">&lt;-</span> <span class="fu">mutate</span>(results_final, </span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">inPathway =</span> ENSEMBL <span class="sc">%in%</span> pathway_genes,</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">isDE =</span> padj <span class="sc">&lt;</span> <span class="fl">0.05</span> )</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>go_table <span class="sc">%&gt;%</span> </span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(SYMBOL, inPathway, isDE)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>    SYMBOL inPathway isDE
 1    LTBP2     FALSE TRUE
@@ -689,7 +686,7 @@ Note
 </div>
 <p>Cross-tabulating the two new columns gives a basis for a statistical test</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(go_table<span class="sc">$</span>inPathway, go_table<span class="sc">$</span>isDE)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(go_table<span class="sc">$</span>inPathway, go_table<span class="sc">$</span>isDE)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>       
         FALSE  TRUE
@@ -700,7 +697,7 @@ Note
 <p>For a particular pathway we need to calculate how many genes were identified as differentially-expressed and compare to <em>how many we would be expect by chance</em>. Or in other words, if we repeatedly generated a list of differentially-expressed genes at random how many genes from this pathway would be expect to see.</p>
 <p>The Fisher’s exact test or chi-squared test (as seen here) can then be used</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chisq.test</span>(<span class="fu">table</span>(go_table<span class="sc">$</span>inPathway, go_table<span class="sc">$</span>isDE))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chisq.test</span>(<span class="fu">table</span>(go_table<span class="sc">$</span>inPathway, go_table<span class="sc">$</span>isDE))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Pearson's Chi-squared test with Yates' continuity correction
@@ -718,47 +715,90 @@ X-squared = 62.088, df = 1, p-value = 3.284e-15</code></pre>
 <p>In reality it would be impractical to test all possible pathways in this manner, so there are a number of Bioconductor packages that automate the process</p>
 <section id="threshold-based-gene-set-testing" class="level2">
 <h2 class="anchored" data-anchor-id="threshold-based-gene-set-testing">Threshold-based Gene Set Testing</h2>
-</section>
-<section id="analysis-with-clusterprofiler" class="level2">
-<h2 class="anchored" data-anchor-id="analysis-with-clusterprofiler">Analysis with clusterProfiler</h2>
-<p><code>clusterProfiler</code> is a Bioconductor package for over-representation analysis. It’s main advantage is that it provides some nice visualisation methods.</p>
-<p>The main function is <code>enrichGO</code> which requires the IDs of genes found to be differentially-expressed (<code>sigGenes</code>) and the IDs of <em>all</em> genes in the dataset (<code>universe</code>). It uses the <code>org.Hs.eg.db</code> package to map between gene names and biological pathways.</p>
+<p><em>Threshold-based</em> or <em>Over-representation</em> analysis is used once we have decided a list of differentially-expressed genes that we are happy with. The analysis then looks for gene sets that are <em>over-represented</em>, or occur more than we would expect by chance.</p>
+<p><code>clusterProfiler</code> is a Bioconductor package for pathways and downstream analysis and it’s main advantage is that it provides some nice visualisation methods.</p>
+<p>The function for over-representation analysis on Gene Ontologies is <code>enrichGO</code> which requires the IDs of genes found to be differentially-expressed (<code>sigGenes</code>) and the IDs of <em>all</em> genes in the dataset (<code>universe</code>). It uses the <code>org.Hs.eg.db</code> package to map between gene names and biological pathways.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(clusterProfiler)</span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>universe <span class="ot">&lt;-</span> results_final <span class="sc">%&gt;%</span> <span class="fu">pull</span>(ENSEMBL)</span>
-<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>sigGenes <span class="ot">&lt;-</span> results_final <span class="sc">%&gt;%</span> </span>
-<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(padj <span class="sc">&lt;</span> <span class="fl">0.05</span>) <span class="sc">%&gt;%</span> <span class="fu">pull</span>(ENSEMBL)</span>
-<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>enrich_go <span class="ot">&lt;-</span> <span class="fu">enrichGO</span>(</span>
-<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">gene=</span> sigGenes,</span>
-<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">OrgDb =</span> org.Hs.eg.db,</span>
-<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">keyType =</span> <span class="st">"ENSEMBL"</span>,</span>
-<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">ont =</span> <span class="st">"BP"</span>,</span>
-<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">universe =</span> universe,</span>
-<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">qvalueCutoff =</span> <span class="fl">0.05</span>,</span>
-<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">readable=</span><span class="cn">TRUE</span></span>
-<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(clusterProfiler)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>universe <span class="ot">&lt;-</span> results_final <span class="sc">%&gt;%</span> <span class="fu">pull</span>(ENSEMBL)</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>sigGenes <span class="ot">&lt;-</span> results_final <span class="sc">%&gt;%</span> </span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(padj <span class="sc">&lt;</span> <span class="fl">0.05</span>) <span class="sc">%&gt;%</span> <span class="fu">pull</span>(ENSEMBL)</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>enrich_go <span class="ot">&lt;-</span> <span class="fu">enrichGO</span>(</span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">gene=</span> sigGenes,</span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">OrgDb =</span> org.Hs.eg.db,</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">keyType =</span> <span class="st">"ENSEMBL"</span>,</span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">ont =</span> <span class="st">"BP"</span>,</span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">universe =</span> universe,</span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">qvalueCutoff =</span> <span class="fl">0.05</span>,</span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">readable=</span><span class="cn">TRUE</span></span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The result of <code>enrichGo</code> can be turned into a data frame for easier interpretation.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>enrich_go <span class="sc">%&gt;%</span> data.frame <span class="sc">%&gt;%</span> </span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>enrich_go <span class="sc">%&gt;%</span> data.frame <span class="sc">%&gt;%</span> </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>                   ID                               Description GeneRatio
-GO:2001233 GO:2001233 regulation of apoptotic signaling pathway  164/4221
-             BgRatio RichFactor FoldEnrichment  zScore       pvalue    p.adjust
-GO:2001233 398/18429  0.4120603       1.799066 8.78405 1.565104e-16 9.85546e-13
-                 qvalue
-GO:2001233 6.741479e-13
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         geneID
-GO:2001233 MMP2/CTSC/PTGS2/HGF/INHBA/EYA4/BDKRB2/NRG1/SFRP1/CLU/UNC5B/PPARG/NR4A2/CD44/TLR4/LGALS3/MAZ/PPP2R1B/ITGA6/NUPR1/PMAIP1/BMP4/LRRK2/FGF10/IL1B/DDIT3/TNFRSF12A/SERINC3/CAV1/TMBIM6/BDNF/BOK/CFLAR/IER3/TNFSF15/ATF4/CSF2/IGF1/DDX3X/FAS/SKIL/PML/ACSL5/G0S2/BBC3/KLF4/SGK3/IL1A/ICAM1/ARHGEF2/PYCR1/FGF2/NCK1/WNT16/RRM2B/CREB3L1/IVNS1ABP/NFE2L2/STRADB/ATF3/TNFSF10/HSPB1/FYN/GDNF/TRIM32/BAK1/CYLD/PTTG1IP/ACAA2/HERPUD1/SIAH2/VNN1/NOC2L/TMEM161A/VDAC2/DNAJA1/TP53/PIAS4/THBS1/TNFSF14/TAF6/HMOX1/BID/EIF2AK3/WNT5A/CTH/PTPRC/PCGF2/RBCK1/MARCHF7/HYOU1/CCAR2/RPS6KB1/MEIS3/RB1CC1/PLAUR/GCLM/SRPX/HIF1A/PAK2/MDM2/SERPINE1/TPT1/PTPN1/FADD/BCL2/URI1/TMEM14A/PPIF/USP15/TPD52L1/MYC/GHITM/EIF5A/ACKR3/TRAP1/USP47/ITPRIP/CXCL12/SYVN1/RELA/CTSH/BAX/ENO1/HMGB2/APP/PIK3CB/RPS3/NME5/SLC25A5/DDIAS/PYCARD/PPP1CA/NFATC4/KDM1A/TRAF2/BAD/TGFBR1/SLC25A6/MIF/NF1/MAPK9/MSX1/DEDD2/AKT1/BAG5/NOL3/PLEKHF1/SEPTIN4/FIS1/CD74/SOD1/SRC/SFRP2/NRP1/BCLAF1/PRELID1/RTKN2/JAK2/SCG2/LMNA/HDAC1/SNAI1/OPA1
+<pre><code>                   ID                                   Description GeneRatio
+GO:2001233 GO:2001233     regulation of apoptotic signaling pathway  164/4221
+GO:0045229 GO:0045229 external encapsulating structure organization  145/4221
+GO:0030198 GO:0030198             extracellular matrix organization  144/4221
+GO:0043062 GO:0043062          extracellular structure organization  144/4221
+GO:0036293 GO:0036293           response to decreased oxygen levels  140/4221
+GO:0001666 GO:0001666                           response to hypoxia  135/4221
+GO:0070482 GO:0070482                     response to oxygen levels  148/4221
+GO:0006979 GO:0006979                  response to oxidative stress  162/4221
+GO:0001503 GO:0001503                                  ossification  176/4221
+GO:0051338 GO:0051338            regulation of transferase activity  176/4221
+             BgRatio RichFactor FoldEnrichment   zScore       pvalue
+GO:2001233 398/18429  0.4120603       1.799066 8.784050 1.565104e-16
+GO:0045229 341/18429  0.4252199       1.856522 8.701630 3.876853e-16
+GO:0030198 339/18429  0.4247788       1.854596 8.656085 5.449599e-16
+GO:0043062 340/18429  0.4235294       1.849141 8.613749 7.346873e-16
+GO:0036293 328/18429  0.4268293       1.863548 8.601070 8.622993e-16
+GO:0001666 314/18429  0.4299363       1.877114 8.544404 1.403743e-15
+GO:0070482 356/18429  0.4157303       1.815090 8.464390 1.955033e-15
+GO:0006979 406/18429  0.3990148       1.742109 8.241337 7.442020e-15
+GO:0001503 458/18429  0.3842795       1.677775 8.005937 3.121776e-14
+GO:0051338 463/18429  0.3801296       1.659656 7.835427 9.807162e-14
+               p.adjust       qvalue
+GO:2001233 9.855460e-13 6.741479e-13
+GO:0045229 1.085980e-12 7.428482e-13
+GO:0030198 1.085980e-12 7.428482e-13
+GO:0043062 1.085980e-12 7.428482e-13
+GO:0036293 1.085980e-12 7.428482e-13
+GO:0001666 1.473228e-12 1.007740e-12
+GO:0070482 1.758692e-12 1.203007e-12
+GO:0006979 5.857800e-12 4.006940e-12
+GO:0001503 2.184203e-11 1.494071e-11
+GO:0051338 6.175570e-11 4.224306e-11
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              geneID
+GO:2001233                                                                                      MMP2/CTSC/PTGS2/HGF/INHBA/EYA4/BDKRB2/NRG1/SFRP1/CLU/UNC5B/PPARG/NR4A2/CD44/TLR4/LGALS3/MAZ/PPP2R1B/ITGA6/NUPR1/PMAIP1/BMP4/LRRK2/FGF10/IL1B/DDIT3/TNFRSF12A/SERINC3/CAV1/TMBIM6/BDNF/BOK/CFLAR/IER3/TNFSF15/ATF4/CSF2/IGF1/DDX3X/FAS/SKIL/PML/ACSL5/G0S2/BBC3/KLF4/SGK3/IL1A/ICAM1/ARHGEF2/PYCR1/FGF2/NCK1/WNT16/RRM2B/CREB3L1/IVNS1ABP/NFE2L2/STRADB/ATF3/TNFSF10/HSPB1/FYN/GDNF/TRIM32/BAK1/CYLD/PTTG1IP/ACAA2/HERPUD1/SIAH2/VNN1/NOC2L/TMEM161A/VDAC2/DNAJA1/TP53/PIAS4/THBS1/TNFSF14/TAF6/HMOX1/BID/EIF2AK3/WNT5A/CTH/PTPRC/PCGF2/RBCK1/MARCHF7/HYOU1/CCAR2/RPS6KB1/MEIS3/RB1CC1/PLAUR/GCLM/SRPX/HIF1A/PAK2/MDM2/SERPINE1/TPT1/PTPN1/FADD/BCL2/URI1/TMEM14A/PPIF/USP15/TPD52L1/MYC/GHITM/EIF5A/ACKR3/TRAP1/USP47/ITPRIP/CXCL12/SYVN1/RELA/CTSH/BAX/ENO1/HMGB2/APP/PIK3CB/RPS3/NME5/SLC25A5/DDIAS/PYCARD/PPP1CA/NFATC4/KDM1A/TRAF2/BAD/TGFBR1/SLC25A6/MIF/NF1/MAPK9/MSX1/DEDD2/AKT1/BAG5/NOL3/PLEKHF1/SEPTIN4/FIS1/CD74/SOD1/SRC/SFRP2/NRP1/BCLAF1/PRELID1/RTKN2/JAK2/SCG2/LMNA/HDAC1/SNAI1/OPA1
+GO:0045229                                                                                                             TGFBI/ELN/COL11A1/COL4A1/MMP2/ITGA8/TNFRSF11B/TGFBR3/COMP/RECK/CSGALNACT1/ADAMTS1/COL8A2/COL5A1/DPP4/COL1A1/COL4A2/SULF1/FBLN5/SMAD3/COL14A1/NID2/HMCN1/MMP11/GPM6B/MFAP4/COL4A6/LAMB1/SERPINH1/MMP1/FLRT2/NTN4/POSTN/COL16A1/PPARG/MMP14/ABI3BP/SLC39A8/ADAM10/MATN2/CYP1B1/PDGFRA/LOXL2/BMP2/RGCC/IL6/COL5A3/COL7A1/FMOD/PRDX4/ITGA2/PXDN/ADAMTS19/TNXB/CAV1/COL5A2/LAMA1/MMP3/CFLAR/ADAMTS10/ERO1A/ELF3/CTSK/LOXL4/ADAMTS6/COL4A5/COL24A1/P4HA3/FSCN1/COL1A2/PTX3/ADAMTSL1/GAS6/RUNX1/ADAMTS12/EMILIN1/COL27A1/ANTXR1/HAS2/FOXC1/THSD4/P3H4/SLC2A10/ERCC2/FOXC2/FBLN1/ADAMTS2/CREB3L1/ZNF469/COL10A1/FOXF2/COL3A1/TGFB1/B4GALT1/APBB2/CRTAP/ADAMTS9/TNFRSF1B/PAPLN/LRP1/HPSE2/AEBP1/ATXN1L/MELTF/HSD17B12/OLFML2B/MMP17/BCL3/SH3PXD2B/KAZALD1/DDR2/ECM2/BMP1/PHLDB1/POMT2/COL4A4/CCDC80/IER3IP1/CRISPLD2/COL11A2/ITGB3/NOTCH1/APP/FOXF1/RIC8A/ADAMTS7/AXIN2/ABL1/EXT1/CAV2/TGM1/TGFBR1/MMP15/ITGB1/NF1/DPT/MYO1E/MAD2L2/COL12A1/SFRP2/ADAMTS13/WASHC1/APLP1/EXOC8/ADAMTS16
+GO:0030198                                                                                                                  TGFBI/ELN/COL11A1/COL4A1/MMP2/ITGA8/TNFRSF11B/TGFBR3/COMP/RECK/CSGALNACT1/ADAMTS1/COL8A2/COL5A1/DPP4/COL1A1/COL4A2/SULF1/FBLN5/SMAD3/COL14A1/NID2/HMCN1/MMP11/GPM6B/MFAP4/COL4A6/LAMB1/SERPINH1/MMP1/FLRT2/NTN4/POSTN/COL16A1/PPARG/MMP14/ABI3BP/SLC39A8/ADAM10/MATN2/CYP1B1/PDGFRA/LOXL2/BMP2/RGCC/IL6/COL5A3/COL7A1/FMOD/PRDX4/ITGA2/PXDN/ADAMTS19/TNXB/CAV1/COL5A2/LAMA1/MMP3/CFLAR/ADAMTS10/ERO1A/ELF3/CTSK/LOXL4/ADAMTS6/COL4A5/COL24A1/P4HA3/FSCN1/COL1A2/PTX3/ADAMTSL1/GAS6/RUNX1/ADAMTS12/EMILIN1/COL27A1/ANTXR1/HAS2/FOXC1/THSD4/P3H4/SLC2A10/ERCC2/FOXC2/FBLN1/ADAMTS2/CREB3L1/ZNF469/COL10A1/FOXF2/COL3A1/TGFB1/B4GALT1/APBB2/CRTAP/ADAMTS9/TNFRSF1B/PAPLN/LRP1/HPSE2/AEBP1/ATXN1L/MELTF/HSD17B12/OLFML2B/MMP17/BCL3/SH3PXD2B/KAZALD1/DDR2/ECM2/BMP1/PHLDB1/POMT2/COL4A4/CCDC80/IER3IP1/CRISPLD2/COL11A2/ITGB3/NOTCH1/APP/FOXF1/RIC8A/ADAMTS7/AXIN2/ABL1/EXT1/CAV2/TGFBR1/MMP15/ITGB1/NF1/DPT/MYO1E/MAD2L2/COL12A1/SFRP2/ADAMTS13/WASHC1/APLP1/EXOC8/ADAMTS16
+GO:0043062                                                                                                                  TGFBI/ELN/COL11A1/COL4A1/MMP2/ITGA8/TNFRSF11B/TGFBR3/COMP/RECK/CSGALNACT1/ADAMTS1/COL8A2/COL5A1/DPP4/COL1A1/COL4A2/SULF1/FBLN5/SMAD3/COL14A1/NID2/HMCN1/MMP11/GPM6B/MFAP4/COL4A6/LAMB1/SERPINH1/MMP1/FLRT2/NTN4/POSTN/COL16A1/PPARG/MMP14/ABI3BP/SLC39A8/ADAM10/MATN2/CYP1B1/PDGFRA/LOXL2/BMP2/RGCC/IL6/COL5A3/COL7A1/FMOD/PRDX4/ITGA2/PXDN/ADAMTS19/TNXB/CAV1/COL5A2/LAMA1/MMP3/CFLAR/ADAMTS10/ERO1A/ELF3/CTSK/LOXL4/ADAMTS6/COL4A5/COL24A1/P4HA3/FSCN1/COL1A2/PTX3/ADAMTSL1/GAS6/RUNX1/ADAMTS12/EMILIN1/COL27A1/ANTXR1/HAS2/FOXC1/THSD4/P3H4/SLC2A10/ERCC2/FOXC2/FBLN1/ADAMTS2/CREB3L1/ZNF469/COL10A1/FOXF2/COL3A1/TGFB1/B4GALT1/APBB2/CRTAP/ADAMTS9/TNFRSF1B/PAPLN/LRP1/HPSE2/AEBP1/ATXN1L/MELTF/HSD17B12/OLFML2B/MMP17/BCL3/SH3PXD2B/KAZALD1/DDR2/ECM2/BMP1/PHLDB1/POMT2/COL4A4/CCDC80/IER3IP1/CRISPLD2/COL11A2/ITGB3/NOTCH1/APP/FOXF1/RIC8A/ADAMTS7/AXIN2/ABL1/EXT1/CAV2/TGFBR1/MMP15/ITGB1/NF1/DPT/MYO1E/MAD2L2/COL12A1/SFRP2/ADAMTS13/WASHC1/APLP1/EXOC8/ADAMTS16
+GO:0036293                                                                                                                                                                                                                                              MMP2/TGFBR3/STC1/PTGS2/DPP4/INHBA/DDIT4/VCAM1/SMAD3/SFRP1/POSTN/PPARG/NR4A2/MMP14/LOC102724560/LOXL2/NPEPPS/BMP2/EPAS1/RGCC/RTN4/TFRC/PMAIP1/AJUBA/IRAK1/PTGIS/SLC11A2/VEGFA/SLC1A1/LONP1/ITGA2/CD24/BNIP3L/CAV1/TMBIM6/STC2/HIPK2/HK2/CFLAR/MYOCD/ERO1A/ATF4/KCNK2/CBS/PLAU/TEK/GATA6/PTK2B/PML/ADO/ROCK2/DDAH1/BBC3/KCNMA1/PLAT/CPEB4/CAPN2/PDK1/SLC29A1/IL1A/CAT/VASN/AQP3/MT-ND4/CITED2/MGARP/MT-ND5/SLC9A1/PGK1/ERCC2/FMN2/EPHA4/PPARA/NFE2L2/TGFB1/PRKAA1/FOSL2/LIMD1/CREBBP/VEGFB/ACAA2/SOD3/USP19/AK4/TP53/THBS1/WTIP/PTPRD/ABAT/EGLN1/HSF1/ZFP36L1/BNIP2/DNMT3A/SDHD/HYOU1/HSPG2/BNIP3/HMOX2/HSP90B1/MLST8/NOP53/HIF1A/DDR2/ADSL/MDM2/PTPN1/BCL2/MT-CYB/MYC/LIF/CXCL12/EGLN2/ADA/ENO1/NOTCH1/PIK3CB/CCNA2/MT-ND1/XRCC1/RPTOR/BAD/NF1/PPARD/AKT1/MT-CO1/NOL3/MAP3K7/MT-CO2/TIGAR/SIRT2/SRC/SRF/TLR2/PICK1/CPEB2/ACE/LMNA/PIN1/MT-ND2
+GO:0001666                                                                                                                                                                                                                                                                            MMP2/TGFBR3/STC1/PTGS2/DPP4/INHBA/DDIT4/VCAM1/SMAD3/SFRP1/POSTN/PPARG/NR4A2/MMP14/LOC102724560/LOXL2/NPEPPS/BMP2/EPAS1/RGCC/RTN4/TFRC/PMAIP1/AJUBA/IRAK1/PTGIS/SLC11A2/VEGFA/LONP1/ITGA2/CD24/BNIP3L/CAV1/TMBIM6/STC2/HIPK2/HK2/CFLAR/MYOCD/ERO1A/ATF4/KCNK2/CBS/PLAU/TEK/GATA6/PTK2B/PML/ADO/ROCK2/DDAH1/BBC3/KCNMA1/PLAT/CAPN2/PDK1/SLC29A1/IL1A/CAT/VASN/AQP3/MT-ND4/CITED2/MGARP/MT-ND5/SLC9A1/PGK1/ERCC2/FMN2/EPHA4/PPARA/NFE2L2/TGFB1/PRKAA1/FOSL2/LIMD1/CREBBP/VEGFB/ACAA2/SOD3/USP19/AK4/TP53/THBS1/WTIP/PTPRD/ABAT/EGLN1/HSF1/ZFP36L1/DNMT3A/SDHD/HYOU1/HSPG2/BNIP3/HMOX2/HSP90B1/MLST8/NOP53/HIF1A/DDR2/ADSL/MDM2/PTPN1/BCL2/MT-CYB/MYC/LIF/CXCL12/EGLN2/ADA/ENO1/NOTCH1/PIK3CB/CCNA2/MT-ND1/XRCC1/RPTOR/BAD/NF1/PPARD/MT-CO1/NOL3/MAP3K7/MT-CO2/TIGAR/SIRT2/SRC/SRF/TLR2/CPEB2/ACE/LMNA/PIN1/MT-ND2
+GO:0070482                                                                                                                                                                                        MMP2/TGFBR3/STC1/PTGS2/DPP4/COL1A1/SLC7A5/INHBA/DDIT4/VCAM1/SMAD3/SFRP1/LPAR1/POSTN/PPARG/NR4A2/MMP14/LOC102724560/LOXL2/NPEPPS/BMP2/EPAS1/RGCC/RTN4/TFRC/PMAIP1/AJUBA/IRAK1/PTGIS/SLC11A2/VEGFA/SLC1A1/LONP1/ITGA2/CD24/BNIP3L/CAV1/TMBIM6/STC2/HIPK2/HK2/CFLAR/MYOCD/ERO1A/ATF4/KCNK2/CBS/PLAU/TEK/GATA6/FAS/PTK2B/PML/ADO/ROCK2/DDAH1/BBC3/KCNMA1/PLAT/CPEB4/CAPN2/PDK1/SLC29A1/IL1A/CAT/VASN/AQP3/MT-ND4/CITED2/MGARP/MT-ND5/SLC9A1/PGK1/ERCC2/FMN2/EPHA4/PPARA/NFE2L2/TGFB1/PRKAA1/FOSL2/LIMD1/CREBBP/VEGFB/ACAA2/SOD3/USP19/AK4/ATP6V1A/TP53/THBS1/WTIP/PTPRD/ABAT/EGLN1/HSF1/ZFP36L1/BNIP2/DNMT3A/GUCY1A2/SDHD/HYOU1/HSPG2/BNIP3/HMOX2/HSP90B1/MLST8/NOP53/HIF1A/DDR2/ADSL/MDM2/PTPN1/BCL2/MT-CYB/MYC/LIF/CXCL12/CDKN1A/EGLN2/ADA/ENO1/NOTCH1/PIK3CB/CCNA2/MT-ND1/XRCC1/RPTOR/BAD/NF1/TXNRD2/PPARD/AKT1/MT-CO1/NOL3/MAP3K7/MT-CO2/TIGAR/SIRT2/SRC/SRF/TLR2/PICK1/CPEB2/ACE/LMNA/PIN1/MT-ND2
+GO:0006979                                                                                                          MMP2/PTGS2/HGF/PDGFD/PTPRN/COL1A1/TRPA1/MGST1/TXNIP/TPM1/FBLN5/CD36/ARL6IP5/NR4A2/MMP14/MAP3K5/IDH1/RCAN1/GPX3/CYP1B1/SNCA/AREG/SESN3/PRDX1/PDGFRA/EPAS1/ADAM9/IL6/PLA2R1/NQO1/SLC11A2/LRRK2/PRDX4/ERMP1/SLC1A1/LONP1/PXDN/TXN/KLF2/APOD/PTGS1/SDC1/STC2/SESN2/MMP3/RBPMS/PAWR/ERO1A/PNPLA8/ATF4/PTK2B/PML/KAT2B/SPHK1/NET1/KDM6B/CYB5B/CAPN2/MET/IL1A/CAT/TREX1/PYCR1/PRR5L/OXR1/PRKAA2/AXL/MT-ND5/PRDX6/ERCC2/PRDX3/WNT16/FOSL1/RRM2B/NFE2L2/PRKAA1/BANF1/FYN/TRIM32/BAK1/ETV5/SIRPA/NCOA7/VNN1/SOD3/GSR/CCS/TMEM161A/CHUK/ERCC1/MT-ND3/APOE/TP53/MT-ND6/PRNP/MACROH2A1/AGAP3/MAPT/HMOX1/CD2AP/HSF1/HDAC6/NUDT1/ETFDH/SELENOP/PCGF2/PLK3/PPARGC1A/ATP13A2/BNIP3/ERCC6L2/HMOX2/FOXP1/GCLM/HIF1A/DDR2/PEX2/MDM2/BCL2/SCARA3/PPIF/TRAP1/ATP2A2/GPX4/RELA/ABCD1/ZNF580/APP/TRIM25/SELENOK/RPS3/GPX8/SLC8A1/PYROXD1/MT-ND1/PDK2/ABL1/PXN/EZH2/PLEKHA1/USP25/PEX13/XRCC1/CUL3/GCH1/MAPK9/TXNRD2/AKT1/MT-CO1/NAPRT/SIRT2/PDCD10/SOD1/SRC/PKD2/SETX/KEAP1/EIF2S1/FOXO4/JAK2/GPX7/PEX12
+GO:0001503            COL11A1/MMP2/EGR2/ITGA11/COMP/CSGALNACT1/STC1/PTGS2/HGF/COL1A1/VCAN/SMAD3/SEMA7A/CCN3/GPM6B/GLI2/FSTL3/SFRP1/FBN2/PPARG/MMP14/CTHRC1/LOC102724560/BAMBI/ANKH/VDR/GLI1/AREG/IL6ST/IGFBP5/XYLT1/BMP2/IL6/CCN2/MSX2/RFLNB/IGF2/TWIST2/BMP4/ALPL/EXT2/VEGFA/TWSG1/COL5A2/ASPN/PTPN11/JAG1/SRGN/SGMS2/CDH11/ATF4/CBS/CTSK/DCHS1/IGF1/PTN/ENPP1/TEK/PTK2B/COL1A2/IARS1/P2RX7/ADRB2/SMAD7/MEF2D/SUN1/BCAP29/PDLIM7/SCUBE3/RUNX1/ADAMTS12/RRAS2/ZMPSTE24/CAT/TOB1/SMO/SEMA4D/BPNT2/HSD17B4/FOXC1/FGF2/NAB2/ERCC2/FOXC2/RBPJ/TMT1A/OSR1/CREB3L1/PTK2/SMAD9/ECM1/TGFB1/FOSL2/LIMD1/HDAC7/TP53INP2/THRA/SBDS/OSR2/IGFBP2/H3-3B/GJA1/ALYREF/BCOR/SUCO/EPHA2/IFT80/GDF5/SBNO2/SNRNP200/ROGDI/LRP4/DKK1/OSTF1/CEBPD/DNAI3/CSF1/IL6R/SKI/EIF2AK3/CTNNBIP1/WNT5A/HIRA/CLEC3B/RASSF2/CLTC/MEN1/SMAD1/JUNB/HIF1A/KAZALD1/DDR2/BMP1/BCL2/JUND/SOX11/FBL/KREMEN1/TMCO1/NBR1/DNAJC13/ATRAID/DDX5/RXRB/PBX1/GLI3/ISG15/S1PR1/ATP2B1/NOTCH1/CCDC47/TENT5A/SLC8A1/ADAMTS7/AXIN2/EXT1/FBXL15/GIT1/PTGER4/SIX2/NF1/FASN/AKT1/RFLNA/SFRP2/NAB1/HNRNPC/PPP3CA/MRC2/MESD/MAPK14/RPS15/ADAR/SNAI1/TUFT1/ROR2
+GO:0051338 EREG/TENM1/IRAK3/NRG1/MMD/FBN1/TCIM/TRIB3/MAP3K5/TLR4/PDCD4/CCNG1/SNCA/CEMIP/RGCC/ADAM9/LYN/GPRC5B/TRIB2/PDGFA/NOX4/LRRK2/IL1B/TSPYL2/CD24/FLT1/GPRC5A/DUSP3/MYOCD/ARRDC4/TNFSF15/TAOK3/NEDD9/IGF1/DDX3X/PTK2B/ROBO1/KAT2B/UBE2S/BAG2/ADRB2/GAS6/UBE2C/PDGFRB/BTRC/EPHB2/AGTR1/SNX6/IRS2/CDC20/SOCS5/CDC14B/CAB39/FGF2/PLK1/PRDX3/TRAF4/STK38/DBI/SKP1/TFAP4/EPHA4/STRADB/PTK2/SYAP1/WARS1/LATS2/BANF1/MIDN/RALB/EEF1A2/LIMK1/HSPB1/PKMYT1/DVL2/CHP1/ADARB1/DUSP7/KSR1/CACUL1/PLAAT4/CHTF18/RAP2C/DUSP10/APOE/DNAJA1/SYNPO2/RGS2/HRAS/RPS2/THBS1/PABPN1/CEP43/USP44/MACROH2A1/TNFRSF10B/WNT5A/HEG1/SPINDOC/TINF2/CDKN2B/PTPRC/RASSF2/SASH1/MEN1/ERRFI1/HHEX/TAB1/DDR2/SPRED1/PAK2/PTPN1/PSRC1/SOCS4/GSKIP/AIDA/TSC2/TPD52L1/TAF7/LMO4/CDKN1A/STK11/PRKAG1/PRKAG2/AKT1S1/CCNT1/DUSP1/PRKRIP1/ITGB3/SERTAD1/PIH1D1/RPS3/PPM1F/HGS/IQGAP1/SLC8A1/RTRAF/GNAQ/ABL1/PYCARD/MST1/EZH2/VPS25/TRIB1/TPX2/XRCC1/TRAF2/CALM1/TRIM27/GHR/AKT1/BAG5/GSK3A/MAP3K7/RBL2/MAD2L2/TIGAR/MAP2K2/CORO1C/PDCD10/CD74/SRC/ITGB1BP1/RAP1A/LDB2/JAK2/ZFP36/ADAR/MAPRE3/CCNT2/CARD10/ZNF675/PILRB/ZNF16/FZR1/ETAA1
            Count
-GO:2001233   164</code></pre>
+GO:2001233   164
+GO:0045229   145
+GO:0030198   144
+GO:0043062   144
+GO:0036293   140
+GO:0001666   135
+GO:0070482   148
+GO:0006979   162
+GO:0001503   176
+GO:0051338   176</code></pre>
 </div>
 </div>
-<p>A dot plot can show us the most enriched pathways, and the size of each.</p>
+<p>Somewhat reassuringly the Extracellular Matrix pathways is found amongst these most significant pathways. A dot plot can show us the most enriched pathways, and the size of each.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dotplot</span>(enrich_go,<span class="at">showCategory=</span><span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dotplot</span>(enrich_go,<span class="at">showCategory=</span><span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -767,27 +807,9 @@ GO:2001233   164</code></pre>
 </div>
 </div>
 </div>
-<p>Relationships between the identified categories can be found using <code>emapplot</code>.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>enrich_go <span class="ot">&lt;-</span> enrichplot<span class="sc">::</span><span class="fu">pairwise_termsim</span>(enrich_go)</span>
-<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="fu">emapplot</span>(enrich_go)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
-ℹ Please use `linewidth` instead.
-ℹ The deprecated feature was likely used in the ggtangle package.
-  Please report the issue to the authors.</code></pre>
-</div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="1152"></p>
-</figure>
-</div>
-</div>
-</div>
 <p>Overlaps between gene sets can also be visualised using an “Upset plot” - an alternative to a venn diagram.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>enrichplot<span class="sc">::</span><span class="fu">upsetplot</span>(enrich_go)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>enrichplot<span class="sc">::</span><span class="fu">upsetplot</span>(enrich_go)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: `aes_()` was deprecated in ggplot2 3.0.0.
 ℹ Please use tidy evaluation idioms with `aes()`
@@ -795,10 +817,28 @@ GO:2001233   164</code></pre>
   Please report the issue at
   &lt;https://github.com/GuangchuangYu/enrichplot/issues&gt;.</code></pre>
 </div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+ℹ Please use `linewidth` instead.
+ℹ The deprecated feature was likely used in the ggupset package.
+  Please report the issue at &lt;https://github.com/const-ae/ggupset/issues&gt;.</code></pre>
+</div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Relationships between the identified categories can be found using <code>emapplot</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>enrich_go <span class="ot">&lt;-</span> enrichplot<span class="sc">::</span><span class="fu">pairwise_termsim</span>(enrich_go)</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="fu">emapplot</span>(enrich_go)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="1152"></p>
 </figure>
 </div>
 </div>
@@ -809,17 +849,17 @@ GO:2001233   164</code></pre>
 <p>An appealing feature of the <strong>GSEA</strong> method is that it does not require us to impose arbitrary cut-offs on the dataset to decide what is differentially-expressed or not. The steps in producing the input required for GSEA are i) retrieving the ranked statistics ii) naming each one according to a chosen identifier (<code>ENSEMBL</code> or <code>ENTREZID</code> for example).</p>
 <p>The <code>clusterProfiler</code> package also includes an implementation of the GSEA algorithm, and the function works in much the same way as <code>enrichGO</code> from above.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>ranked_genes <span class="ot">&lt;-</span> results_final <span class="sc">%&gt;%</span> </span>
-<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Score =</span> <span class="fu">sign</span>(log2FoldChange)<span class="sc">*-</span><span class="fu">log10</span>(padj)) <span class="sc">%&gt;%</span> </span>
-<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(Score)) <span class="sc">%&gt;%</span> </span>
-<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Score))</span>
-<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>geneList <span class="ot">&lt;-</span> <span class="fu">pull</span>(ranked_genes, Score)</span>
-<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(geneList) <span class="ot">&lt;-</span> <span class="fu">pull</span>(ranked_genes, ENSEMBL)</span>
-<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb57-9"><a href="#cb57-9" aria-hidden="true" tabindex="-1"></a>gse_GO  <span class="ot">&lt;-</span> <span class="fu">gseGO</span>(<span class="at">geneList =</span> geneList,</span>
-<span id="cb57-10"><a href="#cb57-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">OrgDb =</span> org.Hs.eg.db,</span>
-<span id="cb57-11"><a href="#cb57-11" aria-hidden="true" tabindex="-1"></a>        <span class="at">ont =</span> <span class="st">"BP"</span>,<span class="at">keyType =</span> <span class="st">"ENSEMBL"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>ranked_genes <span class="ot">&lt;-</span> results_final <span class="sc">%&gt;%</span> </span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Score =</span> <span class="fu">sign</span>(log2FoldChange)<span class="sc">*-</span><span class="fu">log10</span>(padj)) <span class="sc">%&gt;%</span> </span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(Score)) <span class="sc">%&gt;%</span> </span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Score))</span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>geneList <span class="ot">&lt;-</span> <span class="fu">pull</span>(ranked_genes, Score)</span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(geneList) <span class="ot">&lt;-</span> <span class="fu">pull</span>(ranked_genes, ENSEMBL)</span>
+<span id="cb55-8"><a href="#cb55-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb55-9"><a href="#cb55-9" aria-hidden="true" tabindex="-1"></a>gse_GO  <span class="ot">&lt;-</span> <span class="fu">gseGO</span>(<span class="at">geneList =</span> geneList,</span>
+<span id="cb55-10"><a href="#cb55-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">OrgDb =</span> org.Hs.eg.db,</span>
+<span id="cb55-11"><a href="#cb55-11" aria-hidden="true" tabindex="-1"></a>        <span class="at">ont =</span> <span class="st">"BP"</span>,<span class="at">keyType =</span> <span class="st">"ENSEMBL"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>using 'fgsea' for GSEA analysis, please cite Korotkevich et al (2019).</code></pre>
 </div>
@@ -841,58 +881,58 @@ The order of those tied genes will be arbitrary, which may produce unexpected re
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>gse_GO <span class="sc">%&gt;%</span> as.data.frame <span class="sc">%&gt;%</span> </span>
-<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>gse_GO <span class="sc">%&gt;%</span> as.data.frame <span class="sc">%&gt;%</span> </span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                   ID                                          Description
 GO:1990266 GO:1990266                                 neutrophil migration
-GO:0032103 GO:0032103 positive regulation of response to external stimulus
 GO:1902622 GO:1902622                   regulation of neutrophil migration
 GO:0030593 GO:0030593                                neutrophil chemotaxis
 GO:0006956 GO:0006956                                complement activation
 GO:0006959 GO:0006959                              humoral immune response
-GO:1905954 GO:1905954            positive regulation of lipid localization
-GO:0015718 GO:0015718                        monocarboxylic acid transport
-GO:0006066 GO:0006066                            alcohol metabolic process
 GO:0010562 GO:0010562  positive regulation of phosphorus metabolic process
-           setSize enrichmentScore       NES       pvalue   p.adjust
-GO:1990266      67      -0.8447447 -1.877186 5.891374e-07 0.00323731
-GO:0032103     470      -0.6030969 -1.614137 4.079952e-06 0.01120967
-GO:1902622      36      -0.8936258 -1.814629 9.125562e-06 0.01671499
-GO:0030593      48      -0.8582870 -1.804130 1.628950e-05 0.01790217
-GO:0006956      25      -0.9207703 -1.766162 1.516188e-05 0.01790217
-GO:0006959     114      -0.7497180 -1.766523 2.135617e-05 0.01955869
-GO:1905954      73      -0.7868479 -1.763029 5.855996e-05 0.02929080
-GO:0015718     100      -0.7471002 -1.742756 4.415553e-05 0.02929080
-GO:0006066     265      -0.6470992 -1.659672 5.863491e-05 0.02929080
-GO:0010562     377      -0.6156663 -1.629783 5.130972e-05 0.02929080
+GO:0045937 GO:0045937   positive regulation of phosphate metabolic process
+GO:0032103 GO:0032103 positive regulation of response to external stimulus
+GO:0006631 GO:0006631                         fatty acid metabolic process
+GO:0090022 GO:0090022                  regulation of neutrophil chemotaxis
+           setSize enrichmentScore       NES       pvalue    p.adjust
+GO:1990266      67      -0.8447447 -1.879661 9.969343e-07 0.005478154
+GO:1902622      36      -0.8936258 -1.814240 7.732532e-06 0.017787389
+GO:0030593      48      -0.8582870 -1.809180 1.710532e-05 0.017787389
+GO:0006956      25      -0.9207703 -1.802463 2.371656e-05 0.017787389
+GO:0006959     114      -0.7497180 -1.758720 1.555903e-05 0.017787389
+GO:0010562     377      -0.6156663 -1.615341 2.589611e-05 0.017787389
+GO:0045937     377      -0.6156663 -1.615341 2.589611e-05 0.017787389
+GO:0032103     470      -0.6030969 -1.610895 1.187259e-05 0.017787389
+GO:0006631     293      -0.6319033 -1.621175 3.612329e-05 0.022055276
+GO:0090022      24      -0.9080417 -1.769493 6.361137e-05 0.031776773
                 qvalue rank                   leading_edge
-GO:1990266 0.003011422  721  tags=21%, list=4%, signal=20%
-GO:0032103 0.010427499 1823 tags=20%, list=10%, signal=18%
-GO:1902622 0.015548676  721  tags=22%, list=4%, signal=21%
-GO:0030593 0.016653018  323  tags=21%, list=2%, signal=21%
-GO:0006956 0.016653018  704  tags=56%, list=4%, signal=54%
-GO:0006959 0.018193960 1411  tags=29%, list=8%, signal=27%
-GO:1905954 0.027246998  891  tags=22%, list=5%, signal=21%
-GO:0015718 0.027246998  904  tags=25%, list=5%, signal=24%
-GO:0006066 0.027246998 1365  tags=18%, list=8%, signal=17%
-GO:0010562 0.027246998 1432  tags=23%, list=8%, signal=21%
+GO:1990266 0.005046586  721  tags=21%, list=4%, signal=20%
+GO:1902622 0.016386103  721  tags=22%, list=4%, signal=21%
+GO:0030593 0.016386103  323  tags=21%, list=2%, signal=21%
+GO:0006956 0.016386103  704  tags=56%, list=4%, signal=54%
+GO:0006959 0.016386103 1411  tags=29%, list=8%, signal=27%
+GO:0010562 0.016386103 1432  tags=23%, list=8%, signal=21%
+GO:0045937 0.016386103 1432  tags=23%, list=8%, signal=21%
+GO:0032103 0.016386103 1823 tags=20%, list=10%, signal=18%
+GO:0006631 0.020317767 1827 tags=24%, list=10%, signal=22%
+GO:0090022 0.029273406  303  tags=17%, list=2%, signal=16%
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            core_enrichment
 GO:1990266                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ENSG00000115008/ENSG00000002586/ENSG00000125538/ENSG00000145147/ENSG00000115020/ENSG00000169245/ENSG00000115310/ENSG00000131981/ENSG00000163735/ENSG00000124875/ENSG00000112378/ENSG00000111913/ENSG00000197635/ENSG00000115594
-GO:0032103 ENSG00000153558/ENSG00000000003/ENSG00000170323/ENSG00000170458/ENSG00000170989/ENSG00000137752/ENSG00000107562/ENSG00000080824/ENSG00000157764/ENSG00000135655/ENSG00000204403/ENSG00000180370/ENSG00000117226/ENSG00000185515/ENSG00000117228/ENSG00000113712/ENSG00000130164/ENSG00000111961/ENSG00000162545/ENSG00000111727/ENSG00000114251/ENSG00000129657/ENSG00000183735/ENSG00000125735/ENSG00000160712/ENSG00000177189/ENSG00000184371/ENSG00000166747/ENSG00000006606/ENSG00000137033/ENSG00000134070/ENSG00000265491/ENSG00000213341/ENSG00000005893/ENSG00000204592/ENSG00000083799/ENSG00000010810/ENSG00000150457/ENSG00000169398/ENSG00000119414/ENSG00000132256/ENSG00000138685/ENSG00000150782/ENSG00000198961/ENSG00000104368/ENSG00000085871/ENSG00000120899/ENSG00000108688/ENSG00000215301/ENSG00000105894/ENSG00000123240/ENSG00000122861/ENSG00000170425/ENSG00000132205/ENSG00000179295/ENSG00000196776/ENSG00000105974/ENSG00000172594/ENSG00000164171/ENSG00000125538/ENSG00000070193/ENSG00000188906/ENSG00000145147/ENSG00000167191/ENSG00000254087/ENSG00000184374/ENSG00000151414/ENSG00000136244/ENSG00000169245/ENSG00000115310/ENSG00000125730/ENSG00000134853/ENSG00000134352/ENSG00000145335/ENSG00000179630/ENSG00000137845/ENSG00000145623/ENSG00000150593/ENSG00000136869/ENSG00000162645/ENSG00000198121/ENSG00000090376/ENSG00000135218/ENSG00000245532/ENSG00000166949/ENSG00000112378/ENSG00000111913/ENSG00000124882/ENSG00000158270/ENSG00000170962/ENSG00000073756/ENSG00000117525/ENSG00000109861
 GO:1902622                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ENSG00000115008/ENSG00000002586/ENSG00000145147/ENSG00000115310/ENSG00000112378/ENSG00000111913/ENSG00000197635/ENSG00000115594
 GO:0030593                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ENSG00000125538/ENSG00000145147/ENSG00000115020/ENSG00000169245/ENSG00000131981/ENSG00000163735/ENSG00000124875/ENSG00000112378/ENSG00000111913/ENSG00000197635
 GO:0006956                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ENSG00000182326/ENSG00000139178/ENSG00000000971/ENSG00000149131/ENSG00000196352/ENSG00000085063/ENSG00000125538/ENSG00000175899/ENSG00000184374/ENSG00000102760/ENSG00000125730/ENSG00000127241/ENSG00000120885/ENSG00000117335
 GO:0006959                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ENSG00000081237/ENSG00000145824/ENSG00000181374/ENSG00000180596/ENSG00000006606/ENSG00000204592/ENSG00000184678/ENSG00000182326/ENSG00000168214/ENSG00000139178/ENSG00000000971/ENSG00000149131/ENSG00000166710/ENSG00000108688/ENSG00000196352/ENSG00000163739/ENSG00000085063/ENSG00000125538/ENSG00000108700/ENSG00000146072/ENSG00000258818/ENSG00000175899/ENSG00000184374/ENSG00000136244/ENSG00000169245/ENSG00000102760/ENSG00000125730/ENSG00000131981/ENSG00000127241/ENSG00000163735/ENSG00000120885/ENSG00000124875/ENSG00000117335
-GO:1905954                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ENSG00000155368/ENSG00000115008/ENSG00000144747/ENSG00000116171/ENSG00000147872/ENSG00000197142/ENSG00000105974/ENSG00000125538/ENSG00000153246/ENSG00000112697/ENSG00000148344/ENSG00000125730/ENSG00000132170/ENSG00000116711/ENSG00000135218/ENSG00000141338
-GO:0015718                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ENSG00000186951/ENSG00000125257/ENSG00000115008/ENSG00000135046/ENSG00000147872/ENSG00000118596/ENSG00000108932/ENSG00000197142/ENSG00000135241/ENSG00000143320/ENSG00000118777/ENSG00000125538/ENSG00000153246/ENSG00000254087/ENSG00000148344/ENSG00000168679/ENSG00000187134/ENSG00000132170/ENSG00000123983/ENSG00000119899/ENSG00000168398/ENSG00000116711/ENSG00000135218/ENSG00000068366/ENSG00000073756
-GO:0006066                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ENSG00000182621/ENSG00000205808/ENSG00000173409/ENSG00000125629/ENSG00000137714/ENSG00000166311/ENSG00000112972/ENSG00000198743/ENSG00000067064/ENSG00000128918/ENSG00000167315/ENSG00000132356/ENSG00000109929/ENSG00000162409/ENSG00000151151/ENSG00000121691/ENSG00000165092/ENSG00000001630/ENSG00000196139/ENSG00000116171/ENSG00000014257/ENSG00000196616/ENSG00000050405/ENSG00000147475/ENSG00000136160/ENSG00000100612/ENSG00000198814/ENSG00000146233/ENSG00000127955/ENSG00000067113/ENSG00000006007/ENSG00000050165/ENSG00000072210/ENSG00000085662/ENSG00000187134/ENSG00000162407/ENSG00000125845/ENSG00000145335/ENSG00000138061/ENSG00000151632/ENSG00000115159/ENSG00000138413/ENSG00000107798/ENSG00000116711/ENSG00000079931/ENSG00000172817/ENSG00000116678
-GO:0010562                                                                                                                                 ENSG00000170271/ENSG00000101265/ENSG00000081237/ENSG00000114251/ENSG00000030304/ENSG00000183735/ENSG00000120889/ENSG00000160712/ENSG00000171867/ENSG00000176105/ENSG00000111328/ENSG00000067900/ENSG00000151893/ENSG00000156642/ENSG00000112078/ENSG00000102931/ENSG00000116641/ENSG00000187446/ENSG00000101210/ENSG00000144118/ENSG00000132356/ENSG00000169895/ENSG00000169398/ENSG00000082146/ENSG00000186951/ENSG00000116106/ENSG00000074842/ENSG00000157404/ENSG00000138685/ENSG00000162409/ENSG00000135932/ENSG00000163071/ENSG00000187764/ENSG00000158122/ENSG00000111269/ENSG00000150782/ENSG00000117461/ENSG00000162909/ENSG00000154310/ENSG00000169252/ENSG00000134318/ENSG00000114166/ENSG00000120899/ENSG00000026103/ENSG00000215301/ENSG00000135090/ENSG00000123892/ENSG00000137575/ENSG00000179295/ENSG00000105974/ENSG00000136810/ENSG00000272398/ENSG00000125538/ENSG00000070193/ENSG00000188906/ENSG00000125378/ENSG00000148053/ENSG00000167191/ENSG00000254087/ENSG00000072274/ENSG00000136244/ENSG00000091409/ENSG00000049130/ENSG00000162407/ENSG00000168615/ENSG00000102760/ENSG00000125845/ENSG00000103888/ENSG00000125730/ENSG00000109321/ENSG00000145335/ENSG00000136869/ENSG00000197442/ENSG00000123983/ENSG00000080493/ENSG00000176907/ENSG00000108960/ENSG00000157168/ENSG00000009694/ENSG00000108950/ENSG00000135218/ENSG00000136960/ENSG00000124882/ENSG00000116678/ENSG00000140285</code></pre>
+GO:0010562                                                                                                                                 ENSG00000170271/ENSG00000101265/ENSG00000081237/ENSG00000114251/ENSG00000030304/ENSG00000183735/ENSG00000120889/ENSG00000160712/ENSG00000171867/ENSG00000176105/ENSG00000111328/ENSG00000067900/ENSG00000151893/ENSG00000156642/ENSG00000112078/ENSG00000102931/ENSG00000116641/ENSG00000187446/ENSG00000101210/ENSG00000144118/ENSG00000132356/ENSG00000169895/ENSG00000169398/ENSG00000082146/ENSG00000186951/ENSG00000116106/ENSG00000074842/ENSG00000157404/ENSG00000138685/ENSG00000162409/ENSG00000135932/ENSG00000163071/ENSG00000187764/ENSG00000158122/ENSG00000111269/ENSG00000150782/ENSG00000117461/ENSG00000162909/ENSG00000154310/ENSG00000169252/ENSG00000134318/ENSG00000114166/ENSG00000120899/ENSG00000026103/ENSG00000215301/ENSG00000135090/ENSG00000123892/ENSG00000137575/ENSG00000179295/ENSG00000105974/ENSG00000136810/ENSG00000272398/ENSG00000125538/ENSG00000070193/ENSG00000188906/ENSG00000125378/ENSG00000148053/ENSG00000167191/ENSG00000254087/ENSG00000072274/ENSG00000136244/ENSG00000091409/ENSG00000049130/ENSG00000162407/ENSG00000168615/ENSG00000102760/ENSG00000125845/ENSG00000103888/ENSG00000125730/ENSG00000109321/ENSG00000145335/ENSG00000136869/ENSG00000197442/ENSG00000123983/ENSG00000080493/ENSG00000176907/ENSG00000108960/ENSG00000157168/ENSG00000009694/ENSG00000108950/ENSG00000135218/ENSG00000136960/ENSG00000124882/ENSG00000116678/ENSG00000140285
+GO:0045937                                                                                                                                 ENSG00000170271/ENSG00000101265/ENSG00000081237/ENSG00000114251/ENSG00000030304/ENSG00000183735/ENSG00000120889/ENSG00000160712/ENSG00000171867/ENSG00000176105/ENSG00000111328/ENSG00000067900/ENSG00000151893/ENSG00000156642/ENSG00000112078/ENSG00000102931/ENSG00000116641/ENSG00000187446/ENSG00000101210/ENSG00000144118/ENSG00000132356/ENSG00000169895/ENSG00000169398/ENSG00000082146/ENSG00000186951/ENSG00000116106/ENSG00000074842/ENSG00000157404/ENSG00000138685/ENSG00000162409/ENSG00000135932/ENSG00000163071/ENSG00000187764/ENSG00000158122/ENSG00000111269/ENSG00000150782/ENSG00000117461/ENSG00000162909/ENSG00000154310/ENSG00000169252/ENSG00000134318/ENSG00000114166/ENSG00000120899/ENSG00000026103/ENSG00000215301/ENSG00000135090/ENSG00000123892/ENSG00000137575/ENSG00000179295/ENSG00000105974/ENSG00000136810/ENSG00000272398/ENSG00000125538/ENSG00000070193/ENSG00000188906/ENSG00000125378/ENSG00000148053/ENSG00000167191/ENSG00000254087/ENSG00000072274/ENSG00000136244/ENSG00000091409/ENSG00000049130/ENSG00000162407/ENSG00000168615/ENSG00000102760/ENSG00000125845/ENSG00000103888/ENSG00000125730/ENSG00000109321/ENSG00000145335/ENSG00000136869/ENSG00000197442/ENSG00000123983/ENSG00000080493/ENSG00000176907/ENSG00000108960/ENSG00000157168/ENSG00000009694/ENSG00000108950/ENSG00000135218/ENSG00000136960/ENSG00000124882/ENSG00000116678/ENSG00000140285
+GO:0032103 ENSG00000153558/ENSG00000000003/ENSG00000170323/ENSG00000170458/ENSG00000170989/ENSG00000137752/ENSG00000107562/ENSG00000080824/ENSG00000157764/ENSG00000135655/ENSG00000204403/ENSG00000180370/ENSG00000117226/ENSG00000185515/ENSG00000117228/ENSG00000113712/ENSG00000130164/ENSG00000111961/ENSG00000162545/ENSG00000111727/ENSG00000114251/ENSG00000129657/ENSG00000183735/ENSG00000125735/ENSG00000160712/ENSG00000177189/ENSG00000184371/ENSG00000166747/ENSG00000006606/ENSG00000137033/ENSG00000134070/ENSG00000265491/ENSG00000213341/ENSG00000005893/ENSG00000204592/ENSG00000083799/ENSG00000010810/ENSG00000150457/ENSG00000169398/ENSG00000119414/ENSG00000132256/ENSG00000138685/ENSG00000150782/ENSG00000198961/ENSG00000104368/ENSG00000085871/ENSG00000120899/ENSG00000108688/ENSG00000215301/ENSG00000105894/ENSG00000123240/ENSG00000122861/ENSG00000170425/ENSG00000132205/ENSG00000179295/ENSG00000196776/ENSG00000105974/ENSG00000172594/ENSG00000164171/ENSG00000125538/ENSG00000070193/ENSG00000188906/ENSG00000145147/ENSG00000167191/ENSG00000254087/ENSG00000184374/ENSG00000151414/ENSG00000136244/ENSG00000169245/ENSG00000115310/ENSG00000125730/ENSG00000134853/ENSG00000134352/ENSG00000145335/ENSG00000179630/ENSG00000137845/ENSG00000145623/ENSG00000150593/ENSG00000136869/ENSG00000162645/ENSG00000198121/ENSG00000090376/ENSG00000135218/ENSG00000245532/ENSG00000166949/ENSG00000112378/ENSG00000111913/ENSG00000124882/ENSG00000158270/ENSG00000170962/ENSG00000073756/ENSG00000117525/ENSG00000109861
+GO:0006631                                                                                                                                                                                                                                                                                                                                                                 ENSG00000106617/ENSG00000075239/ENSG00000149485/ENSG00000181929/ENSG00000143198/ENSG00000124370/ENSG00000167600/ENSG00000146085/ENSG00000093144/ENSG00000164751/ENSG00000149084/ENSG00000109819/ENSG00000165996/ENSG00000171503/ENSG00000012660/ENSG00000143819/ENSG00000125629/ENSG00000104325/ENSG00000084754/ENSG00000167315/ENSG00000132356/ENSG00000101577/ENSG00000074696/ENSG00000186951/ENSG00000197894/ENSG00000198721/ENSG00000155368/ENSG00000102144/ENSG00000240303/ENSG00000162409/ENSG00000133835/ENSG00000196177/ENSG00000100997/ENSG00000140374/ENSG00000138029/ENSG00000196139/ENSG00000152256/ENSG00000116171/ENSG00000134324/ENSG00000114166/ENSG00000197142/ENSG00000106853/ENSG00000147475/ENSG00000145284/ENSG00000135241/ENSG00000095303/ENSG00000140526/ENSG00000105974/ENSG00000168477/ENSG00000059377/ENSG00000004799/ENSG00000125538/ENSG00000124212/ENSG00000072210/ENSG00000085662/ENSG00000148344/ENSG00000187134/ENSG00000143753/ENSG00000125730/ENSG00000145335/ENSG00000138061/ENSG00000151632/ENSG00000132170/ENSG00000123983/ENSG00000107798/ENSG00000188921/ENSG00000116711/ENSG00000135218/ENSG00000068366/ENSG00000005249/ENSG00000073756
+GO:0090022                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ENSG00000145147/ENSG00000112378/ENSG00000111913/ENSG00000197635</code></pre>
 </div>
 </div>
 <p>An overview of the results can be provided by a “ridge plot”. This allows comparison of the test statistics for each of the top enriched pathways.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ridgeplot</span>(gse_GO)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ridgeplot</span>(gse_GO)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: `aes_string()` was deprecated in ggplot2 3.0.0.
 ℹ Please use tidy evaluation idioms with `aes()`.
@@ -902,7 +942,7 @@ GO:0010562                                                                      
   &lt;https://github.com/GuangchuangYu/enrichplot/issues&gt;.</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Picking joint bandwidth of 5.06</code></pre>
+<pre><code>Picking joint bandwidth of 5.43</code></pre>
 </div>
 <div class="cell-output-display">
 <div>
@@ -914,7 +954,7 @@ GO:0010562                                                                      
 </div>
 <p>An upset plot can still be produced, but this time the distribution of statistics for overlapping categories can be produced.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>enrichplot<span class="sc">::</span><span class="fu">upsetplot</span>(gse_GO)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>enrichplot<span class="sc">::</span><span class="fu">upsetplot</span>(gse_GO)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -925,7 +965,7 @@ GO:0010562                                                                      
 </div>
 <p>The results confirm that the ECM pathway has many differentially-expressed genes (more than we would expect by chance). Moreover, there is a tendancy for these genes to be up-regulated; as indicated by the high positive enrichment score. Another way to visualise the GSEA results, that is typically produced from the GSEA java app, is the so-called enrichment plot.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gseaplot</span>(gse_GO,<span class="at">geneSetID =</span> <span class="st">"GO:0030198"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gseaplot</span>(gse_GO,<span class="at">geneSetID =</span> <span class="st">"GO:0030198"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -936,7 +976,7 @@ GO:0010562                                                                      
 </div>
 <p>The enrichment plot for a gene set with a high negative enrichment score reveals a different pattern.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gseaplot</span>(gse_GO,<span class="at">geneSetID =</span> <span class="st">"GO:0002283"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gseaplot</span>(gse_GO,<span class="at">geneSetID =</span> <span class="st">"GO:0002283"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -968,32 +1008,32 @@ GO:0010562                                                                      
 <p>The Bioconductor package have the convenience of being able to make queries offline. However, they are only available for certain organisms. If your organism does not have an <code>org.XX.eg.db</code> package listed on the Bioconductor annotation page (http://bioconductor.org/packages/release/BiocViews.html#___AnnotationData), an alternative is to use biomaRt which provides an interface to the popular biomart annotation resource.</p>
 <p>The first step is to find the name of a database that you want to connect to.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(biomaRt)</span>
-<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a><span class="fu">listMarts</span>()</span>
-<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>ensembl<span class="ot">=</span><span class="fu">useMart</span>(<span class="st">"ENSEMBL_MART_ENSEMBL"</span>)</span>
-<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a><span class="co"># list the available datasets (species). Replace human with the name of your organism</span></span>
-<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a><span class="fu">listDatasets</span>(ensembl) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"Human"</span>,description))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(biomaRt)</span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a><span class="fu">listMarts</span>()</span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>ensembl<span class="ot">=</span><span class="fu">useMart</span>(<span class="st">"ENSEMBL_MART_ENSEMBL"</span>)</span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a><span class="co"># list the available datasets (species). Replace human with the name of your organism</span></span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a><span class="fu">listDatasets</span>(ensembl) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"Human"</span>,description))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>ensembl <span class="ot">=</span> <span class="fu">useDataset</span>(<span class="st">"hsapiens_gene_ensembl"</span>, <span class="at">mart=</span>ensembl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>ensembl <span class="ot">=</span> <span class="fu">useDataset</span>(<span class="st">"hsapiens_gene_ensembl"</span>, <span class="at">mart=</span>ensembl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Queries to <code>biomaRt</code> are constructed in a similar way to the queries we performed with the <code>org.Hs.eg.db</code> package. Instead of <code>keys</code> we have <code>filters</code>, and instead of <code>columns</code> we have attributes. The list of acceptable values is much more comprehensive that for the <code>org.Hs.eg.db</code> package.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="fu">listFilters</span>(ensembl) <span class="sc">%&gt;%</span> </span>
-<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"ensembl"</span>,name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">listFilters</span>(ensembl) <span class="sc">%&gt;%</span> </span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"ensembl"</span>,name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="fu">listAttributes</span>(ensembl) <span class="sc">%&gt;%</span> </span>
-<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"gene"</span>,name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">listAttributes</span>(ensembl) <span class="sc">%&gt;%</span> </span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"gene"</span>,name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>An advantage over the <code>org..</code> packages is that positional information can be retrieved</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>attributeNames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'ensembl_gene_id'</span>, <span class="st">'entrezgene_id'</span>, <span class="st">'external_gene_name'</span>, <span class="st">"chromosome_name"</span>,<span class="st">"start_position"</span>,<span class="st">"end_position"</span>)</span>
-<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a><span class="fu">getBM</span>(<span class="at">attributes =</span> attributeNames,</span>
-<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">filters =</span> <span class="st">"ensembl_gene_id"</span>,</span>
-<span id="cb76-5"><a href="#cb76-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">values=</span>top_genes,</span>
-<span id="cb76-6"><a href="#cb76-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">mart=</span>ensembl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>attributeNames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'ensembl_gene_id'</span>, <span class="st">'entrezgene_id'</span>, <span class="st">'external_gene_name'</span>, <span class="st">"chromosome_name"</span>,<span class="st">"start_position"</span>,<span class="st">"end_position"</span>)</span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a><span class="fu">getBM</span>(<span class="at">attributes =</span> attributeNames,</span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">filters =</span> <span class="st">"ensembl_gene_id"</span>,</span>
+<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">values=</span>top_genes,</span>
+<span id="cb74-6"><a href="#cb74-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">mart=</span>ensembl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 

@@ -103,7 +103,7 @@ The filtered group (in blue) represents the low-count genes that were removed. T
 
 Non-Filtered Group (e.g., shown in `r #red`): This histogram represents the genes with sufficient expression to be tested. This is the set of $p$-values actually used for the Benjamini-Hochberg adjustment. This distribution should show a clear, desirable pattern: a strong peak near $p=0$ (the true differentially expressed genes) and a flat, uniform distribution from $\sim0.05$ to $1$ (the true null hypotheses).Conclusion: By removing the "Filtered" genes, the adjusted $p$-values ($\text{padj}$) are calculated only on the well-behaved "Non-Filtered" set, resulting in more significant calls for the well-expressed genes.
 
-If the details above seem complex, rememeber that `DESeq2` will do these automatically without you having to think about them. If we think this behaviour isn't desirable, or are curious to see the results without any adjustment, we can set the argument `independentFiltering = FALSE` in the `results` function.
+If the details above seem complex, remember that `DESeq2` will do these automatically without you having to think about them. If we think this behaviour isn't desirable, or are curious to see the results without any adjustment, we can set the argument `independentFiltering = FALSE` in the `results` function.
 
 ## Shrinking the log fold-changes
 
@@ -177,7 +177,7 @@ results_final %>%
   ggplot(aes(x = log2FoldChange, y = -log10(padj), col = ECM_Gene, alpha = ECM_Gene)) + geom_point() + scale_colour_manual(values = c("black", "red")) + scale_alpha_manual(values=c(0.1,1))
 ```
 
-It certainly *looks* like these genes are more significant than we might expect. Another related plot is to look at the statistical significance (-log$_{10} adjusted p-value) for ECM and other genes separately.
+It certainly *looks* like these genes are more significant than we might expect. Another related plot is to look at the statistical significance (-log$_{10}$ adjusted p-value) for ECM and other genes separately.
 
 ```{r}
 results_final %>% 
@@ -190,7 +190,7 @@ Our next visualisation could be a heatmap, which if you recall from the previous
 We then remove any rows with low variance, and look-up the gene symbols to be used to label the rows.
 
 
-```{r fig.width=10,fig.height=10}
+```{r fig.width=10,fig.height=10, message=FALSE}
 library(pheatmap)
 vsd <- vst(dds)
 
@@ -324,11 +324,11 @@ In reality it would be impractical to test all possible pathways in this manner,
 
 ## Threshold-based Gene Set Testing
 
-## Analysis with clusterProfiler
+*Threshold-based* or *Over-representation* analysis is used once we have decided a list of differentially-expressed genes that we are happy with. The analysis then looks for gene sets that are *over-represented*, or occur more than we would expect by chance.
 
-`clusterProfiler` is a Bioconductor package for over-representation analysis. It's main advantage is that it provides some nice visualisation methods.
+`clusterProfiler` is a Bioconductor package for pathways and downstream analysis and it's main advantage is that it provides some nice visualisation methods.
 
-The main function is `enrichGO` which requires the IDs of genes found to be differentially-expressed (`sigGenes`) and the IDs of *all* genes in the dataset (`universe`). It uses the `org.Hs.eg.db` package to map between gene names and biological pathways.
+The function for over-representation analysis on Gene Ontologies is `enrichGO` which requires the IDs of genes found to be differentially-expressed (`sigGenes`) and the IDs of *all* genes in the dataset (`universe`). It uses the `org.Hs.eg.db` package to map between gene names and biological pathways.
 
 ```{r message=FALSE, warning=FALSE}
 library(clusterProfiler)
@@ -352,14 +352,21 @@ The result of `enrichGo` can be turned into a data frame for easier interpretati
 
 ```{r}
 enrich_go %>% data.frame %>% 
-  slice_head()
+  slice_head(n = 10)
 ```
 
-A dot plot can show us the most enriched pathways, and the size of each.
+Somewhat reassuringly the Extracellular Matrix pathways is found amongst these most significant pathways. A dot plot can show us the most enriched pathways, and the size of each.
 
-```{r}
+```{r fig.height=8}
 dotplot(enrich_go,showCategory=20)
 ```
+
+Overlaps between gene sets can also be visualised using an "Upset plot" - an alternative to a venn diagram.
+
+```{r}
+enrichplot::upsetplot(enrich_go)
+```
+
 
 Relationships between the identified categories can be found using `emapplot`.
 
@@ -368,11 +375,7 @@ enrich_go <- enrichplot::pairwise_termsim(enrich_go)
 emapplot(enrich_go)
 ```
 
-Overlaps between gene sets can also be visualised using an "Upset plot" - an alternative to a venn diagram.
 
-```{r}
-enrichplot::upsetplot(enrich_go)
-```
 
 ## Gene set enrichment analysis (GSEA)
 
