@@ -142,7 +142,7 @@ Looking at the "shrunken" results
 plotMA(results_final)
 ```
 
-The shrinkage technique will only change the log$_2$ fold-changes and **not the adjusted or raw p-values**. The purpose of shrinkage is to make the magnitude of the effect reliable for ranking genes, visualizing them in an MA plot, and filtering based on a minimum LFC threshold (e.g., $|\text{LFC}| > 1$). We can create a finalised results table by joining the annotation as before.
+The shrinkage technique will only change the log$_2$ fold-changes and **not the adjusted or raw p-values**. The purpose of shrinkage is to make the magnitude of the effect reliable for ranking genes, visualizing them in an MA plot, and filtering based on a minimum LFC threshold (e.g., `Log2FoldChange` > 1). We can create a finalised results table by joining the annotation as before.
 
 ```{r}
 results_final <- as.data.frame(results_final) %>% 
@@ -151,87 +151,13 @@ results_final <- as.data.frame(results_final) %>%
   filter(!duplicated(ENSEMBL)) %>% 
   arrange(padj) 
 ```
-# Heatmaps
-
-You may have already seen the use of a heatmap as a quality assessment tool to visualise the relationship between samples in an experiment. Another common use-case for such a plot is to visualise the results of a differential expression analysis. Although `ggplot2` has a `geom_tile` function to make heatmaps, specialised packages such as `pheatmaps` offer more functionality such as clustering the samples.
-
-The counts we are visualising are the *variance-stablised* counts, which are more appropriate for visualisation.
-
-Here we will take the top 10 genes from the differential expression analysis and produce a heatmap with the `pheatmap` package. We can take advantage of the fact the our counts table contains Ensembl gene names in the rows. Standard subset operations in R can then be used.
-
-The default colour palette goes from low expression in blue to high expression in red, which is a good alternative to the traditional red/green heatmaps which are not suitable for those with forms of colour-blindness.
-
-```{r}
-# pheatmap is a specialised package to make heatmaps
-library(pheatmap)
-top_genes <- dplyr::slice(results_final, 1:10) %>% pull(row)
-vsd <- vst(dds)
-
-# top_genes is a vector containing ENSEMBL names of the genes we want to see in the heatmap
-
-pheatmap(assay(vsd)[top_genes,])
-```
-
-The heatmap is more informative if we add colours underneath the sample dendrogram to indicate which sample group each sample belongs to. This we can do by creating a data frame containing metadata for each of the samples in our dataset. With the `DESeq2` workflow we have already created such a data frame. We have to make sure the the rownames of the data frame are the same as the column names of the counts matrix.
-
-```{r}
-sampleInfo <- as.data.frame(colData(dds)[,c("condition","Treated")])
-
-pheatmap(assay(vsd)[top_genes,],
-         annotation_col = sampleInfo,
-         scale="row")
-```
-
-Any plot we create in RStudio can be saved as a png or pdf file. We use the `png` or `pdf` function to create a file for the plot to be saved into and run the rest of the code as normal. The plot does not get displayed in RStudio, but printed to the specified file.
-
-```{r}
-png("heatmap_top10_genes.png",width=800,height=800)
-pheatmap(assay(vsd)[top_genes,],
-         annotation_col = sampleInfo)
-# dev.off()
-```
-
-There are many arguments to explore in `pheatmap`. For example, we might want to use a specific order to the rows and columns rather than using clustering. A useful option is to specific our own labels for the rows (genes). The default is to use the rownames of the count matrix. In our cases these are Ensembl IDs and not easy to interpret.
-
-```{r}
-N <- 50
-gene_labels <- dplyr::slice(results_final, 1:N) %>% pull(SYMBOL)
-
-pheatmap(assay(vsd)[top_genes,],
-         annotation_col = sampleInfo,
-         labels_row = gene_labels,
-         scale="row")
-```
-
-Given the nature of how the genes were selected for the heatmap, we shouldn't be surprised by the good separation that it demonstrates.
-
-# Exercise
-
-::: exercise
--   Produce a heatmap using the top 30 genes with the most extreme *log2 Fold-Change*
-    -   HINT: The `abs` function can be used to convert all negative values to positive.
--   Label the heatmap with the gene `SYMBOL` of the genes
--   Is this heatmap as effective as separating the samples into groups?
-
-```{r eval=FALSE}
 
 
+# Investigating particular gene sets
 
+Extracellular Matrix (ECM) genes serve as the blueprint and building materials for the structural and biochemical changes that promote cancer progression. We might hypothesise that the expression of these genes would be altered after treament with TGF
 
-```
-:::
-
-# Pathways analysis
-
-In this section we move towards discovering if our results are ***biologically significant***. Are the genes that we have picked statistical flukes, or are there some commonalities.
-
-There are two different approaches one might use, and we will cover the theory behind both.
-
-## Threshold-based Gene Set Testing
-
-For a particular pathway we need to calculate how many genes were identified as differentially-expressed and compare to *how many we would be expect by chance*. Or in other words, if we repeatedly generated a list of differentially-expressed genes at random how many genes from this pathway would be expect to see.
-
-For the ECM pathway we can extract all genes as follows:-
+For the Extra-Cellular Matrix (ECM) pathway we can extract all genes as follows once we know the GO ID:-
 
 ```{r}
 ## The pull function from dplyr is used to extract a particular column
@@ -242,14 +168,132 @@ pathway_genes <- AnnotationDbi::select(org.Hs.eg.db,
                                        columns="ENSEMBL") %>% pull(ENSEMBL)
 ```
 
-We can then annotate each gene in our results according to whether it belongs to this pathway, and whether it is differentially-expressed.
+We will now make a few plots to explore whether the genes belonging to this pathway have a tendency to be differentially-expressed. Starting with a volcano plot (made by-hand this time), we will label the points according to whether their `ENSEMBL` ID is one of the genes belonging to the pathway.
+
+
+```{r}
+results_final %>% 
+  mutate(ECM_Gene = ENSEMBL %in% pathway_genes) %>% 
+  ggplot(aes(x = log2FoldChange, y = -log10(padj), col = ECM_Gene, alpha = ECM_Gene)) + geom_point() + scale_colour_manual(values = c("black", "red")) + scale_alpha_manual(values=c(0.1,1))
+```
+
+It certainly *looks* like these genes are more significant than we might expect. Another related plot is to look at the statistical significance (-log$_{10} adjusted p-value) for ECM and other genes separately.
+
+```{r}
+results_final %>% 
+  mutate(ECM_Gene = ENSEMBL %in% pathway_genes) %>% 
+  ggplot(aes(x = ECM_Gene, y = -log10(padj))) + geom_boxplot()
+```
+
+Our next visualisation could be a heatmap, which if you recall from the previous section can be created using the `pheatmap` package. The variance stabilised data produced by `vst` is a good choice for this type of visualisation. We first make sure all the ENSEMBL IDs for the pathway are actually in our dataset, and get the VST values for these genes.
+
+We then remove any rows with low variance, and look-up the gene symbols to be used to label the rows.
+
+
+```{r fig.width=10,fig.height=10}
+library(pheatmap)
+vsd <- vst(dds)
+
+## make sure all ENSEMBL IDs are in the dataaset
+pathway_genes <- pathway_genes[pathway_genes %in% rownames(dds)]
+
+## Get the VST values for these 
+heatmap_data <- assay(vsd)[pathway_genes,]
+
+## Remove rows with low variance
+
+heatmap_data <- heatmap_data[rowVars(heatmap_data) >0.005, ]
+
+row_labs <- heatmap_data %>% data.frame() %>% tibble::rownames_to_column("ENSEMBL") %>% 
+  left_join(results_final) %>% 
+  pull(SYMBOL)
+
+samp_anno <- data.frame(colData(dds)) %>% dplyr::select(condition, Treated)
+
+pheatmap(heatmap_data,
+         annotation_col = samp_anno,scale="row",
+         labels_row = row_labs)
+```
+
+Again, this shows genes whose expression seems to be affected by TGF. All these plots are interesting observations, but not concrete scientific proof.
+
+To start to ascribe some significance to the finding we start by defining how many ECM genes we have in our data:-
+
+```{r}
+n_ECM_genes <- filter(results_final, ENSEMBL %in% pathway_genes) %>% nrow
+n_ECM_genes
+```
+How many genes are differentially-expressed. Let's use a loose definition of an adjusted p-value less than 0.05.
+
+```{r}
+n_DE_genes <- filter(results_final, padj < 0.05) %>% nrow()
+n_DE_genes
+```
+Finally, how many of our ECM genes are also differentially-expressed
+
+```{r}
+n_ECM_DE_genes <- filter(results_final, padj < 0.05,ENSEMBL %in% pathway_genes) %>% nrow()
+n_ECM_DE_genes
+```
+If our gene list was just a really random set of genes with no relation to the underlying biology, then we would naturally expect some number of ECM genes to occur **by chance alone**. To get a handle on how many we might expect we can run a small simulation. 
+
+```{r}
+n_ECM_genes <- filter(results_final, ENSEMBL %in% pathway_genes) %>% nrow
+n_DE_genes <- filter(results_final, padj < 0.05) %>% nrow()
+
+ECM_rand <- NULL
+
+for(i in 1:1000){
+ECM_rand[i] <- results_final %>% 
+  slice_sample(n = n_DE_genes) %>% 
+  filter(ENSEMBL %in% pathway_genes) %>% 
+  nrow()
+}
+
+```
+
+
+### Exercise
+
+Use the code above to simulate how many ECM genes we might reasonably expect in a random gene list with the same length as our list of differentially-expressed genes. Make a histogram of the results and make sure you understand the code. Does the **actual number** of ECM genes that we found to be differentially-expressed consistent with this distribution?
+
+:::{.callout-note collapse="true"}
+
+```{r}
+
+## Running the code
+
+n_ECM_genes <- filter(results_final, ENSEMBL %in% pathway_genes) %>% nrow
+n_DE_genes <- filter(results_final, padj < 0.05) %>% nrow()
+
+ECM_rand <- NULL
+
+for(i in 1:1000){
+ECM_rand[i] <- results_final %>% 
+  slice_sample(n = n_DE_genes) %>% 
+  filter(ENSEMBL %in% pathway_genes) %>% 
+  nrow()
+}
+
+data.frame(ECM_rand) %>% 
+  ggplot(aes(x = ECM_rand)) + geom_histogram() + geom_vline(xintercept = n_ECM_DE_genes, col = "red") + geom_vline(xintercept = median(ECM_rand),col="blue")
+
+```
+
+The number of ECM genes we observed was `r n_ECM_DE_genes` whereas the histogram shows we would expect around `r median(ECM_rand)`. It certainly seems like there more ECM genes than we would expect by chance.
+
+:::
+
+To formalise the test, we can then annotate each gene in our results according to whether it belongs to this pathway, and whether it is differentially-expressed or not.
+
 
 ```{r}
 go_table <- mutate(results_final, 
-                   inPathway = row %in% pathway_genes,
-                   isDE = padj < 0.05 & abs(log2FoldChange) > 1)
+                   inPathway = ENSEMBL %in% pathway_genes,
+                   isDE = padj < 0.05 )
 go_table %>% 
-  slice_head(n = 10)
+  slice_head(n = 10) %>% 
+  dplyr::select(SYMBOL, inPathway, isDE)
 ```
 
 Cross-tabulating the two new columns gives a basis for a statistical test
@@ -258,13 +302,27 @@ Cross-tabulating the two new columns gives a basis for a statistical test
 table(go_table$inPathway, go_table$isDE)
 ```
 
+
+For a particular pathway we need to calculate how many genes were identified as differentially-expressed and compare to *how many we would be expect by chance*. Or in other words, if we repeatedly generated a list of differentially-expressed genes at random how many genes from this pathway would be expect to see.
+
+
 The Fisher's exact test or chi-squared test (as seen here) can then be used
 
 ```{r}
 chisq.test(table(go_table$inPathway, go_table$isDE))
 ```
+We now have a p-value that is statistically-significant and can conclude that genes in the ECM pathway appear in our gene list more than we would expect by chance.
+
+
+
+# Pathways analysis
+
+We have of course picked ECM because it fit with a hypothesis we had about the dataset. It may not be the only pathway of interest, and probably not the only one either.
 
 In reality it would be impractical to test all possible pathways in this manner, so there are a number of Bioconductor packages that automate the process
+
+
+## Threshold-based Gene Set Testing
 
 ## Analysis with clusterProfiler
 
@@ -274,9 +332,9 @@ The main function is `enrichGO` which requires the IDs of genes found to be diff
 
 ```{r message=FALSE, warning=FALSE}
 library(clusterProfiler)
-universe <- results_final %>% pull(row)
+universe <- results_final %>% pull(ENSEMBL)
 sigGenes <- results_final %>% 
-  filter(padj < 0.05) %>% pull(row)
+  filter(padj < 0.05) %>% pull(ENSEMBL)
 
 enrich_go <- enrichGO(
   gene= sigGenes,
@@ -325,11 +383,12 @@ The `clusterProfiler` package also includes an implementation of the GSEA algori
 ```{r}
 
 ranked_genes <- results_final %>% 
-  arrange(desc(stat)) %>% 
-  filter(!is.na(stat))
+  mutate(Score = sign(log2FoldChange)*-log10(padj)) %>% 
+  arrange(desc(Score)) %>% 
+  filter(!is.na(Score))
   
-geneList <- pull(ranked_genes, stat)
-names(geneList) <- pull(ranked_genes, row)
+geneList <- pull(ranked_genes, Score)
+names(geneList) <- pull(ranked_genes, ENSEMBL)
   
 gse_GO  <- gseGO(geneList = geneList,
         OrgDb = org.Hs.eg.db,

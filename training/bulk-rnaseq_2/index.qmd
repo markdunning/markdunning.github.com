@@ -543,6 +543,77 @@ Admittedly, that *was* quite a bit of effort and would have been simpler with a 
 :::
 
 
+# Heatmaps
+
+You may have already seen the use of a heatmap as a quality assessment tool to visualise the relationship between samples in an experiment. Another common use-case for such a plot is to visualise the results of a differential expression analysis. Although `ggplot2` has a `geom_tile` function to make heatmaps, specialised packages such as `pheatmaps` offer more functionality such as clustering the samples.
+
+The counts we are visualising are the *variance-stablised* counts, which are more appropriate for visualisation.
+
+Here we will take the top 10 genes from the differential expression analysis and produce a heatmap with the `pheatmap` package. We can take advantage of the fact the our counts table contains Ensembl gene names in the rows. Standard subset operations in R can then be used.
+
+The default colour palette goes from low expression in blue to high expression in red, which is a good alternative to the traditional red/green heatmaps which are not suitable for those with forms of colour-blindness.
+
+```{r}
+# pheatmap is a specialised package to make heatmaps
+library(pheatmap)
+top_genes <- dplyr::slice(results_annotated, 1:10) %>% pull(row)
+vsd <- vst(dds)
+
+# top_genes is a vector containing ENSEMBL names of the genes we want to see in the heatmap
+
+pheatmap(assay(vsd)[top_genes,])
+```
+
+The heatmap is more informative if we add colours underneath the sample dendrogram to indicate which sample group each sample belongs to. This we can do by creating a data frame containing metadata for each of the samples in our dataset. With the `DESeq2` workflow we have already created such a data frame. We have to make sure the the rownames of the data frame are the same as the column names of the counts matrix.
+
+```{r}
+sampleInfo <- as.data.frame(colData(dds)[,c("condition","Treated")])
+
+pheatmap(assay(vsd)[top_genes,],
+         annotation_col = sampleInfo,
+         scale="row")
+```
+
+Any plot we create in RStudio can be saved as a png or pdf file. We use the `png` or `pdf` function to create a file for the plot to be saved into and run the rest of the code as normal. The plot does not get displayed in RStudio, but printed to the specified file.
+
+```{r}
+png("heatmap_top10_genes.png",width=800,height=800)
+pheatmap(assay(vsd)[top_genes,],
+         annotation_col = sampleInfo)
+# dev.off()
+```
+
+There are many arguments to explore in `pheatmap`. For example, we might want to use a specific order to the rows and columns rather than using clustering. A useful option is to specific our own labels for the rows (genes). The default is to use the rownames of the count matrix. In our cases these are Ensembl IDs and not easy to interpret.
+
+```{r}
+N <- 10
+gene_labels <- dplyr::slice(results_annotated, 1:N) %>% pull(SYMBOL)
+
+pheatmap(assay(vsd)[top_genes,],
+         annotation_col = sampleInfo,
+         labels_row = gene_labels,
+         scale="row")
+```
+
+Given the nature of how the genes were selected for the heatmap, we shouldn't be surprised by the good separation that it demonstrates.
+
+# Exercise
+
+::: exercise
+-   Produce a heatmap using the top 30 genes with the most extreme *log2 Fold-Change*
+    -   HINT: The `abs` function can be used to convert all negative values to positive.
+-   Label the heatmap with the gene `SYMBOL` of the genes
+-   Is this heatmap as effective as separating the samples into groups?
+
+```{r eval=FALSE}
+
+
+
+
+```
+:::
+
+
 # The volcano plot
 
 The last visualisation we will cover in this section is the *volcano plot* which is another way of looking at all your results. Similar to the MA plot, it shows the `log2FoldChange` on the x-axis and the statistical significance is shown so that the most significant genes are the highest on the y-axis.
