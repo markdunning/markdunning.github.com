@@ -33,7 +33,7 @@ dds <- readRDS("Robjects/dds.rds")
 
 In [Part 2](/training/bulk-rnaseq_part2/index.html) we dissected the `DESeq` workflow for differential expression in some detail. We also created a data frame for "annotating" the results with biological identifiers that are more recognisable.
 
-```{r message=FALSE, warning=FALSE}
+```{r load-anno, message=FALSE, warning=FALSE}
 library(org.Hs.eg.db)
 anno <- AnnotationDbi::select(org.Hs.eg.db,keys=rownames(dds),
               columns=c("SYMBOL","GENENAME"),
@@ -44,7 +44,7 @@ head(anno)
 
 The code to perform differential expression and incorporate the annotations is given below.
 
-```{r message=FALSE, warning=FALSE}
+```{r results-recap, message=FALSE, warning=FALSE}
 library(DESeq2)
 library(dplyr)
 library(ggplot2)
@@ -83,7 +83,7 @@ But wait, we also have some `NA` values. What's the deal with those?
 
 `DESeq2` has already done some processing on the results to exclude genes with low expression level across the dataset that it deems to be unreliable and unlikely to be differential-expressed. The genes it filters out (those that have `NA` adjusted p-value) tend to have a lower value of `baseMean`.
 
-```{r}
+```{r filter_vs_baseMean}
 results_annotated %>% 
   ggplot(aes(x = is.na(padj), y = baseMean)) + geom_boxplot() + scale_y_log10()
 ```
@@ -94,14 +94,14 @@ The procedure first uses the mean of normalized counts (`baseMean`) across all s
 
 The effect of filtering can be seen in the following histogram:-
 
-```{r}
+```{r histogram_vs_filtered}
 mutate(results_annotated, Filtered = is.na(padj)) %>% 
   ggplot(aes(x = pvalue, fill = Filtered)) + geom_histogram(alpha = 0.4)
 ```
 
 The filtered group (in blue) represents the low-count genes that were removed. The distribution is often nearly uniform or even shows a slight peak towards the lower $p$-values. If these low-power genes were included, the overall flat null distribution needed for accurate FDR control would be slightly inflated near zero, leading to a harsher multiple testing penalty.
 
-Non-Filtered Group (e.g., shown in `r #red`): This histogram represents the genes with sufficient expression to be tested. This is the set of $p$-values actually used for the Benjamini-Hochberg adjustment. This distribution should show a clear, desirable pattern: a strong peak near $p=0$ (the true differentially expressed genes) and a flat, uniform distribution from $\sim0.05$ to $1$ (the true null hypotheses).Conclusion: By removing the "Filtered" genes, the adjusted $p$-values ($\text{padj}$) are calculated only on the well-behaved "Non-Filtered" set, resulting in more significant calls for the well-expressed genes.
+Non-Filtered Group (e.g., shown in red): This histogram represents the genes with sufficient expression to be tested. This is the set of $p$-values actually used for the Benjamini-Hochberg adjustment. This distribution should show a clear, desirable pattern: a strong peak near $p=0$ (the true differentially expressed genes) and a flat, uniform distribution from $\sim0.05$ to $1$ (the true null hypotheses).Conclusion: By removing the "Filtered" genes, the adjusted $p$-values ($\text{padj}$) are calculated only on the well-behaved "Non-Filtered" set, resulting in more significant calls for the well-expressed genes.
 
 If the details above seem complex, remember that `DESeq2` will do these automatically without you having to think about them. If we think this behaviour isn't desirable, or are curious to see the results without any adjustment, we can set the argument `independentFiltering = FALSE` in the `results` function.
 
@@ -123,7 +123,7 @@ It works by:
 
 To use `lfcShrink` we have to supply the initial run of the `DESeq` pipeline (saved as `de_condition` in our case) and pay careful attention to the number of the coefficient that we want to apply shrinkage to. Running the `resultsNames` function prints that names of the coefficients, so `TGF_vs_CTR` is numbered coefficient 3. Printing the `results_final` object allows us to check as name of the contrast is printed to the screen.
 
-```{r}
+```{r make_shruken_results}
 resultsNames(de_condition)
 results_final <- lfcShrink(de_condition, coef = 3)
 results_final
@@ -131,20 +131,20 @@ results_final
 
 Let's remind ourselves of the MA- plot of the raw differential expression results
 
-```{r}
+```{r plotMA_raw}
 results_raw <- results(de_condition)
 plotMA(results_raw)
 ```
 
 Looking at the "shrunken" results
 
-```{r}
+```{r plotMA_shruknen}
 plotMA(results_final)
 ```
 
 The shrinkage technique will only change the log$_2$ fold-changes and **not the adjusted or raw p-values**. The purpose of shrinkage is to make the magnitude of the effect reliable for ranking genes, visualizing them in an MA plot, and filtering based on a minimum LFC threshold (e.g., `Log2FoldChange` > 1). We can create a finalised results table by joining the annotation as before.
 
-```{r}
+```{r add_annotation_to_final_results}
 results_final <- as.data.frame(results_final) %>% 
   tibble::rownames_to_column("ENSEMBL") %>% 
   left_join(anno) %>% 
@@ -159,7 +159,7 @@ Extracellular Matrix (ECM) genes serve as the blueprint and building materials f
 
 For the Extra-Cellular Matrix (ECM) pathway we can extract all genes as follows once we know the GO ID:-
 
-```{r}
+```{r getECM_genes}
 ## The pull function from dplyr is used to extract a particular column
 library(org.Hs.eg.db)
 pathway_genes <- AnnotationDbi::select(org.Hs.eg.db,
@@ -171,7 +171,7 @@ pathway_genes <- AnnotationDbi::select(org.Hs.eg.db,
 We will now make a few plots to explore whether the genes belonging to this pathway have a tendency to be differentially-expressed. Starting with a volcano plot (made by-hand this time), we will label the points according to whether their `ENSEMBL` ID is one of the genes belonging to the pathway.
 
 
-```{r}
+```{r volcano_vs_ECM}
 results_final %>% 
   mutate(ECM_Gene = ENSEMBL %in% pathway_genes) %>% 
   ggplot(aes(x = log2FoldChange, y = -log10(padj), col = ECM_Gene, alpha = ECM_Gene)) + geom_point() + scale_colour_manual(values = c("black", "red")) + scale_alpha_manual(values=c(0.1,1))
@@ -179,7 +179,7 @@ results_final %>%
 
 It certainly *looks* like these genes are more significant than we might expect. Another related plot is to look at the statistical significance (-log$_{10}$ adjusted p-value) for ECM and other genes separately.
 
-```{r}
+```{r padj_vs_ECM_genes}
 results_final %>% 
   mutate(ECM_Gene = ENSEMBL %in% pathway_genes) %>% 
   ggplot(aes(x = ECM_Gene, y = -log10(padj))) + geom_boxplot()
@@ -190,7 +190,7 @@ Our next visualisation could be a heatmap, which if you recall from the previous
 We then remove any rows with low variance, and look-up the gene symbols to be used to label the rows.
 
 
-```{r fig.width=10,fig.height=10, message=FALSE}
+```{r heatmap_of_ECM, fig.width=10,fig.height=10, message=FALSE}
 library(pheatmap)
 vsd <- vst(dds)
 
@@ -219,25 +219,25 @@ Again, this shows genes whose expression seems to be affected by TGF. All these 
 
 To start to ascribe some significance to the finding we start by defining how many ECM genes we have in our data:-
 
-```{r}
+```{r get_ECM_genes}
 n_ECM_genes <- filter(results_final, ENSEMBL %in% pathway_genes) %>% nrow
 n_ECM_genes
 ```
 How many genes are differentially-expressed. Let's use a loose definition of an adjusted p-value less than 0.05.
 
-```{r}
+```{r get_DE_genes}
 n_DE_genes <- filter(results_final, padj < 0.05) %>% nrow()
 n_DE_genes
 ```
 Finally, how many of our ECM genes are also differentially-expressed
 
-```{r}
+```{r get_ECM_DE_genes}
 n_ECM_DE_genes <- filter(results_final, padj < 0.05,ENSEMBL %in% pathway_genes) %>% nrow()
 n_ECM_DE_genes
 ```
 If our gene list was just a really random set of genes with no relation to the underlying biology, then we would naturally expect some number of ECM genes to occur **by chance alone**. To get a handle on how many we might expect we can run a small simulation. 
 
-```{r}
+```{r sim_how_many_ECM}
 n_ECM_genes <- filter(results_final, ENSEMBL %in% pathway_genes) %>% nrow
 n_DE_genes <- filter(results_final, padj < 0.05) %>% nrow()
 
@@ -255,11 +255,13 @@ ECM_rand[i] <- results_final %>%
 
 ### Exercise
 
+# Solution
+
 Use the code above to simulate how many ECM genes we might reasonably expect in a random gene list with the same length as our list of differentially-expressed genes. Make a histogram of the results and make sure you understand the code. Does the **actual number** of ECM genes that we found to be differentially-expressed consistent with this distribution?
 
 :::{.callout-note collapse="true"}
 
-```{r}
+```{r sim_histogram}
 
 ## Running the code
 
@@ -287,7 +289,7 @@ The number of ECM genes we observed was `r n_ECM_DE_genes` whereas the histogram
 To formalise the test, we can then annotate each gene in our results according to whether it belongs to this pathway, and whether it is differentially-expressed or not.
 
 
-```{r}
+```{r cross_tab_ECM_DE}
 go_table <- mutate(results_final, 
                    inPathway = ENSEMBL %in% pathway_genes,
                    isDE = padj < 0.05 )
@@ -298,7 +300,7 @@ go_table %>%
 
 Cross-tabulating the two new columns gives a basis for a statistical test
 
-```{r}
+```{r ECM_DE_2_by_2}
 table(go_table$inPathway, go_table$isDE)
 ```
 
@@ -308,7 +310,7 @@ For a particular pathway we need to calculate how many genes were identified as 
 
 The Fisher's exact test or chi-squared test (as seen here) can then be used
 
-```{r}
+```{r ECM_DE_chisquared}
 chisq.test(table(go_table$inPathway, go_table$isDE))
 ```
 We now have a p-value that is statistically-significant and can conclude that genes in the ECM pathway appear in our gene list more than we would expect by chance.
@@ -330,7 +332,7 @@ In reality it would be impractical to test all possible pathways in this manner,
 
 The function for over-representation analysis on Gene Ontologies is `enrichGO` which requires the IDs of genes found to be differentially-expressed (`sigGenes`) and the IDs of *all* genes in the dataset (`universe`). It uses the `org.Hs.eg.db` package to map between gene names and biological pathways.
 
-```{r message=FALSE, warning=FALSE}
+```{r enrichGO_run, message=FALSE, warning=FALSE}
 library(clusterProfiler)
 universe <- results_final %>% pull(ENSEMBL)
 sigGenes <- results_final %>% 
@@ -350,27 +352,27 @@ enrich_go <- enrichGO(
 
 The result of `enrichGo` can be turned into a data frame for easier interpretation.
 
-```{r}
+```{r enrich_go_as_df}
 enrich_go %>% data.frame %>% 
   slice_head(n = 10)
 ```
 
 Somewhat reassuringly the Extracellular Matrix pathways is found amongst these most significant pathways. A dot plot can show us the most enriched pathways, and the size of each.
 
-```{r fig.height=8}
+```{r enrichGO_dotplot, fig.height=8}
 dotplot(enrich_go,showCategory=20)
 ```
 
 Overlaps between gene sets can also be visualised using an "Upset plot" - an alternative to a venn diagram.
 
-```{r}
+```{r enrichGO_upset}
 enrichplot::upsetplot(enrich_go)
 ```
 
 
 Relationships between the identified categories can be found using `emapplot`.
 
-```{r fig.width=12}
+```{r enrichGO_enrichPlot, fig.width=12}
 enrich_go <- enrichplot::pairwise_termsim(enrich_go)
 emapplot(enrich_go)
 ```
@@ -383,7 +385,7 @@ An appealing feature of the **GSEA** method is that it does not require us to im
 
 The `clusterProfiler` package also includes an implementation of the GSEA algorithm, and the function works in much the same way as `enrichGO` from above.
 
-```{r}
+```{r gseGO_run}
 
 ranked_genes <- results_final %>% 
   mutate(Score = sign(log2FoldChange)*-log10(padj)) %>% 
@@ -399,32 +401,32 @@ gse_GO  <- gseGO(geneList = geneList,
 
 ```
 
-```{r}
+```{r gseGO_show}
 gse_GO %>% as.data.frame %>% 
   slice_head(n = 10)
 ```
 
 An overview of the results can be provided by a "ridge plot". This allows comparison of the test statistics for each of the top enriched pathways.
 
-```{r}
+```{r gseGO_ridgeplot}
 ridgeplot(gse_GO)
 ```
 
 An upset plot can still be produced, but this time the distribution of statistics for overlapping categories can be produced.
 
-```{r}
+```{r gseGO_upset}
 enrichplot::upsetplot(gse_GO)
 ```
 
 The results confirm that the ECM pathway has many differentially-expressed genes (more than we would expect by chance). Moreover, there is a tendancy for these genes to be up-regulated; as indicated by the high positive enrichment score. Another way to visualise the GSEA results, that is typically produced from the GSEA java app, is the so-called enrichment plot.
 
-```{r}
+```{r gseGO_gseaplot_0030198}
 gseaplot(gse_GO,geneSetID = "GO:0030198")
 ```
 
 The enrichment plot for a gene set with a high negative enrichment score reveals a different pattern.
 
-```{r}
+```{r gseGO_gseaplot_0002283}
 gseaplot(gse_GO,geneSetID = "GO:0002283")
 ```
 
