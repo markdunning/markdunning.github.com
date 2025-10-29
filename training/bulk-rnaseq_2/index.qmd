@@ -747,3 +747,54 @@ dds <- nbinomWaldTest(dds)
 ```
 
 It may seem like there is a lot to remember, but fortunately there is one convenient function that will apply the three steps (`DESeq`). The messages printed serve as reminders of the steps included.
+
+
+# Appendix: Annotation with the biomaRt resource
+
+The Bioconductor package have the convenience of being able to make queries offline. However, they are only available for certain organisms. If your organism does not have an `org.XX.eg.db` package listed on the Bioconductor annotation page (http://bioconductor.org/packages/release/BiocViews.html#\_\_\_AnnotationData), an alternative is to use biomaRt which provides an interface to the popular biomart annotation resource.
+
+The first step is to find the name of a database that you want to connect to.
+
+```{r echo=FALSE}
+library(biomaRt)
+```
+
+
+```{r biomart_setup, cache=TRUE}
+library(biomaRt)
+listMarts()
+ensembl=useMart("ENSEMBL_MART_ENSEMBL")
+# list the available datasets (species). Replace human with the name of your organism
+listDatasets(ensembl) %>% dplyr::filter(grepl("Human",description))
+```
+
+```{r biomart_set_dataset, cache=TRUE}
+ensembl = useDataset("hsapiens_gene_ensembl", mart=ensembl)
+```
+
+Queries to `biomaRt` are constructed in a similar way to the queries we performed with the `org.Hs.eg.db` package. Instead of `keys` we have `filters`, and instead of `columns` we have attributes. The list of acceptable values is much more comprehensive that for the `org.Hs.eg.db` package.
+
+```{r biomart_filters, cache=TRUE}
+listFilters(ensembl) %>% 
+    dplyr::filter(grepl("ensembl",name))
+```
+
+```{r biomart_attributes, cache=TRUE}
+listAttributes(ensembl) %>% 
+    dplyr::filter(grepl("gene",name))
+```
+
+An advantage over the `org..` packages is that positional information can be retrieved
+
+```{r, biomart_get_top_10, cache=TRUE}
+attributeNames <- c('ensembl_gene_id', 'entrezgene_id', 'external_gene_name', "chromosome_name","start_position","end_position")
+
+top_genes <- results_annotated %>% 
+  slice_min(padj, n = 10) %>% 
+  pull(row)
+
+getBM(attributes = attributeNames,
+      filters = "ensembl_gene_id",
+      values= top_genes,
+      mart=ensembl)
+```

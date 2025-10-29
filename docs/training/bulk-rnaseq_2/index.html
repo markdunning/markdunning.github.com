@@ -222,6 +222,7 @@ window.Quarto = {
   <li><a href="#exporting-normalized-counts" id="toc-exporting-normalized-counts" class="nav-link" data-scroll-target="#exporting-normalized-counts">Exporting normalized counts</a></li>
   </ul></li>
   <li><a href="#full-deseq-workflow" id="toc-full-deseq-workflow" class="nav-link" data-scroll-target="#full-deseq-workflow">Full DESeq workflow</a></li>
+  <li><a href="#appendix-annotation-with-the-biomart-resource" id="toc-appendix-annotation-with-the-biomart-resource" class="nav-link" data-scroll-target="#appendix-annotation-with-the-biomart-resource">Appendix: Annotation with the biomaRt resource</a></li>
   </ul>
 </nav>
     </div>
@@ -1424,6 +1425,1008 @@ MOV10 0.6600142 1.5151189</code></pre>
 <div class="sourceCode cell-code" id="cb113"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb113-1"><a href="#cb113-1" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">nbinomWaldTest</span>(dds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>It may seem like there is a lot to remember, but fortunately there is one convenient function that will apply the three steps (<code>DESeq</code>). The messages printed serve as reminders of the steps included.</p>
+</section>
+<section id="appendix-annotation-with-the-biomart-resource" class="level1">
+<h1>Appendix: Annotation with the biomaRt resource</h1>
+<p>The Bioconductor package have the convenience of being able to make queries offline. However, they are only available for certain organisms. If your organism does not have an <code>org.XX.eg.db</code> package listed on the Bioconductor annotation page (http://bioconductor.org/packages/release/BiocViews.html#___AnnotationData), an alternative is to use biomaRt which provides an interface to the popular biomart annotation resource.</p>
+<p>The first step is to find the name of a database that you want to connect to.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb114"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(biomaRt)</span>
+<span id="cb114-2"><a href="#cb114-2" aria-hidden="true" tabindex="-1"></a><span class="fu">listMarts</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>               biomart                version
+1 ENSEMBL_MART_ENSEMBL      Ensembl Genes 115
+2   ENSEMBL_MART_MOUSE      Mouse strains 115
+3     ENSEMBL_MART_SNP  Ensembl Variation 115
+4 ENSEMBL_MART_FUNCGEN Ensembl Regulation 115</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb116"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb116-1"><a href="#cb116-1" aria-hidden="true" tabindex="-1"></a>ensembl<span class="ot">=</span><span class="fu">useMart</span>(<span class="st">"ENSEMBL_MART_ENSEMBL"</span>)</span>
+<span id="cb116-2"><a href="#cb116-2" aria-hidden="true" tabindex="-1"></a><span class="co"># list the available datasets (species). Replace human with the name of your organism</span></span>
+<span id="cb116-3"><a href="#cb116-3" aria-hidden="true" tabindex="-1"></a><span class="fu">listDatasets</span>(ensembl) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"Human"</span>,description))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                dataset              description    version
+1 hsapiens_gene_ensembl Human genes (GRCh38.p14) GRCh38.p14</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb118"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb118-1"><a href="#cb118-1" aria-hidden="true" tabindex="-1"></a>ensembl <span class="ot">=</span> <span class="fu">useDataset</span>(<span class="st">"hsapiens_gene_ensembl"</span>, <span class="at">mart=</span>ensembl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Queries to <code>biomaRt</code> are constructed in a similar way to the queries we performed with the <code>org.Hs.eg.db</code> package. Instead of <code>keys</code> we have <code>filters</code>, and instead of <code>columns</code> we have attributes. The list of acceptable values is much more comprehensive that for the <code>org.Hs.eg.db</code> package.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb119"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a><span class="fu">listFilters</span>(ensembl) <span class="sc">%&gt;%</span> </span>
+<span id="cb119-2"><a href="#cb119-2" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"ensembl"</span>,name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                           name
+1               ensembl_gene_id
+2       ensembl_gene_id_version
+3         ensembl_transcript_id
+4 ensembl_transcript_id_version
+5            ensembl_peptide_id
+6    ensembl_peptide_id_version
+7               ensembl_exon_id
+                                                     description
+1                       Gene stable ID(s) [e.g. ENSG00000000003]
+2       Gene stable ID(s) with version [e.g. ENSG00000000003.17]
+3                 Transcript stable ID(s) [e.g. ENST00000000233]
+4 Transcript stable ID(s) with version [e.g. ENST00000000233.10]
+5                    Protein stable ID(s) [e.g. ENSP00000000233]
+6     Protein stable ID(s) with version [e.g. ENSP00000000233.5]
+7                              Exon ID(s) [e.g. ENSE00000000001]</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb121"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a><span class="fu">listAttributes</span>(ensembl) <span class="sc">%&gt;%</span> </span>
+<span id="cb121-2"><a href="#cb121-2" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"gene"</span>,name))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                              name
+1                                  ensembl_gene_id
+2                          ensembl_gene_id_version
+3                               external_gene_name
+4                             external_gene_source
+5                       percentage_gene_gc_content
+6                                     gene_biotype
+7                            entrezgene_trans_name
+8                                        genecards
+9                                     ens_lrg_gene
+10                            mim_gene_description
+11                              mim_gene_accession
+12                            entrezgene_accession
+13                                   entrezgene_id
+14                          entrezgene_description
+15                                   reactome_gene
+16                            wikigene_description
+17                                   wikigene_name
+18                                     wikigene_id
+19                                   affy_hugenefl
+20                           affy_hugene_1_0_st_v1
+21                           affy_hugene_2_0_st_v1
+22                           affy_hugene_2_1_st_v1
+23                                          gene3d
+24                                    gene3d_start
+25                                      gene3d_end
+26                                 ensembl_gene_id
+27                         ensembl_gene_id_version
+28                              external_gene_name
+29                            external_gene_source
+30                                    gene_biotype
+31                                 ensembl_gene_id
+32                         ensembl_gene_id_version
+33                              external_gene_name
+34                            external_gene_source
+35                      percentage_gene_gc_content
+36                cabingdonii_homolog_ensembl_gene
+37        cabingdonii_homolog_associated_gene_name
+38                scaustralis_homolog_ensembl_gene
+39        scaustralis_homolog_associated_gene_name
+40                     vpacos_homolog_ensembl_gene
+41             vpacos_homolog_associated_gene_name
+42                  mmmarmota_homolog_ensembl_gene
+43          mmmarmota_homolog_associated_gene_name
+44                   pformosa_homolog_ensembl_gene
+45           pformosa_homolog_associated_gene_name
+46                    bbbison_homolog_ensembl_gene
+47            bbbison_homolog_associated_gene_name
+48                uamericanus_homolog_ensembl_gene
+49        uamericanus_homolog_associated_gene_name
+50                     nvison_homolog_ensembl_gene
+51             nvison_homolog_associated_gene_name
+52               cdromedarius_homolog_ensembl_gene
+53       cdromedarius_homolog_associated_gene_name
+54                   uparryii_homolog_ensembl_gene
+55           uparryii_homolog_associated_gene_name
+56                  smerianae_homolog_ensembl_gene
+57          smerianae_homolog_associated_gene_name
+58              dnovemcinctus_homolog_ensembl_gene
+59      dnovemcinctus_homolog_associated_gene_name
+60                  sformosus_homolog_ensembl_gene
+61          sformosus_homolog_associated_gene_name
+62                    gmorhua_homolog_ensembl_gene
+63            gmorhua_homolog_associated_gene_name
+64                  charengus_homolog_ensembl_gene
+65          charengus_homolog_associated_gene_name
+66                     ssalar_homolog_ensembl_gene
+67             ssalar_homolog_associated_gene_name
+68                   cporosus_homolog_ensembl_gene
+69           cporosus_homolog_associated_gene_name
+70                  lbergylta_homolog_ensembl_gene
+71          lbergylta_homolog_associated_gene_name
+72                lcalcarifer_homolog_ensembl_gene
+73        lcalcarifer_homolog_associated_gene_name
+74                    dleucas_homolog_ensembl_gene
+75            dleucas_homolog_associated_gene_name
+76                  spartitus_homolog_ensembl_gene
+77          spartitus_homolog_associated_gene_name
+78                     rbieti_homolog_ensembl_gene
+79             rbieti_homolog_associated_gene_name
+80                  bmusculus_homolog_ensembl_gene
+81          bmusculus_homolog_associated_gene_name
+82               llaticaudata_homolog_ensembl_gene
+83       llaticaudata_homolog_associated_gene_name
+84              sbboliviensis_homolog_ensembl_gene
+85      sbboliviensis_homolog_associated_gene_name
+86                  ppaniscus_homolog_ensembl_gene
+87          ppaniscus_homolog_associated_gene_name
+88                    strutta_homolog_ensembl_gene
+89            strutta_homolog_associated_gene_name
+90                   hburtoni_homolog_ensembl_gene
+91           hburtoni_homolog_associated_gene_name
+92                 ogarnettii_homolog_ensembl_gene
+93         ogarnettii_homolog_associated_gene_name
+94              cintestinalis_homolog_ensembl_gene
+95      cintestinalis_homolog_associated_gene_name
+96                  csavignyi_homolog_ensembl_gene
+97          csavignyi_homolog_associated_gene_name
+98                   celegans_homolog_ensembl_gene
+99           celegans_homolog_associated_gene_name
+100                   btaurus_homolog_ensembl_gene
+101           btaurus_homolog_associated_gene_name
+102                  cwagneri_homolog_ensembl_gene
+103          cwagneri_homolog_associated_gene_name
+104                    cgobio_homolog_ensembl_gene
+105            cgobio_homolog_associated_gene_name
+106                ipunctatus_homolog_ensembl_gene
+107        ipunctatus_homolog_associated_gene_name
+108                   ggallus_homolog_ensembl_gene
+109           ggallus_homolog_associated_gene_name
+110              ptroglodytes_homolog_ensembl_gene
+111      ptroglodytes_homolog_associated_gene_name
+112                    cgpicr_homolog_ensembl_gene
+113            cgpicr_homolog_associated_gene_name
+114                 osinensis_homolog_ensembl_gene
+115         osinensis_homolog_associated_gene_name
+116                 psinensis_homolog_ensembl_gene
+117         psinensis_homolog_associated_gene_name
+118              otshawytscha_homolog_ensembl_gene
+119      otshawytscha_homolog_associated_gene_name
+120              atestudineus_homolog_ensembl_gene
+121      atestudineus_homolog_associated_gene_name
+122                aocellaris_homolog_ensembl_gene
+123        aocellaris_homolog_associated_gene_name
+124                lchalumnae_homolog_ensembl_gene
+125        lchalumnae_homolog_associated_gene_name
+126                  okisutch_homolog_ensembl_gene
+127          okisutch_homolog_associated_gene_name
+128               falbicollis_homolog_ensembl_gene
+129       falbicollis_homolog_associated_gene_name
+130                  scanaria_homolog_ensembl_gene
+131          scanaria_homolog_associated_gene_name
+132                  cccarpio_homolog_ensembl_gene
+133          cccarpio_homolog_associated_gene_name
+134                  pmuralis_homolog_ensembl_gene
+135          pmuralis_homolog_associated_gene_name
+136                  vursinus_homolog_ensembl_gene
+137          vursinus_homolog_associated_gene_name
+138                pcoquereli_homolog_ensembl_gene
+139        pcoquereli_homolog_associated_gene_name
+140             mfascicularis_homolog_ensembl_gene
+141     mfascicularis_homolog_associated_gene_name
+142                    odegus_homolog_ensembl_gene
+143            odegus_homolog_associated_gene_name
+144               dclupeoides_homolog_ensembl_gene
+145       dclupeoides_homolog_associated_gene_name
+146                   cldingo_homolog_ensembl_gene
+147           cldingo_homolog_associated_gene_name
+148              clfamiliaris_homolog_ensembl_gene
+149      clfamiliaris_homolog_associated_gene_name
+150                ttruncatus_homolog_ensembl_gene
+151        ttruncatus_homolog_associated_gene_name
+152                    fcatus_homolog_ensembl_gene
+153            fcatus_homolog_associated_gene_name
+154                bgrunniens_homolog_ensembl_gene
+155        bgrunniens_homolog_associated_gene_name
+156                   easinus_homolog_ensembl_gene
+157           easinus_homolog_associated_gene_name
+158              mleucophaeus_homolog_ensembl_gene
+159      mleucophaeus_homolog_associated_gene_name
+160             dmelanogaster_homolog_ensembl_gene
+161     dmelanogaster_homolog_associated_gene_name
+162           applatyrhynchos_homolog_ensembl_gene
+163   applatyrhynchos_homolog_associated_gene_name
+164                 ptextilis_homolog_ensembl_gene
+165         ptextilis_homolog_associated_gene_name
+166               acalliptera_homolog_ensembl_gene
+167       acalliptera_homolog_associated_gene_name
+168               eelectricus_homolog_ensembl_gene
+169       eelectricus_homolog_associated_gene_name
+170                 lafricana_homolog_ensembl_gene
+171         lafricana_homolog_associated_gene_name
+172                    cmilii_homolog_ensembl_gene
+173            cmilii_homolog_associated_gene_name
+174                 svulgaris_homolog_ensembl_gene
+175         svulgaris_homolog_associated_gene_name
+176                   dlabrax_homolog_ensembl_gene
+177           dlabrax_homolog_associated_gene_name
+178                    mpfuro_homolog_ensembl_gene
+179            mpfuro_homolog_associated_gene_name
+180                 trubripes_homolog_ensembl_gene
+181         trubripes_homolog_associated_gene_name
+182              amelanoleuca_homolog_ensembl_gene
+183      amelanoleuca_homolog_associated_gene_name
+184               nleucogenys_homolog_ensembl_gene
+185       nleucogenys_homolog_associated_gene_name
+186                   saurata_homolog_ensembl_gene
+187           saurata_homolog_associated_gene_name
+188                   chircus_homolog_ensembl_gene
+189           chircus_homolog_associated_gene_name
+190                  mauratus_homolog_ensembl_gene
+191          mauratus_homolog_associated_gene_name
+192              acchrysaetos_homolog_ensembl_gene
+193      acchrysaetos_homolog_associated_gene_name
+194                rroxellana_homolog_ensembl_gene
+195        rroxellana_homolog_associated_gene_name
+196                  cauratus_homolog_ensembl_gene
+197          cauratus_homolog_associated_gene_name
+198                 gevgoodei_homolog_ensembl_gene
+199         gevgoodei_homolog_associated_gene_name
+200                  ggorilla_homolog_ensembl_gene
+201          ggorilla_homolog_associated_gene_name
+202                    pmajor_homolog_ensembl_gene
+203            pmajor_homolog_associated_gene_name
+204                 sdumerili_homolog_ensembl_gene
+205         sdumerili_homolog_associated_gene_name
+206                    psimus_homolog_ensembl_gene
+207            psimus_homolog_associated_gene_name
+208            rferrumequinum_homolog_ensembl_gene
+209    rferrumequinum_homolog_associated_gene_name
+210             acarolinensis_homolog_ensembl_gene
+211     acarolinensis_homolog_associated_gene_name
+212                cporcellus_homolog_ensembl_gene
+213        cporcellus_homolog_associated_gene_name
+214               preticulata_homolog_ensembl_gene
+215       preticulata_homolog_associated_gene_name
+216                  eburgeri_homolog_ensembl_gene
+217          eburgeri_homolog_associated_gene_name
+218                eeuropaeus_homolog_ensembl_gene
+219        eeuropaeus_homolog_associated_gene_name
+220                 ecaballus_homolog_ensembl_gene
+221         ecaballus_homolog_associated_gene_name
+222                    hhucho_homolog_ensembl_gene
+223            hhucho_homolog_associated_gene_name
+224                  bihybrid_homolog_ensembl_gene
+225          bihybrid_homolog_associated_gene_name
+226                 pcapensis_homolog_ensembl_gene
+227         pcapensis_homolog_associated_gene_name
+228                     nnaja_homolog_ensembl_gene
+229             nnaja_homolog_associated_gene_name
+230               omelastigma_homolog_ensembl_gene
+231       omelastigma_homolog_associated_gene_name
+232                  olatipes_homolog_ensembl_gene
+233          olatipes_homolog_associated_gene_name
+234                 cjaponica_homolog_ensembl_gene
+235         cjaponica_homolog_associated_gene_name
+236                ojavanicus_homolog_ensembl_gene
+237        ojavanicus_homolog_associated_gene_name
+238               shabroptila_homolog_ensembl_gene
+239       shabroptila_homolog_associated_gene_name
+240                    dordii_homolog_ensembl_gene
+241            dordii_homolog_associated_gene_name
+242                 pcinereus_homolog_ensembl_gene
+243         pcinereus_homolog_associated_gene_name
+244                  pmarinus_homolog_ensembl_gene
+245          pmarinus_homolog_associated_gene_name
+246                   lcrocea_homolog_ensembl_gene
+247           lcrocea_homolog_associated_gene_name
+248              lleishanense_homolog_ensembl_gene
+249      lleishanense_homolog_associated_gene_name
+250                   ppardus_homolog_ensembl_gene
+251           ppardus_homolog_associated_gene_name
+252                  jjaculus_homolog_ensembl_gene
+253          jjaculus_homolog_associated_gene_name
+254                 etelfairi_homolog_ensembl_gene
+255         etelfairi_homolog_associated_gene_name
+256                      pleo_homolog_ensembl_gene
+257              pleo_homolog_associated_gene_name
+258                 clanigera_homolog_ensembl_gene
+259         clanigera_homolog_associated_gene_name
+260                   clumpus_homolog_ensembl_gene
+261           clumpus_homolog_associated_gene_name
+262                nbrichardi_homolog_ensembl_gene
+263        nbrichardi_homolog_associated_gene_name
+264                anancymaae_homolog_ensembl_gene
+265        anancymaae_homolog_associated_gene_name
+266                  mmulatta_homolog_ensembl_gene
+267          mmulatta_homolog_associated_gene_name
+268                 nscutatus_homolog_ensembl_gene
+269         nscutatus_homolog_associated_gene_name
+270                 pnyererei_homolog_ensembl_gene
+271         pnyererei_homolog_associated_gene_name
+272               kmarmoratus_homolog_ensembl_gene
+273       kmarmoratus_homolog_associated_gene_name
+274                   gfortis_homolog_ensembl_gene
+275           gfortis_homolog_associated_gene_name
+276                 pvampyrus_homolog_ensembl_gene
+277         pvampyrus_homolog_associated_gene_name
+278                amexicanus_homolog_ensembl_gene
+279        amexicanus_homolog_associated_gene_name
+280                mlucifugus_homolog_ensembl_gene
+281        mlucifugus_homolog_associated_gene_name
+282              acitrinellus_homolog_ensembl_gene
+283      acitrinellus_homolog_associated_gene_name
+284               xcouchianus_homolog_ensembl_gene
+285       xcouchianus_homolog_associated_gene_name
+286                 mmusculus_homolog_ensembl_gene
+287         mmusculus_homolog_associated_gene_name
+288                  mmurinus_homolog_ensembl_gene
+289          mmurinus_homolog_associated_gene_name
+290             fheteroclitus_homolog_ensembl_gene
+291     fheteroclitus_homolog_associated_gene_name
+292                  hgfemale_homolog_ensembl_gene
+293          hgfemale_homolog_associated_gene_name
+294                mmonoceros_homolog_ensembl_gene
+295        mmonoceros_homolog_associated_gene_name
+296                oniloticus_homolog_ensembl_gene
+297        oniloticus_homolog_associated_gene_name
+298                 pmbairdii_homolog_ensembl_gene
+299         pmbairdii_homolog_associated_gene_name
+300                   elucius_homolog_ensembl_gene
+301           elucius_homolog_associated_gene_name
+302               rnorvegicus_homolog_ensembl_gene
+303       rnorvegicus_homolog_associated_gene_name
+304                   panubis_homolog_ensembl_gene
+305           panubis_homolog_associated_gene_name
+306                mdomestica_homolog_ensembl_gene
+307        mdomestica_homolog_associated_gene_name
+308                  apercula_homolog_ensembl_gene
+309          apercula_homolog_associated_gene_name
+310                  cpbellii_homolog_ensembl_gene
+311          cpbellii_homolog_associated_gene_name
+312                 cimitator_homolog_ensembl_gene
+313         cimitator_homolog_associated_gene_name
+314               pkingsleyae_homolog_ensembl_gene
+315       pkingsleyae_homolog_associated_gene_name
+316                   sscrofa_homolog_ensembl_gene
+317           sscrofa_homolog_associated_gene_name
+318               mnemestrina_homolog_ensembl_gene
+319       mnemestrina_homolog_associated_gene_name
+320                 oprinceps_homolog_ensembl_gene
+321         oprinceps_homolog_associated_gene_name
+322               slucioperca_homolog_ensembl_gene
+323       slucioperca_homolog_associated_gene_name
+324                  mmurdjan_homolog_ensembl_gene
+325          mmurdjan_homolog_associated_gene_name
+326           abrachyrhynchus_homolog_ensembl_gene
+327   abrachyrhynchus_homolog_associated_gene_name
+328                xmaculatus_homolog_ensembl_gene
+329        xmaculatus_homolog_associated_gene_name
+330                 oanatinus_homolog_ensembl_gene
+331         oanatinus_homolog_associated_gene_name
+332                umaritimus_homolog_ensembl_gene
+333        umaritimus_homolog_associated_gene_name
+334              mochrogaster_homolog_ensembl_gene
+335      mochrogaster_homolog_associated_gene_name
+336                ocuniculus_homolog_ensembl_gene
+337        ocuniculus_homolog_associated_gene_name
+338                   omykiss_homolog_ensembl_gene
+339           omykiss_homolog_associated_gene_name
+340                   vvulpes_homolog_ensembl_gene
+341           vvulpes_homolog_associated_gene_name
+342                pnattereri_homolog_ensembl_gene
+343        pnattereri_homolog_associated_gene_name
+344              ecalabaricus_homolog_ensembl_gene
+345      ecalabaricus_homolog_associated_gene_name
+346                   mcaroli_homolog_ensembl_gene
+347           mcaroli_homolog_associated_gene_name
+348               scerevisiae_homolog_ensembl_gene
+349       scerevisiae_homolog_associated_gene_name
+350                platipinna_homolog_ensembl_gene
+351        platipinna_homolog_associated_gene_name
+352                    oaries_homolog_ensembl_gene
+353            oaries_homolog_associated_gene_name
+354               cvariegatus_homolog_ensembl_gene
+355       cvariegatus_homolog_associated_gene_name
+356                  saraneus_homolog_ensembl_gene
+357          saraneus_homolog_associated_gene_name
+358                   mpahari_homolog_ensembl_gene
+359           mpahari_homolog_associated_gene_name
+360                bsplendens_homolog_ensembl_gene
+361        bsplendens_homolog_associated_gene_name
+362              mmoschiferus_homolog_ensembl_gene
+363      mmoschiferus_homolog_associated_gene_name
+364                choffmanni_homolog_ensembl_gene
+365        choffmanni_homolog_associated_gene_name
+366                     catys_homolog_ensembl_gene
+367             catys_homolog_associated_gene_name
+368                  pcatodon_homolog_ensembl_gene
+369          pcatodon_homolog_associated_gene_name
+370             apolyacanthus_homolog_ensembl_gene
+371     apolyacanthus_homolog_associated_gene_name
+372                 loculatus_homolog_ensembl_gene
+373         loculatus_homolog_associated_gene_name
+374         itridecemlineatus_homolog_ensembl_gene
+375 itridecemlineatus_homolog_associated_gene_name
+376               mspicilegus_homolog_ensembl_gene
+377       mspicilegus_homolog_associated_gene_name
+378                gaculeatus_homolog_ensembl_gene
+379        gaculeatus_homolog_associated_gene_name
+380                   pabelii_homolog_ensembl_gene
+381           pabelii_homolog_associated_gene_name
+382                 csyrichta_homolog_ensembl_gene
+383         csyrichta_homolog_associated_gene_name
+384                 sharrisii_homolog_ensembl_gene
+385         sharrisii_homolog_associated_gene_name
+386             tnigroviridis_homolog_ensembl_gene
+387     tnigroviridis_homolog_associated_gene_name
+388               tctriunguis_homolog_ensembl_gene
+389       tctriunguis_homolog_associated_gene_name
+390                 ptaltaica_homolog_ensembl_gene
+391         ptaltaica_homolog_associated_gene_name
+392                    hcomes_homolog_ensembl_gene
+393            hcomes_homolog_associated_gene_name
+394               csemilaevis_homolog_ensembl_gene
+395       csemilaevis_homolog_associated_gene_name
+396                tbelangeri_homolog_ensembl_gene
+397        tbelangeri_homolog_associated_gene_name
+398               xtropicalis_homolog_ensembl_gene
+399       xtropicalis_homolog_associated_gene_name
+400                spunctatus_homolog_ensembl_gene
+401        spunctatus_homolog_associated_gene_name
+402                  smaximus_homolog_ensembl_gene
+403          smaximus_homolog_associated_gene_name
+404                mgallopavo_homolog_ensembl_gene
+405        mgallopavo_homolog_associated_gene_name
+406                  nfurzeri_homolog_ensembl_gene
+407          nfurzeri_homolog_associated_gene_name
+408                   ngalili_homolog_ensembl_gene
+409           ngalili_homolog_associated_gene_name
+410                    psinus_homolog_ensembl_gene
+411            psinus_homolog_associated_gene_name
+412                  csabaeus_homolog_ensembl_gene
+413          csabaeus_homolog_associated_gene_name
+414                  neugenii_homolog_ensembl_gene
+415          neugenii_homolog_associated_gene_name
+416                  mspretus_homolog_ensembl_gene
+417          mspretus_homolog_associated_gene_name
+418                  cjacchus_homolog_ensembl_gene
+419          cjacchus_homolog_associated_gene_name
+420                    bmutus_homolog_ensembl_gene
+421            bmutus_homolog_associated_gene_name
+422            chyarkandensis_homolog_ensembl_gene
+423    chyarkandensis_homolog_associated_gene_name
+424                sldorsalis_homolog_ensembl_gene
+425        sldorsalis_homolog_associated_gene_name
+426                  tguttata_homolog_ensembl_gene
+427          tguttata_homolog_associated_gene_name
+428                    mzebra_homolog_ensembl_gene
+429            mzebra_homolog_associated_gene_name
+430                    drerio_homolog_ensembl_gene
+431            drerio_homolog_associated_gene_name
+432                  marmatus_homolog_ensembl_gene
+433          marmatus_homolog_associated_gene_name
+434                  hsapiens_paralog_ensembl_gene
+435          hsapiens_paralog_associated_gene_name
+436                                ensembl_gene_id
+437                        ensembl_gene_id_version
+438                             external_gene_name
+439                           external_gene_source
+440                     percentage_gene_gc_content
+441                                ensembl_gene_id
+442                        ensembl_gene_id_version
+443                             external_gene_name
+444                           external_gene_source
+445                     percentage_gene_gc_content
+446                               gene_exon_intron
+447                                     gene_flank
+448                              coding_gene_flank
+449                                      gene_exon
+450                                ensembl_gene_id
+451                        ensembl_gene_id_version
+452                             external_gene_name
+453                           external_gene_source
+454                                   gene_biotype
+                                              description         page
+1                                          Gene stable ID feature_page
+2                                  Gene stable ID version feature_page
+3                                               Gene name feature_page
+4                                     Source of gene name feature_page
+5                                       Gene % GC content feature_page
+6                                               Gene type feature_page
+7                           EntrezGene transcript name ID feature_page
+8                                            GeneCards ID feature_page
+9                          LRG display in Ensembl gene ID feature_page
+10                                   MIM gene description feature_page
+11                                     MIM gene accession feature_page
+12              NCBI gene (formerly Entrezgene) accession feature_page
+13                     NCBI gene (formerly Entrezgene) ID feature_page
+14            NCBI gene (formerly Entrezgene) description feature_page
+15                                       Reactome gene ID feature_page
+16                                   WikiGene description feature_page
+17                                          WikiGene name feature_page
+18                                            WikiGene ID feature_page
+19                                    AFFY HuGeneFL probe feature_page
+20                            AFFY HuGene 1 0 st v1 probe feature_page
+21                            AFFY HuGene 2 0 st v1 probe feature_page
+22                            AFFY HuGene 2 1 st v1 probe feature_page
+23                                              Gene3D ID feature_page
+24                                           Gene3D start feature_page
+25                                             Gene3D end feature_page
+26                                         Gene stable ID    structure
+27                                 Gene stable ID version    structure
+28                                              Gene name    structure
+29                                    Source of gene name    structure
+30                                              Gene type    structure
+31                                         Gene stable ID     homologs
+32                                 Gene stable ID version     homologs
+33                                              Gene name     homologs
+34                                    Source of gene name     homologs
+35                                      Gene % GC content     homologs
+36          Abingdon island giant tortoise gene stable ID     homologs
+37               Abingdon island giant tortoise gene name     homologs
+38                         African ostrich gene stable ID     homologs
+39                              African ostrich gene name     homologs
+40                                  Alpaca gene stable ID     homologs
+41                                       Alpaca gene name     homologs
+42                           Alpine marmot gene stable ID     homologs
+43                                Alpine marmot gene name     homologs
+44                            Amazon molly gene stable ID     homologs
+45                                 Amazon molly gene name     homologs
+46                          American bison gene stable ID     homologs
+47                               American bison gene name     homologs
+48                     American black bear gene stable ID     homologs
+49                          American black bear gene name     homologs
+50                           American mink gene stable ID     homologs
+51                                American mink gene name     homologs
+52                           Arabian camel gene stable ID     homologs
+53                                Arabian camel gene name     homologs
+54                  Arctic ground squirrel gene stable ID     homologs
+55                       Arctic ground squirrel gene name     homologs
+56          Argentine black and white tegu gene stable ID     homologs
+57               Argentine black and white tegu gene name     homologs
+58                               Armadillo gene stable ID     homologs
+59                                    Armadillo gene name     homologs
+60                        Asian bonytongue gene stable ID     homologs
+61                             Asian bonytongue gene name     homologs
+62                            Atlantic cod gene stable ID     homologs
+63                                 Atlantic cod gene name     homologs
+64                       Atlantic herring  gene stable ID     homologs
+65                            Atlantic herring  gene name     homologs
+66                         Atlantic salmon gene stable ID     homologs
+67                              Atlantic salmon gene name     homologs
+68          Australian saltwater crocodile gene stable ID     homologs
+69               Australian saltwater crocodile gene name     homologs
+70                           Ballan wrasse gene stable ID     homologs
+71                                Ballan wrasse gene name     homologs
+72                        Barramundi perch gene stable ID     homologs
+73                             Barramundi perch gene name     homologs
+74                            Beluga whale gene stable ID     homologs
+75                                 Beluga whale gene name     homologs
+76                      Bicolor damselfish gene stable ID     homologs
+77                           Bicolor damselfish gene name     homologs
+78                 Black snub-nosed monkey gene stable ID     homologs
+79                      Black snub-nosed monkey gene name     homologs
+80                              Blue whale gene stable ID     homologs
+81                                   Blue whale gene name     homologs
+82                   Blue-ringed sea krait gene stable ID     homologs
+83                        Blue-ringed sea krait gene name     homologs
+84                Bolivian squirrel monkey gene stable ID     homologs
+85                     Bolivian squirrel monkey gene name     homologs
+86                                  Bonobo gene stable ID     homologs
+87                                       Bonobo gene name     homologs
+88                             Brown trout gene stable ID     homologs
+89                                  Brown trout gene name     homologs
+90                   Burton's mouthbrooder gene stable ID     homologs
+91                        Burton's mouthbrooder gene name     homologs
+92                                Bushbaby gene stable ID     homologs
+93                                     Bushbaby gene name     homologs
+94                          C.intestinalis gene stable ID     homologs
+95                               C.intestinalis gene name     homologs
+96                              C.savignyi gene stable ID     homologs
+97                                   C.savignyi gene name     homologs
+98   Caenorhabditis elegans (Nematode, N2) gene stable ID     homologs
+99        Caenorhabditis elegans (Nematode, N2) gene name     homologs
+100                                 Cattle gene stable ID     homologs
+101                                      Cattle gene name     homologs
+102                        Chacoan peccary gene stable ID     homologs
+103                             Chacoan peccary gene name     homologs
+104                    Channel bull blenny gene stable ID     homologs
+105                         Channel bull blenny gene name     homologs
+106                        Channel catfish gene stable ID     homologs
+107                             Channel catfish gene name     homologs
+108                                Chicken gene stable ID     homologs
+109                                     Chicken gene name     homologs
+110                             Chimpanzee gene stable ID     homologs
+111                                  Chimpanzee gene name     homologs
+112                   Chinese hamster PICR gene stable ID     homologs
+113                        Chinese hamster PICR gene name     homologs
+114                         Chinese medaka gene stable ID     homologs
+115                              Chinese medaka gene name     homologs
+116               Chinese softshell turtle gene stable ID     homologs
+117                    Chinese softshell turtle gene name     homologs
+118                         Chinook salmon gene stable ID     homologs
+119                              Chinook salmon gene name     homologs
+120                         Climbing perch gene stable ID     homologs
+121                              Climbing perch gene name     homologs
+122                      Clown anemonefish gene stable ID     homologs
+123                           Clown anemonefish gene name     homologs
+124                             Coelacanth gene stable ID     homologs
+125                                  Coelacanth gene name     homologs
+126                            Coho salmon gene stable ID     homologs
+127                                 Coho salmon gene name     homologs
+128                    Collared flycatcher gene stable ID     homologs
+129                         Collared flycatcher gene name     homologs
+130                          Common canary gene stable ID     homologs
+131                               Common canary gene name     homologs
+132                            Common carp gene stable ID     homologs
+133                                 Common carp gene name     homologs
+134                     Common wall lizard gene stable ID     homologs
+135                          Common wall lizard gene name     homologs
+136                          Common wombat gene stable ID     homologs
+137                               Common wombat gene name     homologs
+138                      Coquerel's sifaka gene stable ID     homologs
+139                           Coquerel's sifaka gene name     homologs
+140                    Crab-eating macaque gene stable ID     homologs
+141                         Crab-eating macaque gene name     homologs
+142                                   Degu gene stable ID     homologs
+143                                        Degu gene name     homologs
+144                       Denticle herring gene stable ID     homologs
+145                            Denticle herring gene name     homologs
+146                                  Dingo gene stable ID     homologs
+147                                       Dingo gene name     homologs
+148                                    Dog gene stable ID     homologs
+149                                         Dog gene name     homologs
+150                                Dolphin gene stable ID     homologs
+151                                     Dolphin gene name     homologs
+152                           Domestic cat gene stable ID     homologs
+153                                Domestic cat gene name     homologs
+154                           Domestic yak gene stable ID     homologs
+155                                Domestic yak gene name     homologs
+156                                 Donkey gene stable ID     homologs
+157                                      Donkey gene name     homologs
+158                                  Drill gene stable ID     homologs
+159                                       Drill gene name     homologs
+160  Drosophila melanogaster - (Fruit fly) gene stable ID     homologs
+161       Drosophila melanogaster - (Fruit fly) gene name     homologs
+162                                   Duck gene stable ID     homologs
+163                                        Duck gene name     homologs
+164                    Eastern brown snake gene stable ID     homologs
+165                         Eastern brown snake gene name     homologs
+166                          Eastern happy gene stable ID     homologs
+167                               Eastern happy gene name     homologs
+168                           Electric eel gene stable ID     homologs
+169                                Electric eel gene name     homologs
+170                               Elephant gene stable ID     homologs
+171                                    Elephant gene name     homologs
+172                         Elephant shark gene stable ID     homologs
+173                              Elephant shark gene name     homologs
+174                  Eurasian red squirrel gene stable ID     homologs
+175                       Eurasian red squirrel gene name     homologs
+176                       European seabass gene stable ID     homologs
+177                            European seabass gene name     homologs
+178                                 Ferret gene stable ID     homologs
+179                                      Ferret gene name     homologs
+180                                   Fugu gene stable ID     homologs
+181                                        Fugu gene name     homologs
+182                            Giant panda gene stable ID     homologs
+183                                 Giant panda gene name     homologs
+184                                 Gibbon gene stable ID     homologs
+185                                      Gibbon gene name     homologs
+186                      Gilthead seabream gene stable ID     homologs
+187                           Gilthead seabream gene name     homologs
+188                                   Goat gene stable ID     homologs
+189                                        Goat gene name     homologs
+190                         Golden Hamster gene stable ID     homologs
+191                              Golden Hamster gene name     homologs
+192                           Golden eagle gene stable ID     homologs
+193                                Golden eagle gene name     homologs
+194               Golden snub-nosed monkey gene stable ID     homologs
+195                    Golden snub-nosed monkey gene name     homologs
+196                               Goldfish gene stable ID     homologs
+197                                    Goldfish gene name     homologs
+198             Goodes thornscrub tortoise gene stable ID     homologs
+199                  Goodes thornscrub tortoise gene name     homologs
+200                                Gorilla gene stable ID     homologs
+201                                     Gorilla gene name     homologs
+202                              Great Tit gene stable ID     homologs
+203                                   Great Tit gene name     homologs
+204                      Greater amberjack gene stable ID     homologs
+205                           Greater amberjack gene name     homologs
+206                   Greater bamboo lemur gene stable ID     homologs
+207                        Greater bamboo lemur gene name     homologs
+208                  Greater horseshoe bat gene stable ID     homologs
+209                       Greater horseshoe bat gene name     homologs
+210                            Green anole gene stable ID     homologs
+211                                 Green anole gene name     homologs
+212                             Guinea Pig gene stable ID     homologs
+213                                  Guinea Pig gene name     homologs
+214                                  Guppy gene stable ID     homologs
+215                                       Guppy gene name     homologs
+216                                Hagfish gene stable ID     homologs
+217                                     Hagfish gene name     homologs
+218                               Hedgehog gene stable ID     homologs
+219                                    Hedgehog gene name     homologs
+220                                  Horse gene stable ID     homologs
+221                                       Horse gene name     homologs
+222                                 Huchen gene stable ID     homologs
+223                                      Huchen gene name     homologs
+224                   Hybrid - Bos Indicus gene stable ID     homologs
+225                        Hybrid - Bos Indicus gene name     homologs
+226                                  Hyrax gene stable ID     homologs
+227                                       Hyrax gene name     homologs
+228                           Indian cobra gene stable ID     homologs
+229                                Indian cobra gene name     homologs
+230                          Indian medaka gene stable ID     homologs
+231                               Indian medaka gene name     homologs
+232                   Japanese medaka HdrR gene stable ID     homologs
+233                        Japanese medaka HdrR gene name     homologs
+234                         Japanese quail gene stable ID     homologs
+235                              Japanese quail gene name     homologs
+236                      Javanese ricefish gene stable ID     homologs
+237                           Javanese ricefish gene name     homologs
+238                                 Kakapo gene stable ID     homologs
+239                                      Kakapo gene name     homologs
+240                           Kangaroo rat gene stable ID     homologs
+241                                Kangaroo rat gene name     homologs
+242                                  Koala gene stable ID     homologs
+243                                       Koala gene name     homologs
+244                                Lamprey gene stable ID     homologs
+245                                     Lamprey gene name     homologs
+246                   Large yellow croaker gene stable ID     homologs
+247                        Large yellow croaker gene name     homologs
+248                     Leishan spiny toad gene stable ID     homologs
+249                          Leishan spiny toad gene name     homologs
+250                                Leopard gene stable ID     homologs
+251                                     Leopard gene name     homologs
+252                 Lesser Egyptian jerboa gene stable ID     homologs
+253                      Lesser Egyptian jerboa gene name     homologs
+254                 Lesser hedgehog tenrec gene stable ID     homologs
+255                      Lesser hedgehog tenrec gene name     homologs
+256                                   Lion gene stable ID     homologs
+257                                        Lion gene name     homologs
+258                 Long-tailed chinchilla gene stable ID     homologs
+259                      Long-tailed chinchilla gene name     homologs
+260                               Lumpfish gene stable ID     homologs
+261                                    Lumpfish gene name     homologs
+262                       Lyretail cichlid gene stable ID     homologs
+263                            Lyretail cichlid gene name     homologs
+264                      Ma's night monkey gene stable ID     homologs
+265                           Ma's night monkey gene name     homologs
+266                                Macaque gene stable ID     homologs
+267                                     Macaque gene name     homologs
+268                   Mainland tiger snake gene stable ID     homologs
+269                        Mainland tiger snake gene name     homologs
+270                  Makobe Island cichlid gene stable ID     homologs
+271                       Makobe Island cichlid gene name     homologs
+272                       Mangrove rivulus gene stable ID     homologs
+273                            Mangrove rivulus gene name     homologs
+274                    Medium ground-finch gene stable ID     homologs
+275                         Medium ground-finch gene name     homologs
+276                                Megabat gene stable ID     homologs
+277                                     Megabat gene name     homologs
+278                          Mexican tetra gene stable ID     homologs
+279                               Mexican tetra gene name     homologs
+280                               Microbat gene stable ID     homologs
+281                                    Microbat gene name     homologs
+282                          Midas cichlid gene stable ID     homologs
+283                               Midas cichlid gene name     homologs
+284                    Monterrey platyfish gene stable ID     homologs
+285                         Monterrey platyfish gene name     homologs
+286                                  Mouse gene stable ID     homologs
+287                                       Mouse gene name     homologs
+288                            Mouse Lemur gene stable ID     homologs
+289                                 Mouse Lemur gene name     homologs
+290                              Mummichog gene stable ID     homologs
+291                                   Mummichog gene name     homologs
+292                  Naked mole-rat female gene stable ID     homologs
+293                       Naked mole-rat female gene name     homologs
+294                                Narwhal gene stable ID     homologs
+295                                     Narwhal gene name     homologs
+296                           Nile tilapia gene stable ID     homologs
+297                                Nile tilapia gene name     homologs
+298           Northern American deer mouse gene stable ID     homologs
+299                Northern American deer mouse gene name     homologs
+300                          Northern pike gene stable ID     homologs
+301                               Northern pike gene name     homologs
+302               Norway rat - BN/NHsdMcwi gene stable ID     homologs
+303                    Norway rat - BN/NHsdMcwi gene name     homologs
+304                           Olive baboon gene stable ID     homologs
+305                                Olive baboon gene name     homologs
+306                                Opossum gene stable ID     homologs
+307                                     Opossum gene name     homologs
+308                       Orange clownfish gene stable ID     homologs
+309                            Orange clownfish gene name     homologs
+310                         Painted turtle gene stable ID     homologs
+311                              Painted turtle gene name     homologs
+312        Panamanian white-faced capuchin gene stable ID     homologs
+313             Panamanian white-faced capuchin gene name     homologs
+314               Paramormyrops kingsleyae gene stable ID     homologs
+315                    Paramormyrops kingsleyae gene name     homologs
+316                                    Pig gene stable ID     homologs
+317                                         Pig gene name     homologs
+318                     Pig-tailed macaque gene stable ID     homologs
+319                          Pig-tailed macaque gene name     homologs
+320                                   Pika gene stable ID     homologs
+321                                        Pika gene name     homologs
+322                             Pike-perch gene stable ID     homologs
+323                                  Pike-perch gene name     homologs
+324                   Pinecone soldierfish gene stable ID     homologs
+325                        Pinecone soldierfish gene name     homologs
+326                      Pink-footed goose gene stable ID     homologs
+327                           Pink-footed goose gene name     homologs
+328                              Platyfish gene stable ID     homologs
+329                                   Platyfish gene name     homologs
+330                               Platypus gene stable ID     homologs
+331                                    Platypus gene name     homologs
+332                             Polar bear gene stable ID     homologs
+333                                  Polar bear gene name     homologs
+334                           Prairie vole gene stable ID     homologs
+335                                Prairie vole gene name     homologs
+336                                 Rabbit gene stable ID     homologs
+337                                      Rabbit gene name     homologs
+338                          Rainbow trout gene stable ID     homologs
+339                               Rainbow trout gene name     homologs
+340                                Red fox gene stable ID     homologs
+341                                     Red fox gene name     homologs
+342                    Red-bellied piranha gene stable ID     homologs
+343                         Red-bellied piranha gene name     homologs
+344                               Reedfish gene stable ID     homologs
+345                                    Reedfish gene name     homologs
+346                           Ryukyu mouse gene stable ID     homologs
+347                                Ryukyu mouse gene name     homologs
+348               Saccharomyces cerevisiae gene stable ID     homologs
+349                    Saccharomyces cerevisiae gene name     homologs
+350                          Sailfin molly gene stable ID     homologs
+351                               Sailfin molly gene name     homologs
+352                                  Sheep gene stable ID     homologs
+353                                       Sheep gene name     homologs
+354                      Sheepshead minnow gene stable ID     homologs
+355                           Sheepshead minnow gene name     homologs
+356                                  Shrew gene stable ID     homologs
+357                                       Shrew gene name     homologs
+358                            Shrew mouse gene stable ID     homologs
+359                                 Shrew mouse gene name     homologs
+360                  Siamese fighting fish gene stable ID     homologs
+361                       Siamese fighting fish gene name     homologs
+362                     Siberian musk deer gene stable ID     homologs
+363                          Siberian musk deer gene name     homologs
+364                                  Sloth gene stable ID     homologs
+365                                       Sloth gene name     homologs
+366                         Sooty mangabey gene stable ID     homologs
+367                              Sooty mangabey gene name     homologs
+368                            Sperm whale gene stable ID     homologs
+369                                 Sperm whale gene name     homologs
+370                          Spiny chromis gene stable ID     homologs
+371                               Spiny chromis gene name     homologs
+372                            Spotted gar gene stable ID     homologs
+373                                 Spotted gar gene name     homologs
+374                               Squirrel gene stable ID     homologs
+375                                    Squirrel gene name     homologs
+376                           Steppe mouse gene stable ID     homologs
+377                                Steppe mouse gene name     homologs
+378                            Stickleback gene stable ID     homologs
+379                                 Stickleback gene name     homologs
+380                     Sumatran orangutan gene stable ID     homologs
+381                          Sumatran orangutan gene name     homologs
+382                                Tarsier gene stable ID     homologs
+383                                     Tarsier gene name     homologs
+384                        Tasmanian devil gene stable ID     homologs
+385                             Tasmanian devil gene name     homologs
+386                              Tetraodon gene stable ID     homologs
+387                                   Tetraodon gene name     homologs
+388                  Three-toed box turtle gene stable ID     homologs
+389                       Three-toed box turtle gene name     homologs
+390                                  Tiger gene stable ID     homologs
+391                                       Tiger gene name     homologs
+392                    Tiger tail seahorse gene stable ID     homologs
+393                         Tiger tail seahorse gene name     homologs
+394                            Tongue sole gene stable ID     homologs
+395                                 Tongue sole gene name     homologs
+396                             Tree Shrew gene stable ID     homologs
+397                                  Tree Shrew gene name     homologs
+398                   Tropical clawed frog gene stable ID     homologs
+399                        Tropical clawed frog gene name     homologs
+400                                Tuatara gene stable ID     homologs
+401                                     Tuatara gene name     homologs
+402                                 Turbot gene stable ID     homologs
+403                                      Turbot gene name     homologs
+404                                 Turkey gene stable ID     homologs
+405                                      Turkey gene name     homologs
+406                    Turquoise killifish gene stable ID     homologs
+407                         Turquoise killifish gene name     homologs
+408 Upper Galilee mountains blind mole rat gene stable ID     homologs
+409      Upper Galilee mountains blind mole rat gene name     homologs
+410                                Vaquita gene stable ID     homologs
+411                                     Vaquita gene name     homologs
+412                             Vervet-AGM gene stable ID     homologs
+413                                  Vervet-AGM gene name     homologs
+414                                Wallaby gene stable ID     homologs
+415                                     Wallaby gene name     homologs
+416                     Western wild mouse gene stable ID     homologs
+417                          Western wild mouse gene name     homologs
+418              White-tufted-ear marmoset gene stable ID     homologs
+419                   White-tufted-ear marmoset gene name     homologs
+420                               Wild yak gene stable ID     homologs
+421                                    Wild yak gene name     homologs
+422                           Yarkand deer gene stable ID     homologs
+423                                Yarkand deer gene name     homologs
+424                   Yellowtail amberjack gene stable ID     homologs
+425                        Yellowtail amberjack gene name     homologs
+426                            Zebra finch gene stable ID     homologs
+427                                 Zebra finch gene name     homologs
+428                            Zebra mbuna gene stable ID     homologs
+429                                 Zebra mbuna gene name     homologs
+430                              Zebrafish gene stable ID     homologs
+431                                   Zebrafish gene name     homologs
+432                            Zig-zag eel gene stable ID     homologs
+433                                 Zig-zag eel gene name     homologs
+434                        Human paralogue gene stable ID     homologs
+435                  Human paralogue associated gene name     homologs
+436                                        Gene stable ID          snp
+437                                Gene stable ID version          snp
+438                                             Gene name          snp
+439                                   Source of gene name          snp
+440                                     Gene % GC content          snp
+441                                        Gene stable ID  snp_somatic
+442                                Gene stable ID version  snp_somatic
+443                                             Gene name  snp_somatic
+444                                   Source of gene name  snp_somatic
+445                                     Gene % GC content  snp_somatic
+446                                      Unspliced (Gene)    sequences
+447                                          Flank (Gene)    sequences
+448                            Flank-coding region (Gene)    sequences
+449                                        Exon sequences    sequences
+450                                        Gene stable ID    sequences
+451                                Gene stable ID version    sequences
+452                                             Gene name    sequences
+453                                   Source of gene name    sequences
+454                                             Gene type    sequences</code></pre>
+</div>
+</div>
+<p>An advantage over the <code>org..</code> packages is that positional information can be retrieved</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb123"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a>attributeNames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'ensembl_gene_id'</span>, <span class="st">'entrezgene_id'</span>, <span class="st">'external_gene_name'</span>, <span class="st">"chromosome_name"</span>,<span class="st">"start_position"</span>,<span class="st">"end_position"</span>)</span>
+<span id="cb123-2"><a href="#cb123-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb123-3"><a href="#cb123-3" aria-hidden="true" tabindex="-1"></a>top_genes <span class="ot">&lt;-</span> results_annotated <span class="sc">%&gt;%</span> </span>
+<span id="cb123-4"><a href="#cb123-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_min</span>(padj, <span class="at">n =</span> <span class="dv">10</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb123-5"><a href="#cb123-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(row)</span>
+<span id="cb123-6"><a href="#cb123-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb123-7"><a href="#cb123-7" aria-hidden="true" tabindex="-1"></a><span class="fu">getBM</span>(<span class="at">attributes =</span> attributeNames,</span>
+<span id="cb123-8"><a href="#cb123-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">filters =</span> <span class="st">"ensembl_gene_id"</span>,</span>
+<span id="cb123-9"><a href="#cb123-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">values=</span> top_genes,</span>
+<span id="cb123-10"><a href="#cb123-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">mart=</span>ensembl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   ensembl_gene_id entrezgene_id external_gene_name chromosome_name
+1  ENSG00000049540          2006                ELN               7
+2  ENSG00000060718          1301            COL11A1               1
+3  ENSG00000087245          4313               MMP2              16
+4  ENSG00000115414          2335                FN1               2
+5  ENSG00000119681          4053              LTBP2              14
+6  ENSG00000120708          7045              TGFBI               5
+7  ENSG00000139211        347902             AMIGO2              12
+8  ENSG00000172061        131578             LRRC15               3
+9  ENSG00000186340          7058              THBS2               6
+10 ENSG00000187498          1282             COL4A1              13
+   start_position end_position
+1        74027789     74069909
+2       102876467    103108872
+3        55389700     55506691
+4       215360440    215436120
+5        74498183     74612378
+6       136028988    136063818
+7        47075707     47080902
+8       194355249    194369743
+9       169215780    169254060
+10      110148963    110307202</code></pre>
+</div>
+</div>
 
 
 </section>

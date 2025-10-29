@@ -333,7 +333,22 @@ In reality it would be impractical to test all possible pathways in this manner,
 
 The function for over-representation analysis on Gene Ontologies is `enrichGO` which requires the IDs of genes found to be differentially-expressed (`sigGenes`) and the IDs of *all* genes in the dataset (`universe`). It uses the `org.Hs.eg.db` package to map between gene names and biological pathways.
 
-```{r enrichGO_run, message=FALSE, warning=FALSE}
+:::{.callout-note}
+
+Unlike the `DESeq` workflow in the previous section, which reports **all** genes regardless of their significance, `enrichGO` only reports *significant* pathways based on the `qvalueCutoff` and `pvalueCutoff` arguments. If you want to see all the results regardless of significance you can set these values to 1.
+
+The `p.adjust` and `qvalue` columns refers to two separate but related methods for multiple testing. `p.adjust` uses the the Benjamini-Hochberg ($\text{BH}$) method (also called $\text{FDR}$ or $\text{BH}$), which is a common and robust method for controlling the $\text{FDR}$. This is a step-up method that adjusts the raw $P$-value for each term. If you set a $\text{BH}$ cutoff of $0.05$, you are stating that you expect at most 5% of your rejected null hypotheses (your significant terms) to be false discoveries (i.e., enriched by chance). Therefore the value in the $\text{p.adjust}$ column is the lowest $\text{FDR}$ you can tolerate while still declaring that specific term significant.
+
+`qvalue` is based on the method developed by John Storey, often implemented via the `qvalue` R package, which is frequently used for high-throughput data. The $\text{Q}$-value is an estimate of the minimum expected $\text{FDR}$ incurred when declaring a specific term significant. Unlike the $\text{BH}$ method, the $\text{Q}$-value method estimates the proportion of true null hypotheses ($\pi_0$) present in the data, leading to a potentially more powerful (less conservative) adjustment. If a term has a $\text{Q}$-value of $0.01$, it means that if you choose that value as your significance cutoff, you expect 1% of the terms declared significant to be false positives. Consequently the value in the $\text{qvalue}$ column is generally lower (more stringent) than the $\text{p.adjust}$ value because it uses the estimated $\pi_0$ to adjust the calculation.
+
+:::
+
+```{r echo = FALSE, warning=FALSE, message=FALSE}
+library(clusterProfiler)
+```
+
+
+```{r enrichGO_run, message=FALSE, warning=FALSE, cache = TRUE}
 library(clusterProfiler)
 universe <- results_final %>% pull(ENSEMBL)
 sigGenes <- results_final %>% 
@@ -362,7 +377,7 @@ enrich_go %>% data.frame %>%
 The output data frame is using the same approaches discussed above and the `GeneRatio` and `BgRatio` columns tell you for each row (pathway) how many genes in that pathway were found in the DE genes (`GeneRatio`) and in the background (`BgRatio`). The `FoldEnrichment` indicates how many more times each pathway is represented than you would expect. Somewhat reassuringly the Extracellular Matrix pathway is found amongst these most significant pathways. A dot plot can show us the most enriched pathways, their statistical significance and the size of each.
 
 ```{r enrichGO_dotplot, fig.height=8}
-dotplot(enrich_go,showCategory=20)
+enrichplot::dotplot(enrich_go,showCategory=20)
 ```
 
 You might notice that the names of some pathways, and the numbers of genes they contain are extremely similar. For example `extracellular matrix organization` and `extracellular structure organization`. This is because Gene Ontologies are not mutually exclusive and can comprise the same genes. The results can therefore give a false impression of how many biological functions are being represented amongst the results. Overlaps between gene sets can also be visualised using an "Upset plot" - an alternative to a venn diagram. The connected dots in the bottom panel show genes that are shared between different pathways, and the number of these genes is displayed in the bar chart.
@@ -398,11 +413,40 @@ Finally, the `treeplot` function performs hierarchical clustering of enriched te
 enrich_go <- enrichplot::pairwise_termsim(enrich_go)
 enrichplot::treeplot(enrich_go)
 ```
+
+
 ### "Simplifying" the GO results
 
+As noted, GO terms contain a lot of redundancy due to its hierarchical nature. We can however tackle this issue using the `simplify` function. In order to understand the impact we will first make a note of how many pathways are in the un-simplified output.
 
 
 
+```{r} 
+enrich_go %>% data.frame() %>% nrow
+```
+
+
+Similarity in this case refers to semantic similarity as implemented in the `GOSemSim` package. Semantic similarity, in the context of Gene Ontology (GO) , is a quantitative measure of how functionally related two GO terms are. It goes beyond simple gene sharing by assessing the terms' proximity within the GO hierarchy (the Directed Acyclic Graph or DAG). Two terms are highly similar if they share a common ancestor deep in the hierarchy, indicating a precise functional relationship, regardless of whether their gene lists overlap perfectly. This method ensures that terms covering the same core biological concept are grouped together.
+
+If two or more GO terms are found to be highly similar (i.e., their similarity score meets or exceeds the defined cutoff), `simplify()` considers them redundant and removes one of them by for example picking the term with the most significant p-value.
+
+```{r simplifying, cache = TRUE}
+## This may take a while to run
+
+enrich_go_simplified <- simplify(enrich_go)
+enrich_go_simplified %>% data.frame %>% slice_head(n = 10)
+```
+
+```{r}
+enrich_go_simplified %>% data.frame %>% nrow()
+```
+
+
+Compare the number of rows (terms) in the original enrichment result to the simplified result. You should see a significant reduction in the total count of enriched terms, confirming that redundancy was successfully removed.
+
+```{r emapplot-simplified, fig.width=12}
+emapplot(enrich_go_simplified)
+```
 
 ## Gene set enrichment analysis (GSEA)
 
@@ -410,7 +454,7 @@ An appealing feature of the **GSEA** method is that it does not require us to im
 
 The steps in producing the input required for GSEA are i) calculating and retrieving the ranking statistics ii) naming each one according to a chosen identifier (`ENSEMBL` or `ENTREZID` for example). The `clusterProfiler` package also includes an implementation of the GSEA algorithm, and the function works in much the same way as `enrichGO` from above.
 
-```{r gseGO_run, warning = FALSE}
+```{r gseGO_run, warning = FALSE, cache = TRUE}
 
 ranked_genes <- results_final %>% 
   mutate(Score = sign(log2FoldChange)*-log10(padj)) %>% 
@@ -436,7 +480,16 @@ gse_GO %>% as.data.frame %>%
 ```
 
 
-As GSEA uses *all* of the genes that were present in the dataset, it has also used all genes in a pathway to calculate the enrichment. However, to narrow-down the interpretation of a pathways the core enrichment or leading edge of a GSEA can be used. This refers to the subset of genes within an enriched pathway that primarily drives the enrichment signal.2It represents the genes that are most responsible for the pathway receiving its high Enrichment Score and thus its significance
+As GSEA uses *all* of the genes that were present in the dataset, it has also used all genes in a pathway to calculate the enrichment. However, to narrow-down the interpretation of a pathways the core enrichment or leading edge of a GSEA can be used. This refers to the subset of genes within an enriched pathway that primarily drives the enrichment signal. It represents the genes that are most responsible for the pathway receiving its high Enrichment Score and thus its significance.
+
+```{r}
+## show the core enrichment for the top pathway
+gse_GO %>% as.data.frame %>% 
+  slice_head() %>% 
+  select(core_enrichment)
+```
+
+
 
 An overview of the results can be provided by a "ridge plot". This allows comparison of the test statistics for each of the top enriched pathways.
 
@@ -465,11 +518,9 @@ top_gsea_ID <- gse_GO %>% as.data.frame %>%
 enrichplot::gseaplot2(gse_GO,geneSetID = top_gsea,title = top_gsea_ID)
 ```
 
-The Top Panel: Enrichment Score (ES) & $\text{GSEA}$ Barcode. This panel shows the core evidence for enrichment. + Running $\text{ES}$ Curve (The Line): This is a running sum statistic that measures the degree of enrichment. It starts at zero and increases every time a gene belonging to the pathway is encountered in the ranked list, whereas it slightly decreases when a gene not in the pathway is encountered. The peak of this curve is the maximum Enrichment Score ($\text{ES}$). If the peak is on the left (positive), the pathway is up-regulated; if the peak is on the right (negative), the pathway is down-regulated. + $\text{GSEA}$ Barcode (The Ticks): The black vertical lines beneath the curve are the barcode. Each line represents a single gene from the pathway, placed at its exact rank position. The clustering of these ticks—either on the far left or far right—provides the visual evidence for the calculated $\text{ES}$.
+The top panel shows the core evidence for enrichment. The line is a running sum statistic that measures the degree of enrichment. It starts at zero and increases every time a gene belonging to the pathway is encountered in the ranked list, whereas it slightly decreases when a gene not in the pathway is encountered. The peak of this curve is the maximum Enrichment Score ($\text{ES}$). If the peak is on the left (positive), the pathway is up-regulated; if the peak is on the right (negative), the pathway is down-regulated. $\text{GSEA}$ Barcode (The Ticks): The black vertical lines beneath the curve are the barcode. Each line represents a single gene from the pathway, placed at its exact rank position. The clustering of these ticks—either on the far left or far right—provides the visual evidence for the calculated $\text{ES}$.
 
--   The Bottom Panel: Gene Ranking Metric displays the value of the statistic used to rank all genes.
-    -   Ranking Metric: This usually shows the $\text{Log}_2 \text{Fold Change}$ ($\text{LFC}$), $t$-statistic, or another metric for every gene in the experiment.
-    -   Interpretation: This confirms that the genes on the far left of the plot have the most positive values (high $\text{LFC}$) and those on the far right have the most negative values (low $\text{LFC}$), providing context for the directional enrichment observed in the top panel.The plot therefore provides a concise, integrated view, confirming both statistical significance (from the $\text{NES}$ not shown on the curve but derived from it) and the directionality and magnitude of the pathway's regulation.
+The Bottom Panel displays the value of the statistic used to rank all genes. This confirms that the genes on the far left of the plot have the most positive values (high $\text{LFC}$) and those on the far right have the most negative values (low $\text{LFC}$), providing context for the directional enrichment observed in the top panel.
 
 ## Exercise
 
@@ -480,6 +531,7 @@ The Top Panel: Enrichment Score (ES) & $\text{GSEA}$ Barcode. This panel shows t
 -   (Optional) If you have time, use the gseKEGG to perform GSEA using KEGG terms.
 
 ::: {.callout-note collapse="true"}
+
 ### Solution
 
 ```{r enrichKEGG}
@@ -490,10 +542,13 @@ sigGenesEntrez <- results_final %>%
 
 enrich_kegg <- enrichKEGG(gene = sigGenesEntrez,
                        organism = "hsa",)
-as.data.frame(enrich_kegg)
+as.data.frame(enrich_kegg) %>% slice_head(n = 10)
 
 
 ```
+
+
+
 
 ```{r gseKEGG}
 ranked_genes <- results_final %>% 
@@ -509,7 +564,7 @@ names(geneList) <- pull(ranked_genes, ENTREZID)
 gse_GO  <- gseKEGG(geneList = geneList,
                    organism = "hsa")
 
-gse_GO %>% data.frame()
+gse_GO %>% data.frame() %>% slice_head(n = 10)
 ```
 
 
@@ -548,7 +603,7 @@ We have looked the two main types of test supported by `clusterProfiler` using a
 Ultimately, you will have to decide which database(s) are more appropriate for the interpretation of your results
 
 
-### Additional visualistion of KEGG pathways
+## Additional visualistion of KEGG pathways
 
 The special feature of a KEGG pathway is its standardized, structured graphical representation as a set of computable maps. This makes that visualisation with tools like `pathview` is possible. The standardization means KEGG is more than just a list of genes — it's an integrated system where both the visual elements and the underlying molecular data are tightly linked.
 
@@ -583,45 +638,28 @@ pathview(
 ![](/files/training/bulk_rnaseq/hsa04142.lysosome_blue_red.png)
 
 
-### Pathways analysis for non-human organisms
+## Pathways analysis for non-human organisms
 
-# Appendix: Annotation with the biomaRt resource
+Due to the nature of our dataset we have been naturally using a human-centric database provided in the Bioconductor package `org.Hs.eg.db`. Other model organisms such as `org.Mm.eg.db` (Mouse), `org.Rn.eg.db` (Rat) can be used be substituting the `OrgDb` argument in `enrichGO`
 
-The Bioconductor package have the convenience of being able to make queries offline. However, they are only available for certain organisms. If your organism does not have an `org.XX.eg.db` package listed on the Bioconductor annotation page (http://bioconductor.org/packages/release/BiocViews.html#\_\_\_AnnotationData), an alternative is to use biomaRt which provides an interface to the popular biomart annotation resource.
-
-The first step is to find the name of a database that you want to connect to.
 
 ```{r eval=FALSE}
-library(biomaRt)
-listMarts()
-ensembl=useMart("ENSEMBL_MART_ENSEMBL")
-# list the available datasets (species). Replace human with the name of your organism
-listDatasets(ensembl) %>% filter(grepl("Human",description))
+# library(org.Mm.eg.db)
+
+enrich_go <- enrichGO(
+  gene= sigGenes,
+  ## Change this for a different organism
+  OrgDb = org.Mm.eg.db,
+  keyType = "ENSEMBL",
+  ont = "BP",
+  universe = universe,
+  qvalueCutoff = 0.05,
+  readable=TRUE
+)
+
 ```
 
-```{r eval=FALSE}
-ensembl = useDataset("hsapiens_gene_ensembl", mart=ensembl)
-```
+If organisms are not found in Bioconductor the relevant data can still be retrieved via the `AnnotationHub` package. 
 
-Queries to `biomaRt` are constructed in a similar way to the queries we performed with the `org.Hs.eg.db` package. Instead of `keys` we have `filters`, and instead of `columns` we have attributes. The list of acceptable values is much more comprehensive that for the `org.Hs.eg.db` package.
+# Summary
 
-```{r eval=FALSE}
-listFilters(ensembl) %>% 
-    filter(grepl("ensembl",name))
-```
-
-```{r eval=FALSE}
-listAttributes(ensembl) %>% 
-    filter(grepl("gene",name))
-```
-
-An advantage over the `org..` packages is that positional information can be retrieved
-
-```{r eval=FALSE}
-attributeNames <- c('ensembl_gene_id', 'entrezgene_id', 'external_gene_name', "chromosome_name","start_position","end_position")
-
-getBM(attributes = attributeNames,
-      filters = "ensembl_gene_id",
-      values=top_genes,
-      mart=ensembl)
-```
