@@ -3,16 +3,28 @@ title: "Introduction to RNA-Seq - Part 3"
 author: Mark Dunning
 date: 2025-10-25
 theme: darkly
-image: "/files/training/bulk_rnaseq/part3_preview.png"
+image: "/files/training/bulk_rnaseq/treeplot.png"
 ---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+
+```
 
 # Overview
 
-Further exploration of differential expression, followed by identifcation of biological pathways of interest
+Further exploration of differential expression, followed by identification of biological pathways of interest
 
 ## Quick Start
 
-This section follows on from [Part 1](/training/bulk-rnaseq_part1/index.html) and [Part 2](/training/bulk-rnaseq_part2/index.html) where we saw how to import raw RNA-seq counts into `DESeq2`, perform some quality assessment and then differential expression. Several packages are required, which can be downloaded with this code:-
+This section follows on from [Part 1](/training/bulk-rnaseq_1/index.html) and [Part 2](/training/bulk-rnaseq_2/index.html) where we saw how to import raw RNA-seq counts into `DESeq2`, perform some quality assessment and then differential expression. Several packages are required, which can be downloaded with this code:-
 
 ```{r eval=FALSE}
 source("https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/install_bioc_packages.R")
@@ -31,12 +43,12 @@ download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/he
 dds <- readRDS("Robjects/dds.rds")
 ```
 
-In [Part 2](/training/bulk-rnaseq_part2/index.html) we dissected the `DESeq` workflow for differential expression in some detail. We also created a data frame for "annotating" the results with biological identifiers that are more recognisable.
+In [Part 2](/training/bulk-rnaseq_2/index.html) we dissected the `DESeq` workflow for differential expression in some detail. We also created a data frame for "annotating" the results with biological identifiers that are more recognisable.
 
 ```{r load-anno, message=FALSE, warning=FALSE}
 library(org.Hs.eg.db)
 anno <- AnnotationDbi::select(org.Hs.eg.db,keys=rownames(dds),
-              columns=c("SYMBOL","GENENAME"),
+              columns=c("SYMBOL","GENENAME", "ENTREZID"),
               keytype="ENSEMBL")
 # Have a look at the annotation
 head(anno)
@@ -66,8 +78,7 @@ results_annotated %>%
 
 # Filtering the differential expression results
 
-The `results_annotated` tibble contains results for *all* the genes that appeared in our counts data, which could be many 10,000s of potential candidates for being biologically meaningful. Deciding which genes to take forward for further investigation can be quite subtle, and can depend on what your question of interest is. With the simplest criteria applied (e.g. an adjusted p-value of 0.05) you can still be faced with 1000s of genes to interpret. Of course, there are methods for identifying biological themes (see later). 
-
+The `results_annotated` tibble contains results for *all* the genes that appeared in our counts data, which could be many 10,000s of potential candidates for being biologically meaningful. Deciding which genes to take forward for further investigation can be quite subtle, and can depend on what your question of interest is. With the simplest criteria applied (e.g. an adjusted p-value of 0.05) you can still be faced with 1000s of genes to interpret. Of course, there are methods for identifying biological themes (see later).
 
 The `padj` and `log2FoldChange` in the results table are common quantities for filtering representing the statistical certainty and effect size respectively. In an ideal world, genes of interest should have a high degree of statistical certainty (extremely low p-value) and large effect size. We can be reasonably confident about the p-value adjustments that `DESeq2` performed, and we will discuss the `log2FoldChange` later.
 
@@ -90,7 +101,7 @@ results_annotated %>%
 
 The core principle is that genes with very low expression (low average normalized counts) have little power to be called differentially expressed, even if their true $\log_2$ fold change is comparatively large. By testing all genes, you incur a multiple testing penalty for these low-power genes, which reduces the number of genes that can be called significant overall.
 
-The procedure first uses the mean of normalized counts (`baseMean`) across all samples as a filtering mechanism. Genes with very low expression have high $p$-values due to low statistical power (high variance relative to the mean), regardless of their true fold change. `DESeq2` determines an optimal cutoff for the `baseMean` that maximizes the number of genes called significant (`padj` < $\alpha$, where $\alpha$ is usually $0.1$ or $0.05$). This is done by testing a range of cutoffs and picking the one that yields the largest number of discoveries. Genes with mean counts below this optimal cutoff are removed (in practice their `padj` is set to `NA`). The remaining genes are then subjected to the Benjamini-Hochberg procedure.The benefit is a gain in statistical power. By reducing the total number of hypotheses tested, the multiple testing penalty is less severe, allowing more true positives (expressed genes with actual differential expression) to pass the adjusted $p$-value threshold.
+The procedure first uses the mean of normalized counts (`baseMean`) across all samples as a filtering mechanism. Genes with very low expression have high $p$-values due to low statistical power (high variance relative to the mean), regardless of their true fold change. `DESeq2` determines an optimal cutoff for the `baseMean` that maximizes the number of genes called significant (`padj` \< $\alpha$, where $\alpha$ is usually $0.1$ or $0.05$). This is done by testing a range of cutoffs and picking the one that yields the largest number of discoveries. Genes with mean counts below this optimal cutoff are removed (in practice their `padj` is set to `NA`). The remaining genes are then subjected to the Benjamini-Hochberg procedure.The benefit is a gain in statistical power. By reducing the total number of hypotheses tested, the multiple testing penalty is less severe, allowing more true positives (expressed genes with actual differential expression) to pass the adjusted $p$-value threshold.
 
 The effect of filtering can be seen in the following histogram:-
 
@@ -142,7 +153,7 @@ Looking at the "shrunken" results
 plotMA(results_final)
 ```
 
-The shrinkage technique will only change the log$_2$ fold-changes and **not the adjusted or raw p-values**. The purpose of shrinkage is to make the magnitude of the effect reliable for ranking genes, visualizing them in an MA plot, and filtering based on a minimum LFC threshold (e.g., `Log2FoldChange` > 1). We can create a finalised results table by joining the annotation as before.
+The shrinkage technique will only change the log$_2$ fold-changes and **not the adjusted or raw p-values**. The purpose of shrinkage is to make the magnitude of the effect reliable for ranking genes, visualizing them in an MA plot, and filtering based on a minimum LFC threshold (e.g., `Log2FoldChange` \> 1). We can create a finalised results table by joining the annotation as before.
 
 ```{r add_annotation_to_final_results}
 results_final <- as.data.frame(results_final) %>% 
@@ -151,7 +162,6 @@ results_final <- as.data.frame(results_final) %>%
   filter(!duplicated(ENSEMBL)) %>% 
   arrange(padj) 
 ```
-
 
 # Investigating particular gene sets
 
@@ -170,7 +180,6 @@ pathway_genes <- AnnotationDbi::select(org.Hs.eg.db,
 
 We will now make a few plots to explore whether the genes belonging to this pathway have a tendency to be differentially-expressed. Starting with a volcano plot (made by-hand this time), we will label the points according to whether their `ENSEMBL` ID is one of the genes belonging to the pathway.
 
-
 ```{r volcano_vs_ECM}
 results_final %>% 
   mutate(ECM_Gene = ENSEMBL %in% pathway_genes) %>% 
@@ -188,7 +197,6 @@ results_final %>%
 Our next visualisation could be a heatmap, which if you recall from the previous section can be created using the `pheatmap` package. The variance stabilised data produced by `vst` is a good choice for this type of visualisation. We first make sure all the ENSEMBL IDs for the pathway are actually in our dataset, and get the VST values for these genes.
 
 We then remove any rows with low variance, and look-up the gene symbols to be used to label the rows.
-
 
 ```{r heatmap_of_ECM, fig.width=10,fig.height=10, message=FALSE}
 library(pheatmap)
@@ -223,19 +231,22 @@ To start to ascribe some significance to the finding we start by defining how ma
 n_ECM_genes <- filter(results_final, ENSEMBL %in% pathway_genes) %>% nrow
 n_ECM_genes
 ```
+
 How many genes are differentially-expressed. Let's use a loose definition of an adjusted p-value less than 0.05.
 
 ```{r get_DE_genes}
 n_DE_genes <- filter(results_final, padj < 0.05) %>% nrow()
 n_DE_genes
 ```
+
 Finally, how many of our ECM genes are also differentially-expressed
 
 ```{r get_ECM_DE_genes}
 n_ECM_DE_genes <- filter(results_final, padj < 0.05,ENSEMBL %in% pathway_genes) %>% nrow()
 n_ECM_DE_genes
 ```
-If our gene list was just a really random set of genes with no relation to the underlying biology, then we would naturally expect some number of ECM genes to occur **by chance alone**. To get a handle on how many we might expect we can run a small simulation. 
+
+If our gene list was just a really random set of genes with no relation to the underlying biology, then we would naturally expect some number of ECM genes to occur **by chance alone**. To get a handle on how many we might expect we can run a small simulation.
 
 ```{r sim_how_many_ECM}
 n_ECM_genes <- filter(results_final, ENSEMBL %in% pathway_genes) %>% nrow
@@ -252,14 +263,12 @@ ECM_rand[i] <- results_final %>%
 
 ```
 
-
 ### Exercise
-
-# Solution
 
 Use the code above to simulate how many ECM genes we might reasonably expect in a random gene list with the same length as our list of differentially-expressed genes. Make a histogram of the results and make sure you understand the code. Does the **actual number** of ECM genes that we found to be differentially-expressed consistent with this distribution?
 
-:::{.callout-note collapse="true"}
+::: {.callout-note collapse="true"}
+# Solution
 
 ```{r sim_histogram}
 
@@ -283,11 +292,9 @@ data.frame(ECM_rand) %>%
 ```
 
 The number of ECM genes we observed was `r n_ECM_DE_genes` whereas the histogram shows we would expect around `r median(ECM_rand)`. It certainly seems like there more ECM genes than we would expect by chance.
-
 :::
 
 To formalise the test, we can then annotate each gene in our results according to whether it belongs to this pathway, and whether it is differentially-expressed or not.
-
 
 ```{r cross_tab_ECM_DE}
 go_table <- mutate(results_final, 
@@ -304,25 +311,19 @@ Cross-tabulating the two new columns gives a basis for a statistical test
 table(go_table$inPathway, go_table$isDE)
 ```
 
-
-For a particular pathway we need to calculate how many genes were identified as differentially-expressed and compare to *how many we would be expect by chance*. Or in other words, if we repeatedly generated a list of differentially-expressed genes at random how many genes from this pathway would be expect to see.
-
-
 The Fisher's exact test or chi-squared test (as seen here) can then be used
 
 ```{r ECM_DE_chisquared}
 chisq.test(table(go_table$inPathway, go_table$isDE))
 ```
+
 We now have a p-value that is statistically-significant and can conclude that genes in the ECM pathway appear in our gene list more than we would expect by chance.
-
-
 
 # Pathways analysis
 
-We have of course picked ECM because it fit with a hypothesis we had about the dataset. It may not be the only pathway of interest, and probably not the only one either.
+We have of course picked ECM because it fit with a hypothesis we had about the dataset. It may not be the most significant pathway of interest, and probably not the only one either.
 
 In reality it would be impractical to test all possible pathways in this manner, so there are a number of Bioconductor packages that automate the process
-
 
 ## Threshold-based Gene Set Testing
 
@@ -354,38 +355,62 @@ The result of `enrichGo` can be turned into a data frame for easier interpretati
 
 ```{r enrich_go_as_df}
 enrich_go %>% data.frame %>% 
-  slice_head(n = 10)
+  slice_head(n = 10) %>% 
+  select(-geneID)
 ```
 
-Somewhat reassuringly the Extracellular Matrix pathways is found amongst these most significant pathways. A dot plot can show us the most enriched pathways, and the size of each.
+The output data frame is using the same approaches discussed above and the `GeneRatio` and `BgRatio` columns tell you for each row (pathway) how many genes in that pathway were found in the DE genes (`GeneRatio`) and in the background (`BgRatio`). The `FoldEnrichment` indicates how many more times each pathway is represented than you would expect. Somewhat reassuringly the Extracellular Matrix pathway is found amongst these most significant pathways. A dot plot can show us the most enriched pathways, their statistical significance and the size of each.
 
 ```{r enrichGO_dotplot, fig.height=8}
 dotplot(enrich_go,showCategory=20)
 ```
 
-Overlaps between gene sets can also be visualised using an "Upset plot" - an alternative to a venn diagram.
+You might notice that the names of some pathways, and the numbers of genes they contain are extremely similar. For example `extracellular matrix organization` and `extracellular structure organization`. This is because Gene Ontologies are not mutually exclusive and can comprise the same genes. The results can therefore give a false impression of how many biological functions are being represented amongst the results. Overlaps between gene sets can also be visualised using an "Upset plot" - an alternative to a venn diagram. The connected dots in the bottom panel show genes that are shared between different pathways, and the number of these genes is displayed in the bar chart.
 
-```{r enrichGO_upset}
+```{r enrichGO_upset, message=FALSE, warning=FALSE}
 enrichplot::upsetplot(enrich_go)
 ```
 
+The `emapplot` function is another way of identifying redundancy and clustering the enrichment results into broader biological themes. For instance, terms like "cell proliferation," "cell division," and "mitotic nuclear division" would all cluster together, indicating they represent the single, large theme of "cell cycle."
 
-Relationships between the identified categories can be found using `emapplot`.
+Each node in this plot represents a significantly enriched pathway or GO term. Whereas an edge (line) connects two nodes if their underlying gene sets overlap significantly (i.e., they share many common genes).
 
 ```{r enrichGO_enrichPlot, fig.width=12}
 enrich_go <- enrichplot::pairwise_termsim(enrich_go)
 emapplot(enrich_go)
 ```
 
+Whereas a gene-concept network plot (`cnetplot`) depicts the linkages of genes and biological concepts (e.g. GO terms or KEGG pathways) as a network. This plot can identify the core "hub" genes (genes with high connectivity) that are common to multiple enriched pathways. These hub genes are often considered the most critical players driving the observed biological change.
+
+```{r, cnetplot, fig.width=12,fig.height=12}
+cnetplot(enrich_go)
+```
+
+The`heatplot` is another way of visualising pathway overlaps. In this plot, each column is a gene and a black box indicating if that gene features in a given pathway.
+
+```{r heatplot, fig.width=12}
+heatplot(enrich_go, showCategory = 10)
+```
+
+Finally, the `treeplot` function performs hierarchical clustering of enriched terms. It relies on the pairwise similarities of the enriched terms calculated by the `pairwise_termsim()` function, which by default usese the Jaccard’s similarity index (JC).
+
+```{r treeplot, message=FALSE, warning=FALSE, fig.width=12}
+enrich_go <- enrichplot::pairwise_termsim(enrich_go)
+enrichplot::treeplot(enrich_go)
+```
+### "Simplifying" the GO results
+
+
+
 
 
 ## Gene set enrichment analysis (GSEA)
 
-An appealing feature of the **GSEA** method is that it does not require us to impose arbitrary cut-offs on the dataset to decide what is differentially-expressed or not. The steps in producing the input required for GSEA are i) retrieving the ranked statistics ii) naming each one according to a chosen identifier (`ENSEMBL` or `ENTREZID` for example).
+An appealing feature of the **GSEA** method is that it does not require us to impose arbitrary cut-offs on the dataset to decide what is differentially-expressed or not. Instead it takes a set of *ranked statistics* for *all* genes and looks for sets of genes that occur either at the top or bottom of the list. As GSEA uses the *direction* of a test result (either up- or down-regulated) the test statistics themselves must have a positive or negative sign. Although the p-values cannot therefore be used for this purpose, they can be transformed using the same equation used in the volcano plot (-10 x log$_{10}$) and multiplying by the "sign" of the LFC (i.e. +1 or -1).
 
-The `clusterProfiler` package also includes an implementation of the GSEA algorithm, and the function works in much the same way as `enrichGO` from above.
+The steps in producing the input required for GSEA are i) calculating and retrieving the ranking statistics ii) naming each one according to a chosen identifier (`ENSEMBL` or `ENTREZID` for example). The `clusterProfiler` package also includes an implementation of the GSEA algorithm, and the function works in much the same way as `enrichGO` from above.
 
-```{r gseGO_run}
+```{r gseGO_run, warning = FALSE}
 
 ranked_genes <- results_final %>% 
   mutate(Score = sign(log2FoldChange)*-log10(padj)) %>% 
@@ -401,10 +426,17 @@ gse_GO  <- gseGO(geneList = geneList,
 
 ```
 
+The results may not necessarily be the same as the over-representation analysis, since GSEA is answering a slightly different question.
+
 ```{r gseGO_show}
 gse_GO %>% as.data.frame %>% 
-  slice_head(n = 10)
+  slice_head(n = 10) %>% 
+  ## don't show the core enrichment to make a display a bit cleaner
+  select(-core_enrichment)
 ```
+
+
+As GSEA uses *all* of the genes that were present in the dataset, it has also used all genes in a pathway to calculate the enrichment. However, to narrow-down the interpretation of a pathways the core enrichment or leading edge of a GSEA can be used. This refers to the subset of genes within an enriched pathway that primarily drives the enrichment signal.2It represents the genes that are most responsible for the pathway receiving its high Enrichment Score and thus its significance
 
 An overview of the results can be provided by a "ridge plot". This allows comparison of the test statistics for each of the top enriched pathways.
 
@@ -418,35 +450,140 @@ An upset plot can still be produced, but this time the distribution of statistic
 enrichplot::upsetplot(gse_GO)
 ```
 
-The results confirm that the ECM pathway has many differentially-expressed genes (more than we would expect by chance). Moreover, there is a tendancy for these genes to be up-regulated; as indicated by the high positive enrichment score. Another way to visualise the GSEA results, that is typically produced from the GSEA java app, is the so-called enrichment plot.
+GSEA introduces a new type of plot that summarizes the entire analysis for a single pathway and is central to interpreting its results. Shown below is the GSEA enrichment plot for the pathway with the most extreme enrichment score.
 
-```{r gseGO_gseaplot_0030198}
-gseaplot(gse_GO,geneSetID = "GO:0030198")
+```{r gseGO_gseaplot_up, fig.height=8}
+
+top_gsea <- gse_GO %>% as.data.frame %>% 
+  slice_max(abs(enrichmentScore)) %>% 
+  pull(ID)
+
+top_gsea_ID <- gse_GO %>% as.data.frame %>% 
+  slice_max(abs(enrichmentScore)) %>% 
+  pull(Description)
+
+enrichplot::gseaplot2(gse_GO,geneSetID = top_gsea,title = top_gsea_ID)
 ```
 
-The enrichment plot for a gene set with a high negative enrichment score reveals a different pattern.
+The Top Panel: Enrichment Score (ES) & $\text{GSEA}$ Barcode. This panel shows the core evidence for enrichment. + Running $\text{ES}$ Curve (The Line): This is a running sum statistic that measures the degree of enrichment. It starts at zero and increases every time a gene belonging to the pathway is encountered in the ranked list, whereas it slightly decreases when a gene not in the pathway is encountered. The peak of this curve is the maximum Enrichment Score ($\text{ES}$). If the peak is on the left (positive), the pathway is up-regulated; if the peak is on the right (negative), the pathway is down-regulated. + $\text{GSEA}$ Barcode (The Ticks): The black vertical lines beneath the curve are the barcode. Each line represents a single gene from the pathway, placed at its exact rank position. The clustering of these ticks—either on the far left or far right—provides the visual evidence for the calculated $\text{ES}$.
 
-```{r gseGO_gseaplot_0002283}
-gseaplot(gse_GO,geneSetID = "GO:0002283")
-```
+-   The Bottom Panel: Gene Ranking Metric displays the value of the statistic used to rank all genes.
+    -   Ranking Metric: This usually shows the $\text{Log}_2 \text{Fold Change}$ ($\text{LFC}$), $t$-statistic, or another metric for every gene in the experiment.
+    -   Interpretation: This confirms that the genes on the far left of the plot have the most positive values (high $\text{LFC}$) and those on the far right have the most negative values (low $\text{LFC}$), providing context for the directional enrichment observed in the top panel.The plot therefore provides a concise, integrated view, confirming both statistical significance (from the $\text{NES}$ not shown on the curve but derived from it) and the directionality and magnitude of the pathway's regulation.
 
 ## Exercise
 
-::: exercise
 -   In addition to enriched GO terms, `clusterProfiler` can also find enriched [KEGG](https://www.genome.jp/kegg/) terms using the `enrichKEGG` function. There are a couple of changes that are required from `enrichGO`
-    -   `ENTREZID` have to be used as the identifer type
+    -   `ENTREZID` has to be used as the identifer type
     -   the user must input an appropriate [organism code](https://www.genome.jp/kegg/catalog/org_list.html). The code for humans is `hsa`.
 -   Use the `enrichKEGG` function to identify enriched KEGG terms in the analysis.
 -   (Optional) If you have time, use the gseKEGG to perform GSEA using KEGG terms.
-:::
 
-```{r}
+::: {.callout-note collapse="true"}
+### Solution
+
+```{r enrichKEGG}
+## KEGG tools require ENTREZ ID
+
+sigGenesEntrez <- results_final %>% 
+  filter(padj < 0.05) %>% pull(ENTREZID)
+
+enrich_kegg <- enrichKEGG(gene = sigGenesEntrez,
+                       organism = "hsa",)
+as.data.frame(enrich_kegg)
+
 
 ```
 
-Other visualisation methods using the clusterProfiler output can be found here:-
+```{r gseKEGG}
+ranked_genes <- results_final %>% 
+  mutate(Score = sign(log2FoldChange)*-log10(padj)) %>% 
+  arrange(desc(Score)) %>% 
+  filter(!is.na(Score)) %>% 
+  filter(!is.na(ENTREZID)) %>% 
+  filter(!duplicated(ENTREZID))
+  
+geneList <- pull(ranked_genes, Score)
+names(geneList) <- pull(ranked_genes, ENTREZID)
+  
+gse_GO  <- gseKEGG(geneList = geneList,
+                   organism = "hsa")
 
-https://yulab-smu.top/biomedical-knowledge-mining-book/enrichplot.html
+gse_GO %>% data.frame()
+```
+
+
+:::
+
+## Which database to use?
+
+We have looked the two main types of test supported by `clusterProfiler` using a database of Gene Ontology (GO) terms as a reference. These were implemented in the `enrichGO` and `gseGO` functions respectively. The above exercise used KEGG instead. A nice feature of `clusterProfiler` is that you can test different databases for significant pathways with few changes to your code. Some of the different databases and the corresponding function to use are summarised below
+
++------------------------------------------------------------------------------------------------------------------------------------+---------------------+---------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
+| Database                                                                                                                           | Function            | Primary Focus                                                             | Pros                                                                                                | Cons                                                                                                                   |
++====================================================================================================================================+=====================+===========================================================================+=====================================================================================================+========================================================================================================================+
+| [Gene Ontology (GO)](https://yulab-smu.top/biomedical-knowledge-mining-book/clusterprofiler-go.html)                               | -   \`enrichGO\`    | Biological Process (BP), Molecular Function (MF), Cellular Component (CC) | -   **Broadest Coverage:** Covers nearly all known genes in most species.                           | -   **High Redundancy:** Similar terms often overlap significantly.                                                    |
+|                                                                                                                                    |                     |                                                                           |                                                                                                     |                                                                                                                        |
+|                                                                                                                                    | -   \`gseGO\`       |                                                                           | -   **Hierarchical:** Allows for semantic similarity grouping (`simplify()`).                       | -   **Functional Ambiguity:** Terms can be very broad.                                                                 |
++------------------------------------------------------------------------------------------------------------------------------------+---------------------+---------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
+| [KEGG (Kyoto Encyclopedia of Genes and Genomes)](https://yulab-smu.top/biomedical-knowledge-mining-book/clusterprofiler-kegg.html) | -   \`enrichKEGG\`  | Metabolic & Regulatory Pathways                                           | -   **Visual Maps:** Provides detailed, manually drawn pathway diagrams.                            | -   **Limited Coverage:** Focused primarily on well-studied pathways.                                                  |
+|                                                                                                                                    |                     |                                                                           |                                                                                                     |                                                                                                                        |
+|                                                                                                                                    | -   \`gseKEGG\`     |                                                                           | -   **Focus on Mechanism:** Excellent for examining core signaling and metabolic processes          | -   **Licensing/Updates:** Access can be restricted/less frequently updated in free versions.                          |
++------------------------------------------------------------------------------------------------------------------------------------+---------------------+---------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
+| [Reactome](https://yulab-smu.top/biomedical-knowledge-mining-book/reactomepa.html)                                                 | -   `enrichPathway` | Molecular Events & Reactions                                              | -   **Mechanistic Detail:** Highly curated, evidence-based sequence of molecular events (reactions) | -   **Bias toward Human:** Predominantly focused on human biology.                                                     |
+|                                                                                                                                    |                     |                                                                           |                                                                                                     |                                                                                                                        |
+|                                                                                                                                    | -   \`gsePathway\`  |                                                                           | -   **Non-Redundant Structure:** Less overlap between main pathways than in GO.                     | -    **Pathway Fragmentation:** High detail can make pathways appear fragmented.                                       |
++------------------------------------------------------------------------------------------------------------------------------------+---------------------+---------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
+| [WikiPathways](https://yulab-smu.top/biomedical-knowledge-mining-book/wikipathways-analysis.html)                                  | -   `enrichWP`      | Community-Driven, Open Content                                            | -   **Flexible & Collaborative:** Allows any researcher to create, edit, and contribute.            | -   **Variable Quality:** Quality control is less stringent than curated databases.                                    |
+|                                                                                                                                    |                     |                                                                           |                                                                                                     |                                                                                                                        |
+|                                                                                                                                    | -   `gseWP`         |                                                                           | -   **Rapid Inclusion:** Quickly integrates novel and species-specific pathways.                    | -   **Inconsistent Scope:** Pathway scale and definition can be less uniform.                                          |
++------------------------------------------------------------------------------------------------------------------------------------+---------------------+---------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
+| [Disease Ontology](https://yulab-smu.top/biomedical-knowledge-mining-book/dose-enrichment.html)                                    | -   `enrichDO`      | Structured Vocabulary for Human Diseases                                  | -   **Hierarchical Structure:** DAG allows for GSEA and semantic clustering.                        | -   **Gene Association Reliability:** Associations are aggregated from multiple sources, meaning reliability can vary. |
+|                                                                                                                                    |                     |                                                                           |                                                                                                     |                                                                                                                        |
+|                                                                                                                                    | -   `gseDO`         |                                                                           | -   **Standardized:** Provides a single, clear terminology for classifying diseases.                | -   **Redundancy:** Hierarchical terms mean high-level parent terms can obscure specific results.                      |
++------------------------------------------------------------------------------------------------------------------------------------+---------------------+---------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
+
+: Summary of different databases that clusterProfiler can use
+
+Ultimately, you will have to decide which database(s) are more appropriate for the interpretation of your results
+
+
+### Additional visualistion of KEGG pathways
+
+The special feature of a KEGG pathway is its standardized, structured graphical representation as a set of computable maps. This makes that visualisation with tools like `pathview` is possible. The standardization means KEGG is more than just a list of genes — it's an integrated system where both the visual elements and the underlying molecular data are tightly linked.
+
+
+In the below we take a pathway such as "Lysosome", use it's standard KEGG layout and colour the genes involved in the pathway according to the LFC.
+
+
+```{r pathview}
+library(pathview)
+
+# The KEGG ID you want to visualize
+kegg_id <- "hsa04142"
+
+# Organism code (hsa for human)
+organism_code <- "hsa"
+
+lfc_values <- pull(results_final, "log2FoldChange")
+names(lfc_values) <- pull(results_final, "ENTREZID")
+
+pathview(
+  gene.data = lfc_values,
+  pathway.id = "hsa04142",
+  species = "hsa",
+  low = "blue",
+  mid = "gray",
+  high = "red",
+  kegg.native = TRUE,
+  out.suffix = "lysosome_blue_red"
+)
+```
+
+![](/files/training/bulk_rnaseq/hsa04142.lysosome_blue_red.png)
+
+
+### Pathways analysis for non-human organisms
 
 # Appendix: Annotation with the biomaRt resource
 

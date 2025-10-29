@@ -1,6 +1,5 @@
 if(!require(BiocManager)) install.packages("BiocManager")
-BiocManager::install(c("limma", 
-         "org.Hs.eg.db", 
+BiocManager::install(c( "org.Hs.eg.db", 
          "RColorBrewer", 
          "DESeq2",
          "pheatmap",
@@ -16,5 +15,7 @@ BiocManager::install(c("limma",
          "GeneTonic",
          "ggupset",
          "ggridges",
+         "enrichplot",
         "EnhancedVolcano",
-        "apeglm"),suppressUpdates=TRUE)
+        "apeglm",
+        "pathview"),suppressUpdates=TRUE)
