@@ -4,11 +4,9 @@ author: Mark Dunning
 date: 2025-10-16
 image: /files/training/r/part2_preview.png
 theme: darkly
+description: "Starting to play with data with the `dplyr` and `ggplot2` packages"
 ---
 
-# Overview
-
-Starting to play with data with the `dplyr` and `ggplot2` packages
 
 ## Topics covered
 

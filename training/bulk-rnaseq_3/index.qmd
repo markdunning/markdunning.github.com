@@ -1,9 +1,10 @@
 ---
 title: "Introduction to RNA-Seq - Part 3"
 author: Mark Dunning
-date: 2025-10-25
+date: 2025-10-30
 theme: darkly
 image: "/files/training/bulk_rnaseq/treeplot.png"
+description: "Further exploration of differential expression, followed by identification of biological pathways of interest"
 ---
 
 ```{r}
@@ -18,9 +19,6 @@ knitr::opts_chunk$set(
 
 ```
 
-# Overview
-
-Further exploration of differential expression, followed by identification of biological pathways of interest
 
 ## Quick Start
 

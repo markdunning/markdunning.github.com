@@ -4,11 +4,8 @@ author: Mark Dunning
 date: 2025-10-23
 theme: darkly
 image: /files/training/bulk_rnaseq/samp_cor.png
+description: "Importing 'raw' RNA-seq counts into R and performing quality assessment"
 ---
-
-# Overview
-
-Importing "raw" RNA-seq counts into R and performing quality assessment
 
 ## Pre-amble
 

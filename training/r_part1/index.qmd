@@ -3,13 +3,8 @@ title: "Introduction to R - Part 1"
 author: Mark Dunning
 date: 2025-10-16
 theme: darkly
+description: "In these materials, we explore fundamental operations of R and load some example data"
 ---
-
-# Overview
-
-::: warning
-In these materials, we explore fundamental operations of R and load some example data
-:::
 
 ## Topics Covered
 

@@ -4,11 +4,9 @@ author: Mark Dunning
 date: 2025-10-16
 image: /files/training/r/part3_preview.png
 theme: darkly
+description: "Further data exploration and manipulation with `ggplot2` and `dplyr`"
 ---
 
-# Overview
-
-Further data exploration and manipulation with `ggplot2` and `dplyr`
 
 ## Topics covered
 

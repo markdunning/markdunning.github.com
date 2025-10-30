@@ -4,11 +4,10 @@ author: Mark Dunning
 date: 2025-10-25
 theme: darkly
 image: "/files/training/bulk_rnaseq/TGF_Vs_CTR_volcano.png"
+description: "Performing differential expression on Bulk RNA-seq data using DESeq2"
 ---
 
-# Overview
 
-Performing differential expression on Bulk RNA-seq data using DESeq2
 
 ## Quick Start
 
