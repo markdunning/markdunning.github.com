@@ -391,7 +391,8 @@ We can bind in the annotation information to the `results` data frame.
 
 ```{r}
 results_annotated <- results(de_condition,tidy=TRUE) %>% 
-  left_join(anno, by=c("row"="ENSEMBL"))
+  left_join(anno, by=c("row"="ENSEMBL")) %>% 
+  arrange(padj)
 
 head(results_annotated)
 ```
@@ -555,7 +556,7 @@ The default colour palette goes from low expression in blue to high expression i
 ```{r heatmap-1}
 # pheatmap is a specialised package to make heatmaps
 library(pheatmap)
-top_genes <- dplyr::slice(results_annotated, 1:10) %>% pull(row)
+top_genes <- dplyr::slice_min(results_annotated, padj, n = 10) %>% pull(row)
 vsd <- vst(dds)
 
 # top_genes is a vector containing ENSEMBL names of the genes we want to see in the heatmap
@@ -564,6 +565,9 @@ pheatmap(assay(vsd)[top_genes,])
 ```
 
 The heatmap is more informative if we add colours underneath the sample dendrogram to indicate which sample group each sample belongs to. This we can do by creating a data frame containing metadata for each of the samples in our dataset. With the `DESeq2` workflow we have already created such a data frame. We have to make sure the the rownames of the data frame are the same as the column names of the counts matrix.
+
+
+Expression patterns are also easier to discern if we use `scale = TRUE`, which scales each gene (row) using the average expression level. Thus, we can now see which individual samples the gene is up- or down-regulated in.
 
 ```{r heatmap2}
 sampleInfo <- as.data.frame(colData(dds)[,c("condition","Treated")])
@@ -578,15 +582,16 @@ Any plot we create in RStudio can be saved as a png or pdf file. We use the `png
 ```{r}
 png("heatmap_top10_genes.png",width=800,height=800)
 pheatmap(assay(vsd)[top_genes,],
-         annotation_col = sampleInfo)
+         annotation_col = sampleInfo,
+         scale = "row")
 # dev.off()
 ```
 
-There are many arguments to explore in `pheatmap`. For example, we might want to use a specific order to the rows and columns rather than using clustering. A useful option is to specific our own labels for the rows (genes). The default is to use the rownames of the count matrix. In our cases these are Ensembl IDs and not easy to interpret.
+There are many arguments to explore in `pheatmap`. A useful option is to specific our own labels for the rows (genes). The default is to use the rownames of the count matrix. In our case these are ENSEMBL IDs and not easy to interpret.
 
 ```{r heatmap3}
 N <- 10
-gene_labels <- dplyr::slice(results_annotated, 1:N) %>% pull(SYMBOL)
+gene_labels <- dplyr::slice_min(results_annotated, padj, n = 10) %>% pull(SYMBOL)
 
 pheatmap(assay(vsd)[top_genes,],
          annotation_col = sampleInfo,
@@ -594,7 +599,26 @@ pheatmap(assay(vsd)[top_genes,],
          scale="row")
 ```
 
-Given the nature of how the genes were selected for the heatmap, we shouldn't be surprised by the good separation that it demonstrates.
+
+Since we are only interested in `CTR` and `TGF` samples for this analysis it might make sense not to include the `IR` samples in the plot (however, I personally like to include all samples to get a better impression of the data variability). The matrix we use as an argument to `pheatmap` can be subset accordingly, for example by creating a vector that contains only the indices of the `CTR` and `TGF` samples
+
+```{r heatmap_no_IR}
+no_ir <- which(dds$condition != "IR")
+
+pheatmap(assay(vsd)[top_genes,no_ir],
+         annotation_col = sampleInfo[no_ir,],scale="row")
+```
+
+The clustering of columns (or indeed rows) can also be turned off.
+
+```{r heatmap-no-col-cluster}
+pheatmap(assay(vsd)[top_genes,no_ir],
+         annotation_col = sampleInfo[no_ir,],
+         scale = "row",
+         cluster_cols = FALSE)
+```
+
+Given the nature of how the genes were selected for the heatmap (i.e. picking the most statistically significant), we shouldn't be surprised by the good separation that it demonstrates. Another use we will see later on is for a gene list of our choosing relating to a particular biological pathway.
 
 # Exercise
 
@@ -632,6 +656,16 @@ The samples are not cleanly separated when LFC is used, as it looks like the lar
 
 :::
 
+
+:::{.callout-note}
+
+## ComplexHeatmap
+
+Although I haven't personally used it, the `ComplexHeatmap` is another popular choice for heatmaps of biological data. It promises more flexibility than `pheatmap` and support for multi-layered plot and is particularly useful for multi-omics and single-cell data
+
+- [ComplexHeatmap](https://jokergoo.github.io/ComplexHeatmap-reference/book/introduction.html)
+
+:::
 
 # The volcano plot
 
