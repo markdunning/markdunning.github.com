@@ -598,18 +598,38 @@ Given the nature of how the genes were selected for the heatmap, we shouldn't be
 
 # Exercise
 
-::: exercise
+
 -   Produce a heatmap using the top 30 genes with the most extreme *log2 Fold-Change*
     -   HINT: The `abs` function can be used to convert all negative values to positive.
 -   Label the heatmap with the gene `SYMBOL` of the genes
 -   Is this heatmap as effective as separating the samples into groups?
 
-```{r eval=FALSE}
+:::{.callout-note collapse="true"}
+
+## Solution
+
+```{r heatmap-by-LFC}
+
+top_genes <-dplyr::slice_max(results_annotated, abs(log2FoldChange), n = 30) %>% 
+  pull(row)
+
+labels <- dplyr::slice_max(results_annotated, abs(log2FoldChange), n = 30) %>% 
+  pull(SYMBOL)
+
+sampleInfo <- as.data.frame(colData(dds)[,c("condition","Treated")])
 
 
+pheatmap(assay(vsd)[top_genes,],
+         scale= "row",
+         annotation_col = sampleInfo, 
+         labels_row = labels)
 
 
 ```
+
+The samples are not cleanly separated when LFC is used, as it looks like the large LFC values are driven by outliers in a single sample. Most of the gene names are not recognisable to me, or `NA`, making me suspicious that these are just random findings.
+
+
 :::
 
 
@@ -780,7 +800,8 @@ listFilters(ensembl) %>%
 
 ```{r biomart_attributes, cache=TRUE}
 listAttributes(ensembl) %>% 
-    dplyr::filter(grepl("gene",name))
+    dplyr::filter(grepl("gene",name)) %>% 
+  slice_sample(n = 10)
 ```
 
 An advantage over the `org..` packages is that positional information can be retrieved
