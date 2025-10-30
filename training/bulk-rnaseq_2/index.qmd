@@ -186,13 +186,13 @@ You may notice the amount of `NA` p-values here. We will come back to this later
 
 Another overview of the results is to use the `plotMA` function. Each point on this plot represents and individual gene with the x- and y-axes being the overall expression level and magnitude of difference respectively. Statistically significant genes are automatically highlighted. The fanning effect at low expression levels is often seen due to high relative fold-change at low expression levels. Once you have run your DE analysis, an MA plot visually confirms that your DE genes are not exclusively confined to extremely low-count regions.
 
-```{r}
+```{r plotMA}
 plotMA(de_condition)
 ```
 
 It is also instructive to perform a "sanity" check and plot the sample-level counts for genes with high significance. This could highlight any other technical factors that we are not currently taking into account. The plot is not particularly attractive, but is a good quick diagnostic as it confirms which direction your contrast is. i.e. Treatment vs Control or Control vs Treatment.
 
-```{r}
+```{r plotCounts-upreg}
 ## Get the gene lowest p-value and a log2 fold-change over 0
 
 top_up <- results(de_condition, tidy = TRUE) %>% 
@@ -202,7 +202,7 @@ top_up <- results(de_condition, tidy = TRUE) %>%
 plotCounts(dds,top_up,intgroup = "condition")
 ```
 
-```{r}
+```{r plotCounts-downreg}
 
 ## Get the gene with the lowest p-value and a log2 fold-change less than 0
 top_down <- results(de_condition, tidy = TRUE) %>% 
@@ -450,7 +450,7 @@ ens_ids
 ```
 This code works, but is a bit clunky. N.B. `par(mfrow=c(1,3))` is the base R plotting way of making a panel with one row and three columns
 
-```{r}
+```{r plotCounts-solution}
 par(mfrow=c(1,3))
 
 plotCounts(dds, ens_ids[1], intgroup = "condition")
@@ -510,7 +510,7 @@ norm_counts %>%
 
 Finally, we can make the plot of count against condition
 
-```{r}
+```{r plotCounts-ggplot}
 library(ggplot2)
 norm_counts %>% 
   data.frame() %>% 
@@ -523,7 +523,7 @@ norm_counts %>%
 ```
 But what are the most recognisable names for these genes? We could use the `results_annotated` table that we already made and we could then `facet` using the `SYMBOL` which will print the gene names automatically.
 
-```{r}
+```{r plotCounts-ggplot-2}
 norm_counts %>% 
   data.frame() %>% 
   tibble:::rownames_to_column("row") %>% 
@@ -552,7 +552,7 @@ Here we will take the top 10 genes from the differential expression analysis and
 
 The default colour palette goes from low expression in blue to high expression in red, which is a good alternative to the traditional red/green heatmaps which are not suitable for those with forms of colour-blindness.
 
-```{r}
+```{r heatmap-1}
 # pheatmap is a specialised package to make heatmaps
 library(pheatmap)
 top_genes <- dplyr::slice(results_annotated, 1:10) %>% pull(row)
@@ -565,7 +565,7 @@ pheatmap(assay(vsd)[top_genes,])
 
 The heatmap is more informative if we add colours underneath the sample dendrogram to indicate which sample group each sample belongs to. This we can do by creating a data frame containing metadata for each of the samples in our dataset. With the `DESeq2` workflow we have already created such a data frame. We have to make sure the the rownames of the data frame are the same as the column names of the counts matrix.
 
-```{r}
+```{r heatmap2}
 sampleInfo <- as.data.frame(colData(dds)[,c("condition","Treated")])
 
 pheatmap(assay(vsd)[top_genes,],
@@ -584,7 +584,7 @@ pheatmap(assay(vsd)[top_genes,],
 
 There are many arguments to explore in `pheatmap`. For example, we might want to use a specific order to the rows and columns rather than using clustering. A useful option is to specific our own labels for the rows (genes). The default is to use the rownames of the count matrix. In our cases these are Ensembl IDs and not easy to interpret.
 
-```{r}
+```{r heatmap3}
 N <- 10
 gene_labels <- dplyr::slice(results_annotated, 1:N) %>% pull(SYMBOL)
 
@@ -628,7 +628,7 @@ if(!require(EnhancedVolcano)) BiocManager::install("EnhancedVolcano")
 
 `EnhancedVolcano` is useful as it will automatically label the names of the most significant genes and apply a colour scheme.
 
-```{r message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+```{r eVolcano-1, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
 library(EnhancedVolcano)
 
 EnhancedVolcano(results_annotated, x = "log2FoldChange", 
@@ -645,7 +645,7 @@ ggsave("TGF_vs_CTR_volcano.png")
 ```
 Rather than labeling all the genes, we can just highlight some of interest
 
-```{r fig.width=10, fig.height=8}
+```{r eVolcano-2, fig.width=10, fig.height=8}
 EnhancedVolcano(results_annotated, x = "log2FoldChange", 
                 y = "padj", 
                 lab = results_annotated$SYMBOL, 
