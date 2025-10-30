@@ -80,7 +80,7 @@ results_annotated %>%
 
 The `results_annotated` tibble contains results for *all* the genes that appeared in our counts data, which could be many 10,000s of potential candidates for being biologically meaningful. Deciding which genes to take forward for further investigation can be quite subtle, and can depend on what your question of interest is. With the simplest criteria applied (e.g. an adjusted p-value of 0.05) you can still be faced with 1000s of genes to interpret. Of course, there are methods for identifying biological themes (see later).
 
-The `padj` and `log2FoldChange` in the results table are common quantities for filtering representing the statistical certainty and effect size respectively. In an ideal world, genes of interest should have a high degree of statistical certainty (extremely low p-value) and large effect size. We can be reasonably confident about the p-value adjustments that `DESeq2` performed, and we will discuss the `log2FoldChange` later.
+The `padj` and `log2FoldChange` in the results table are common quantities for filtering representing the statistical certainty and effect size respectively. In an ideal world, genes of interest should have a high degree of statistical certainty (extremely low p-value) and large effect size. As correcting for multiple testing is a standard procedure for large datasets, and is included in `DESqe2`as standard, we can be reasonably confident about the p-value adjustments that `DESeq2` performed. We will discuss the `log2FoldChange` later.
 
 At the moment we have almost 5,000 genes with an arbitrary `0.05` cutoff, but not all of them are going to be relevant to our question.
 
@@ -88,11 +88,11 @@ At the moment we have almost 5,000 genes with an arbitrary `0.05` cutoff, but no
 dplyr::count(results_annotated, padj <0.05)
 ```
 
-But wait, we also have some `NA` values. What's the deal with those?
+But wait, we also have some `NA` values. What's the deal with those? Maybe `DESeq2` is doing something non-standard in p-value correction after all.
 
 ## Why are some adjusted p-values "`NA`"?
 
-`DESeq2` has already done some processing on the results to exclude genes with low expression level across the dataset that it deems to be unreliable and unlikely to be differential-expressed. The genes it filters out (those that have `NA` adjusted p-value) tend to have a lower value of `baseMean`.
+It turns out that `DESeq2` has already done some processing on the results to exclude genes with low expression level across the dataset that it deems to be unreliable and unlikely to be differential-expressed. The genes it filters out (those that have `NA` adjusted p-value) tend to have a lower value of `baseMean`.
 
 ```{r filter_vs_baseMean}
 results_annotated %>% 
@@ -101,7 +101,7 @@ results_annotated %>%
 
 The core principle is that genes with very low expression (low average normalized counts) have little power to be called differentially expressed, even if their true $\log_2$ fold change is comparatively large. By testing all genes, you incur a multiple testing penalty for these low-power genes, which reduces the number of genes that can be called significant overall.
 
-The procedure first uses the mean of normalized counts (`baseMean`) across all samples as a filtering mechanism. Genes with very low expression have high $p$-values due to low statistical power (high variance relative to the mean), regardless of their true fold change. `DESeq2` determines an optimal cutoff for the `baseMean` that maximizes the number of genes called significant (`padj` \< $\alpha$, where $\alpha$ is usually $0.1$ or $0.05$). This is done by testing a range of cutoffs and picking the one that yields the largest number of discoveries. Genes with mean counts below this optimal cutoff are removed (in practice their `padj` is set to `NA`). The remaining genes are then subjected to the Benjamini-Hochberg procedure.The benefit is a gain in statistical power. By reducing the total number of hypotheses tested, the multiple testing penalty is less severe, allowing more true positives (expressed genes with actual differential expression) to pass the adjusted $p$-value threshold.
+The procedure first uses the mean of normalized counts (`baseMean`) across all samples as a filtering mechanism. Genes with very low expression have high $p$-values due to low statistical power (high variance relative to the mean), regardless of their true fold change. `DESeq2` determines an optimal cutoff for the `baseMean` that maximizes the number of genes called significant (`padj` \< $\alpha$, where $\alpha$ is usually $0.1$ or $0.05$). This is done by testing a range of cutoffs and picking the one that yields the largest number of discoveries. Genes with mean counts below this optimal cutoff are removed (in practice their `padj` is set to `NA`). The remaining genes are then subjected to the Benjamini-Hochberg procedure. The benefit is a gain in statistical power. By reducing the total number of hypotheses tested, the multiple testing penalty is less severe, allowing more true positives (expressed genes with actual differential expression) to pass the adjusted $p$-value threshold.
 
 The effect of filtering can be seen in the following histogram:-
 
@@ -110,9 +110,11 @@ mutate(results_annotated, Filtered = is.na(padj)) %>%
   ggplot(aes(x = pvalue, fill = Filtered)) + geom_histogram(alpha = 0.4)
 ```
 
-The filtered group (in blue) represents the low-count genes that were removed. The distribution is often nearly uniform or even shows a slight peak towards the lower $p$-values. If these low-power genes were included, the overall flat null distribution needed for accurate FDR control would be slightly inflated near zero, leading to a harsher multiple testing penalty.
+The filtered group (in blue) represents the low-count genes that were removed. The distribution is typically nearly uniform or even shows a slight peak towards the lower $p$-values. If these low-power genes were included, the overall flat null distribution needed for accurate FDR control would be slightly inflated near zero, leading to a harsher multiple testing penalty.
 
-Non-Filtered Group (e.g., shown in red): This histogram represents the genes with sufficient expression to be tested. This is the set of $p$-values actually used for the Benjamini-Hochberg adjustment. This distribution should show a clear, desirable pattern: a strong peak near $p=0$ (the true differentially expressed genes) and a flat, uniform distribution from $\sim0.05$ to $1$ (the true null hypotheses).Conclusion: By removing the "Filtered" genes, the adjusted $p$-values ($\text{padj}$) are calculated only on the well-behaved "Non-Filtered" set, resulting in more significant calls for the well-expressed genes.
+The non-Filtered Group (e.g., shown in red) represents the genes with sufficient expression to be tested. This is the set of $p$-values actually used for the Benjamini-Hochberg adjustment. This distribution should show a clear, desirable pattern: a strong peak near $p=0$ (the true differentially expressed genes) and a flat, uniform distribution from $\sim0.05$ to $1$ (the true null hypotheses).
+
+By removing the "Filtered" genes, the adjusted $p$-values (`padj`) are calculated only on the well-behaved "Non-Filtered" set, resulting in more significant calls for the well-expressed genes.
 
 If the details above seem complex, remember that `DESeq2` will do these automatically without you having to think about them. If we think this behaviour isn't desirable, or are curious to see the results without any adjustment, we can set the argument `independentFiltering = FALSE` in the `results` function.
 
@@ -120,7 +122,7 @@ If the details above seem complex, remember that `DESeq2` will do these automati
 
 `DESeq2` provides an estimate, for each gene, of the difference in mean expression between our groups. However, in the same way that the raw pvalues can be improved by the adjustment described about, we can also get better estimates of the log fold-changes (LFC).
 
-When we made the MA-plot in the previous section we saw a fanning effect at lower expression levels. Creates much cleaner, less noisy MA plots and heatmaps. A technique called "shrinkage" helps to address this as the "shrunken" log fold-change is a better measure of biological magnitude for ranking genes
+When we made the MA-plot in the previous section we saw a fanning effect at lower expression levels. A technique called "shrinkage" helps to address this as the "shrunken" log fold-change is a better measure of biological magnitude for ranking genes.
 
 Log fold-change shrinkage, implemented in `DESeq2` via the `lfcShrink()` function, uses a statistical technique called Bayesian shrinkage (or an Empirical Bayes approach) to address this.
 
@@ -165,7 +167,7 @@ results_final <- as.data.frame(results_final) %>%
 
 # Investigating particular gene sets
 
-Extracellular Matrix (ECM) genes serve as the blueprint and building materials for the structural and biochemical changes that promote cancer progression. We might hypothesise that the expression of these genes would be altered after treament with TGF
+Extracellular Matrix (ECM) genes serve as the blueprint and building materials for the structural and biochemical changes that promote cancer progression. We might hypothesise that the expression of these genes would be altered after treatment with TGF
 
 For the Extra-Cellular Matrix (ECM) pathway we can extract all genes as follows once we know the GO ID:-
 
@@ -178,7 +180,7 @@ pathway_genes <- AnnotationDbi::select(org.Hs.eg.db,
                                        columns="ENSEMBL") %>% pull(ENSEMBL)
 ```
 
-We will now make a few plots to explore whether the genes belonging to this pathway have a tendency to be differentially-expressed. Starting with a volcano plot (made by-hand this time), we will label the points according to whether their `ENSEMBL` ID is one of the genes belonging to the pathway.
+We will now make a few plots to explore whether the genes belonging to this pathway have a tendency to be differentially-expressed (**DE**). Starting with a volcano plot (made by-hand this time), we will label the points according to whether their `ENSEMBL` ID is one of the genes belonging to the pathway.
 
 ```{r volcano_vs_ECM}
 results_final %>% 
@@ -186,7 +188,7 @@ results_final %>%
   ggplot(aes(x = log2FoldChange, y = -log10(padj), col = ECM_Gene, alpha = ECM_Gene)) + geom_point() + scale_colour_manual(values = c("black", "red")) + scale_alpha_manual(values=c(0.1,1))
 ```
 
-It certainly *looks* like these genes are more significant than we might expect. Another related plot is to look at the statistical significance (-log$_{10}$ adjusted p-value) for ECM and other genes separately.
+It certainly *looks* like some of these genes are DE. Another related plot is to look at the statistical significance (-log$_{10}$ adjusted p-value) for ECM and other genes separately.
 
 ```{r padj_vs_ECM_genes}
 results_final %>% 
@@ -194,7 +196,7 @@ results_final %>%
   ggplot(aes(x = ECM_Gene, y = -log10(padj))) + geom_boxplot()
 ```
 
-Our next visualisation could be a heatmap, which if you recall from the previous section can be created using the `pheatmap` package. The variance stabilised data produced by `vst` is a good choice for this type of visualisation. We first make sure all the ENSEMBL IDs for the pathway are actually in our dataset, and get the VST values for these genes.
+Again, the significance of ECM genes looks higher. Our next visualisation could be a heatmap, which if you recall from the previous section can be created using the `pheatmap` package. The variance stabilised data produced by `vst` is a good choice for this type of visualisation. We first make sure all the ENSEMBL IDs for the pathway are actually in our dataset, and get the VST values for these genes.
 
 We then remove any rows with low variance, and look-up the gene symbols to be used to label the rows.
 
@@ -232,21 +234,21 @@ n_ECM_genes <- filter(results_final, ENSEMBL %in% pathway_genes) %>% nrow
 n_ECM_genes
 ```
 
-How many genes are differentially-expressed. Let's use a loose definition of an adjusted p-value less than 0.05.
+Next, how many genes are DE. Let's use a loose definition of an adjusted p-value less than 0.05.
 
 ```{r get_DE_genes}
 n_DE_genes <- filter(results_final, padj < 0.05) %>% nrow()
 n_DE_genes
 ```
 
-Finally, how many of our ECM genes are also differentially-expressed
+Finally, how many of our ECM genes are also DE
 
 ```{r get_ECM_DE_genes}
 n_ECM_DE_genes <- filter(results_final, padj < 0.05,ENSEMBL %in% pathway_genes) %>% nrow()
 n_ECM_DE_genes
 ```
 
-If our gene list was just a really random set of genes with no relation to the underlying biology, then we would naturally expect some number of ECM genes to occur **by chance alone**. To get a handle on how many we might expect we can run a small simulation.
+If our gene list was just a really random set of genes, with no relation to the underlying biology, then we would naturally expect some number of ECM genes to occur **by chance alone**. To get a handle on how many we might expect we can run a small simulation.
 
 ```{r sim_how_many_ECM}
 n_ECM_genes <- filter(results_final, ENSEMBL %in% pathway_genes) %>% nrow
@@ -265,7 +267,7 @@ ECM_rand[i] <- results_final %>%
 
 ### Exercise
 
-Use the code above to simulate how many ECM genes we might reasonably expect in a random gene list with the same length as our list of differentially-expressed genes. Make a histogram of the results and make sure you understand the code. Does the **actual number** of ECM genes that we found to be differentially-expressed consistent with this distribution?
+Use the code above to simulate how many ECM genes we might reasonably expect in a random gene list with the same length as our list of DE genes. Make a histogram of the results and make sure you understand the code. Is the **actual number** of ECM genes that we found to be DE consistent with this distribution?
 
 ::: {.callout-note collapse="true"}
 # Solution
@@ -294,7 +296,7 @@ data.frame(ECM_rand) %>%
 The number of ECM genes we observed was `r n_ECM_DE_genes` whereas the histogram shows we would expect around `r median(ECM_rand)`. It certainly seems like there more ECM genes than we would expect by chance.
 :::
 
-To formalise the test, we can then annotate each gene in our results according to whether it belongs to this pathway, and whether it is differentially-expressed or not.
+To formalise the test, we can then annotate each gene in our results according to whether it belongs to this pathway, and whether it is DE or not.
 
 ```{r cross_tab_ECM_DE}
 go_table <- mutate(results_final, 
@@ -323,15 +325,15 @@ We now have a p-value that is statistically-significant and can conclude that ge
 
 We have of course picked ECM because it fit with a hypothesis we had about the dataset. It may not be the most significant pathway of interest, and probably not the only one either.
 
-In reality it would be impractical to test all possible pathways in this manner, so there are a number of Bioconductor packages that automate the process
+In reality it would be impractical to test all possible pathways in this manner, so there are a number of Bioconductor packages that automate the process. There are two main methodologies with the key distinction being whether we are happy to draw an arbitrary cut-off on the adjusted p-value and possibly LFC (*Threshold-based* or *Over-representation* analysis) or not (*Gene Set Enrichment Analysis (GSEA)*). Although we will use a single package that allows both methods, there are many other packages and websites available. Fortunately they mostly tend to use the same input(s).
 
 ## Threshold-based Gene Set Testing
 
-*Threshold-based* or *Over-representation* analysis is used once we have decided a list of differentially-expressed genes that we are happy with. The analysis then looks for gene sets that are *over-represented*, or occur more than we would expect by chance.
+*Threshold-based* or *Over-representation* analysis is used once we have decided a list of DE genes that we are happy with. The analysis then looks for gene sets that are *over-represented*, or occur more than we would expect by chance.
 
 `clusterProfiler` is a Bioconductor package for pathways and downstream analysis and it's main advantage is that it provides some nice visualisation methods.
 
-The function for over-representation analysis on Gene Ontologies is `enrichGO` which requires the IDs of genes found to be differentially-expressed (`sigGenes`) and the IDs of *all* genes in the dataset (`universe`). It uses the `org.Hs.eg.db` package to map between gene names and biological pathways.
+The function for over-representation analysis on Gene Ontologies is `enrichGO` which requires the IDs of genes found to be DE (`sigGenes`) and the IDs of *all* genes in the dataset (`universe`). It uses the `org.Hs.eg.db` package to map between gene names and biological pathways.
 
 :::{.callout-note}
 
@@ -339,7 +341,7 @@ Unlike the `DESeq` workflow in the previous section, which reports **all** genes
 
 The `p.adjust` and `qvalue` columns refers to two separate but related methods for multiple testing. `p.adjust` uses the the Benjamini-Hochberg ($\text{BH}$) method (also called $\text{FDR}$ or $\text{BH}$), which is a common and robust method for controlling the $\text{FDR}$. This is a step-up method that adjusts the raw $P$-value for each term. If you set a $\text{BH}$ cutoff of $0.05$, you are stating that you expect at most 5% of your rejected null hypotheses (your significant terms) to be false discoveries (i.e., enriched by chance). Therefore the value in the $\text{p.adjust}$ column is the lowest $\text{FDR}$ you can tolerate while still declaring that specific term significant.
 
-`qvalue` is based on the method developed by John Storey, often implemented via the `qvalue` R package, which is frequently used for high-throughput data. The $\text{Q}$-value is an estimate of the minimum expected $\text{FDR}$ incurred when declaring a specific term significant. Unlike the $\text{BH}$ method, the $\text{Q}$-value method estimates the proportion of true null hypotheses ($\pi_0$) present in the data, leading to a potentially more powerful (less conservative) adjustment. If a term has a $\text{Q}$-value of $0.01$, it means that if you choose that value as your significance cutoff, you expect 1% of the terms declared significant to be false positives. Consequently the value in the $\text{qvalue}$ column is generally lower (more stringent) than the $\text{p.adjust}$ value because it uses the estimated $\pi_0$ to adjust the calculation.
+The `qvalue` column comes from a method developed by John Storey, often implemented via the `qvalue` R package, which is frequently used for high-throughput data. The $\text{Q}$-value is an estimate of the minimum expected $\text{FDR}$ incurred when declaring a specific term significant. Unlike the $\text{BH}$ method, the $\text{Q}$-value method estimates the proportion of true null hypotheses ($\pi_0$) present in the data, leading to a potentially more powerful (less conservative) adjustment. If a term has a $\text{Q}$-value of $0.01$, it means that if you choose that value as your significance cutoff, you expect 1% of the terms declared significant to be false positives. Consequently the value in the $\text{qvalue}$ column is generally lower (more stringent) than the $\text{p.adjust}$ value because it uses the estimated $\pi_0$ to adjust the calculation.
 
 :::
 
@@ -374,7 +376,7 @@ enrich_go %>% data.frame %>%
   select(-geneID)
 ```
 
-The output data frame is using the same approaches discussed above and the `GeneRatio` and `BgRatio` columns tell you for each row (pathway) how many genes in that pathway were found in the DE genes (`GeneRatio`) and in the background (`BgRatio`). The `FoldEnrichment` indicates how many more times each pathway is represented than you would expect. Somewhat reassuringly the Extracellular Matrix pathway is found amongst these most significant pathways. A dot plot can show us the most enriched pathways, their statistical significance and the size of each.
+The output data frame is using the same approaches discussed above and the `GeneRatio` and `BgRatio` columns tell you for each row (pathway) how many genes in that pathway were found in the DE genes (`GeneRatio`), and in the background (`BgRatio`). The `FoldEnrichment` indicates how many more times each pathway is represented than you would expect. Somewhat reassuringly the ECM pathway is found among these most significant pathways. A dot plot can show us the most enriched pathways, their statistical significance, and the size of each.
 
 ```{r enrichGO_dotplot, fig.height=8}
 enrichplot::dotplot(enrich_go,showCategory=20)
@@ -395,7 +397,7 @@ enrich_go <- enrichplot::pairwise_termsim(enrich_go)
 emapplot(enrich_go)
 ```
 
-Whereas a gene-concept network plot (`cnetplot`) depicts the linkages of genes and biological concepts (e.g. GO terms or KEGG pathways) as a network. This plot can identify the core "hub" genes (genes with high connectivity) that are common to multiple enriched pathways. These hub genes are often considered the most critical players driving the observed biological change.
+A gene-concept network plot (`cnetplot`) depicts the linkages of genes and biological concepts (e.g. GO terms or KEGG pathways) as a network. This plot can identify the core "hub" genes (genes with high connectivity) that are common to multiple enriched pathways. These hub genes are often considered the most critical players driving the observed biological change.
 
 ```{r, cnetplot, fig.width=12,fig.height=12}
 cnetplot(enrich_go)
@@ -426,7 +428,7 @@ enrich_go %>% data.frame() %>% nrow
 ```
 
 
-Similarity in this case refers to semantic similarity as implemented in the `GOSemSim` package. Semantic similarity, in the context of Gene Ontology (GO) , is a quantitative measure of how functionally related two GO terms are. It goes beyond simple gene sharing by assessing the terms' proximity within the GO hierarchy (the Directed Acyclic Graph or DAG). Two terms are highly similar if they share a common ancestor deep in the hierarchy, indicating a precise functional relationship, regardless of whether their gene lists overlap perfectly. This method ensures that terms covering the same core biological concept are grouped together.
+"Similarity" in this case refers to semantic similarity as implemented in the `GOSemSim` package. Semantic similarity, in the context of Gene Ontology (GO),cis a quantitative measure of how functionally related two GO terms are. It goes beyond simple gene sharing by assessing the terms' proximity within the GO hierarchy (the Directed Acyclic Graph or DAG). Two terms are highly similar if they share a common ancestor deep in the hierarchy, indicating a functional relationship, regardless of whether their gene lists overlap perfectly. This method ensures that terms covering the same core biological concept are grouped together.
 
 If two or more GO terms are found to be highly similar (i.e., their similarity score meets or exceeds the defined cutoff), `simplify()` considers them redundant and removes one of them by for example picking the term with the most significant p-value.
 
@@ -442,17 +444,21 @@ enrich_go_simplified %>% data.frame %>% nrow()
 ```
 
 
-Compare the number of rows (terms) in the original enrichment result to the simplified result. You should see a significant reduction in the total count of enriched terms, confirming that redundancy was successfully removed.
+Compare the number of rows (terms) in the original enrichment result to the simplified result. You should see a significant reduction in the total count of enriched terms, confirming that redundancy was successfully removed. We can also repeat some of the same plots as above
 
 ```{r emapplot-simplified, fig.width=12}
 emapplot(enrich_go_simplified)
 ```
 
+```{r cnetplot-simplified, fig.width=12}
+cnetplot(enrich_go_simplified)
+```
+
 ## Gene set enrichment analysis (GSEA)
 
-An appealing feature of the **GSEA** method is that it does not require us to impose arbitrary cut-offs on the dataset to decide what is differentially-expressed or not. Instead it takes a set of *ranked statistics* for *all* genes and looks for sets of genes that occur either at the top or bottom of the list. As GSEA uses the *direction* of a test result (either up- or down-regulated) the test statistics themselves must have a positive or negative sign. Although the p-values cannot therefore be used for this purpose, they can be transformed using the same equation used in the volcano plot (-10 x log$_{10}$) and multiplying by the "sign" of the LFC (i.e. +1 or -1).
+An appealing feature of the **GSEA** method is that it does not require us to impose arbitrary cut-offs on the dataset to decide what is DE or not. Instead it takes a set of *ranked statistics* for *all* genes and looks for sets of genes that occur either at the top or bottom of the list. As GSEA uses the *direction* of a test result (either up- or down-regulated) the test statistics themselves must have a positive or negative sign. Although the p-values cannot therefore be used for this purpose, they can be transformed using the same equation used in the volcano plot (-10 x log$_{10}$) and multiplying by the "sign" of the LFC (i.e. +1 or -1).
 
-The steps in producing the input required for GSEA are i) calculating and retrieving the ranking statistics ii) naming each one according to a chosen identifier (`ENSEMBL` or `ENTREZID` for example). The `clusterProfiler` package also includes an implementation of the GSEA algorithm, and the function works in much the same way as `enrichGO` from above.
+The steps in producing the input required for GSEA are i) calculating and retrieving the ranking statistics ii) naming each one according to a chosen identifier (`ENSEMBL` or `ENTREZID` for example). The `clusterProfiler` package also includes an implementation of the GSEA algorithm (via the `fgsea` package), and the function works in much the same way as `enrichGO` from above.
 
 ```{r gseGO_run, warning = FALSE, cache = TRUE}
 
@@ -518,9 +524,14 @@ top_gsea_ID <- gse_GO %>% as.data.frame %>%
 enrichplot::gseaplot2(gse_GO,geneSetID = top_gsea,title = top_gsea_ID)
 ```
 
-The top panel shows the core evidence for enrichment. The line is a running sum statistic that measures the degree of enrichment. It starts at zero and increases every time a gene belonging to the pathway is encountered in the ranked list, whereas it slightly decreases when a gene not in the pathway is encountered. The peak of this curve is the maximum Enrichment Score ($\text{ES}$). If the peak is on the left (positive), the pathway is up-regulated; if the peak is on the right (negative), the pathway is down-regulated. $\text{GSEA}$ Barcode (The Ticks): The black vertical lines beneath the curve are the barcode. Each line represents a single gene from the pathway, placed at its exact rank position. The clustering of these ticks—either on the far left or far right—provides the visual evidence for the calculated $\text{ES}$.
+The top panel shows the core evidence for enrichment. The line is a running sum statistic that measures the degree of enrichment. It starts at zero and increases every time a gene belonging to the pathway is encountered in the ranked list, whereas it slightly decreases when a gene not in the pathway is encountered. The peak of this curve is the maximum Enrichment Score ($\text{ES}$). If the peak is on the left (positive), the pathway is up-regulated; if the peak is on the right (negative), the pathway is down-regulated. $\text{GSEA}$
+
+The black vertical lines beneath the curve are the pathway "barcode". Each line represents a single gene from the pathway, placed at its exact ranked position. The clustering of these ticks—either on the far left or far right—provides the visual evidence for the calculated $\text{ES}$.
 
 The Bottom Panel displays the value of the statistic used to rank all genes. This confirms that the genes on the far left of the plot have the most positive values (high $\text{LFC}$) and those on the far right have the most negative values (low $\text{LFC}$), providing context for the directional enrichment observed in the top panel.
+
+In the example plot there is a high concentration of vertical black lines to the right of the plot - coinciding with the lowest point of the green line. This is where the majority of genes for this pathway can be found in the ranked gene list, and therefore we conclude there is a tendency for genes in this pathway to be DE.
+
 
 ## Exercise
 
@@ -528,7 +539,7 @@ The Bottom Panel displays the value of the statistic used to rank all genes. Thi
     -   `ENTREZID` has to be used as the identifer type
     -   the user must input an appropriate [organism code](https://www.genome.jp/kegg/catalog/org_list.html). The code for humans is `hsa`.
 -   Use the `enrichKEGG` function to identify enriched KEGG terms in the analysis.
--   (Optional) If you have time, use the gseKEGG to perform GSEA using KEGG terms.
+-   (Optional) If you have time, use the `gseKEGG` to perform GSEA using KEGG terms.
 
 ::: {.callout-note collapse="true"}
 
@@ -600,15 +611,12 @@ We have looked the two main types of test supported by `clusterProfiler` using a
 
 : Summary of different databases that clusterProfiler can use
 
-Ultimately, you will have to decide which database(s) are more appropriate for the interpretation of your results
+Ultimately, you will have to decide which database(s) are more appropriate for the interpretation of your results.
 
 
 ## Additional visualistion of KEGG pathways
 
-The special feature of a KEGG pathway is its standardized, structured graphical representation as a set of computable maps. This makes that visualisation with tools like `pathview` is possible. The standardization means KEGG is more than just a list of genes — it's an integrated system where both the visual elements and the underlying molecular data are tightly linked.
-
-
-In the below we take a pathway such as "Lysosome", use it's standard KEGG layout and colour the genes involved in the pathway according to the LFC.
+The special feature of a KEGG pathway is its standardized, structured graphical representation as a set of computable maps. This means that visualisation with tools like `pathview` is possible. In the below we take a pathway such as "Lysosome", use it's standard KEGG layout and colour the genes involved in the pathway according to the LFC.
 
 
 ```{r pathview}
@@ -637,29 +645,14 @@ pathview(
 
 ![](/files/training/bulk_rnaseq/hsa04142.lysosome_blue_red.png)
 
-
-## Pathways analysis for non-human organisms
-
-Due to the nature of our dataset we have been naturally using a human-centric database provided in the Bioconductor package `org.Hs.eg.db`. Other model organisms such as `org.Mm.eg.db` (Mouse), `org.Rn.eg.db` (Rat) can be used be substituting the `OrgDb` argument in `enrichGO`
-
-
-```{r eval=FALSE}
-# library(org.Mm.eg.db)
-
-enrich_go <- enrichGO(
-  gene= sigGenes,
-  ## Change this for a different organism
-  OrgDb = org.Mm.eg.db,
-  keyType = "ENSEMBL",
-  ont = "BP",
-  universe = universe,
-  qvalueCutoff = 0.05,
-  readable=TRUE
-)
-
-```
-
-If organisms are not found in Bioconductor the relevant data can still be retrieved via the `AnnotationHub` package. 
-
 # Summary
 
+
+We have covered many aspects of how to explore your RNA-seq results. You may wish to you as many, or as few of these, as possible to understand your data. Unfortunately, as a Bioinformatician I cannot tell you exactly which cut-offs and combination of databases are the most applicable for your data. The key takeaway is that success hinges on the initial phases of Quality Control (QC) and data normalization, which ensure the integrity of the downstream differential expression results. By combining  the statistical findings with our prior biological knowledge, we transform a list of numbers into a clear understanding of the altered pathways and functions, making the data truly interpretable and actionable.
+
+
+:::{.callout-important}
+
+Ultimately, the data tells a story, but you, as the researcher, must use your knowledge and judgment to determine the best lens through which to view it.
+
+:::
