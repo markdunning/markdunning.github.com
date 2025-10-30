@@ -7,7 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Mark Dunning">
-<meta name="dcterms.date" content="2025-10-25">
+<meta name="dcterms.date" content="2025-10-30">
+<meta name="description" content="Further exploration of differential expression, followed by identification of biological pathways of interest">
 
 <title>Introduction to RNA-Seq - Part 3 – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
 <style>
@@ -196,10 +197,7 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a>
-  <ul class="collapse">
-  <li><a href="#quick-start" id="toc-quick-start" class="nav-link" data-scroll-target="#quick-start">Quick Start</a></li>
-  </ul></li>
+  <li><a href="#quick-start" id="toc-quick-start" class="nav-link active" data-scroll-target="#quick-start">Quick Start</a></li>
   <li><a href="#differential-expression-with-deseq2" id="toc-differential-expression-with-deseq2" class="nav-link" data-scroll-target="#differential-expression-with-deseq2">Differential expression with <code>DESeq2</code></a></li>
   <li><a href="#filtering-the-differential-expression-results" id="toc-filtering-the-differential-expression-results" class="nav-link" data-scroll-target="#filtering-the-differential-expression-results">Filtering the differential expression results</a>
   <ul class="collapse">
@@ -233,6 +231,11 @@ window.Quarto = {
 <h1 class="title">Introduction to RNA-Seq - Part 3</h1>
 </div>
 
+<div>
+  <div class="description">
+    Further exploration of differential expression, followed by identification of biological pathways of interest
+  </div>
+</div>
 
 
 <div class="quarto-title-meta">
@@ -247,7 +250,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 25, 2025</p>
+      <p class="date">October 30, 2025</p>
     </div>
   </div>
   
@@ -259,9 +262,6 @@ window.Quarto = {
 </header>
 
 
-<section id="overview" class="level1">
-<h1>Overview</h1>
-<p>Further exploration of differential expression, followed by identification of biological pathways of interest</p>
 <section id="quick-start" class="level2">
 <h2 class="anchored" data-anchor-id="quick-start">Quick Start</h2>
 <p>This section follows on from <a href="../..\training/bulk-rnaseq_1/index.html">Part 1</a> and <a href="../..\training/bulk-rnaseq_2/index.html">Part 2</a> where we saw how to import raw RNA-seq counts into <code>DESeq2</code>, perform some quality assessment and then differential expression. Several packages are required, which can be downloaded with this code:-</p>
@@ -273,7 +273,6 @@ window.Quarto = {
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"Robjects/"</span>,<span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/files/training/bulk_rnaseq/dds.rds"</span>,<span class="at">destfile =</span> <span class="st">"Robjects/dds.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-</section>
 </section>
 <section id="differential-expression-with-deseq2" class="level1">
 <h1>Differential expression with <code>DESeq2</code></h1>

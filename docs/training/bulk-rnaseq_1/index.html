@@ -8,6 +8,7 @@
 
 <meta name="author" content="Mark Dunning">
 <meta name="dcterms.date" content="2025-10-23">
+<meta name="description" content="Importing ‘raw’ RNA-seq counts into R and performing quality assessment">
 
 <title>Introduction to RNA-Seq - Part 1 – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
 <style>
@@ -196,14 +197,11 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a>
-  <ul class="collapse">
-  <li><a href="#pre-amble" id="toc-pre-amble" class="nav-link" data-scroll-target="#pre-amble">Pre-amble</a></li>
+  <li><a href="#pre-amble" id="toc-pre-amble" class="nav-link active" data-scroll-target="#pre-amble">Pre-amble</a></li>
   <li><a href="#quick-start" id="toc-quick-start" class="nav-link" data-scroll-target="#quick-start">Quick Start</a></li>
   <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">Setup</a></li>
   <li><a href="#rna-seq-processing" id="toc-rna-seq-processing" class="nav-link" data-scroll-target="#rna-seq-processing">RNA-seq processing</a></li>
   <li><a href="#introducing-the-example-dataset" id="toc-introducing-the-example-dataset" class="nav-link" data-scroll-target="#introducing-the-example-dataset">Introducing the example dataset</a></li>
-  </ul></li>
   <li><a href="#importing-rna-seq-data-into-r" id="toc-importing-rna-seq-data-into-r" class="nav-link" data-scroll-target="#importing-rna-seq-data-into-r">Importing RNA-seq data into R</a>
   <ul class="collapse">
   <li><a href="#about-metadata" id="toc-about-metadata" class="nav-link" data-scroll-target="#about-metadata">About “metadata”</a>
@@ -236,6 +234,11 @@ window.Quarto = {
 <h1 class="title">Introduction to RNA-Seq - Part 1</h1>
 </div>
 
+<div>
+  <div class="description">
+    Importing ‘raw’ RNA-seq counts into R and performing quality assessment
+  </div>
+</div>
 
 
 <div class="quarto-title-meta">
@@ -262,9 +265,6 @@ window.Quarto = {
 </header>
 
 
-<section id="overview" class="level1">
-<h1>Overview</h1>
-<p>Importing “raw” RNA-seq counts into R and performing quality assessment</p>
 <section id="pre-amble" class="level2">
 <h2 class="anchored" data-anchor-id="pre-amble">Pre-amble</h2>
 <p>High-throughput sequencing is now established as a standard technique for many functional genomics studies; allowing the researcher to compare and contrast the transcriptomes of many individuals to obtain biological insight. A high-volume of data are generated from these experimental techniques and thus require robust and reproducible tools to be employed in the analysis.</p>
@@ -405,7 +405,6 @@ Note
 </ul>
 </div>
 </div>
-</section>
 </section>
 <section id="importing-rna-seq-data-into-r" class="level1">
 <h1>Importing RNA-seq data into R</h1>

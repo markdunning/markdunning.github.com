@@ -8,6 +8,7 @@
 
 <meta name="author" content="Mark Dunning">
 <meta name="dcterms.date" content="2025-10-25">
+<meta name="description" content="Performing differential expression on Bulk RNA-seq data using DESeq2">
 
 <title>Introduction to RNA-Seq - Part 2 – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
 <style>
@@ -196,10 +197,7 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a>
-  <ul class="collapse">
-  <li><a href="#quick-start" id="toc-quick-start" class="nav-link" data-scroll-target="#quick-start">Quick Start</a></li>
-  </ul></li>
+  <li><a href="#quick-start" id="toc-quick-start" class="nav-link active" data-scroll-target="#quick-start">Quick Start</a></li>
   <li><a href="#differential-expression-with-deseq2" id="toc-differential-expression-with-deseq2" class="nav-link" data-scroll-target="#differential-expression-with-deseq2">Differential expression with <code>DESeq2</code></a>
   <ul class="collapse">
   <li><a href="#recap-of-pre-processing" id="toc-recap-of-pre-processing" class="nav-link" data-scroll-target="#recap-of-pre-processing">Recap of pre-processing</a></li>
@@ -234,6 +232,11 @@ window.Quarto = {
 <h1 class="title">Introduction to RNA-Seq - Part 2</h1>
 </div>
 
+<div>
+  <div class="description">
+    Performing differential expression on Bulk RNA-seq data using DESeq2
+  </div>
+</div>
 
 
 <div class="quarto-title-meta">
@@ -260,9 +263,6 @@ window.Quarto = {
 </header>
 
 
-<section id="overview" class="level1">
-<h1>Overview</h1>
-<p>Performing differential expression on Bulk RNA-seq data using DESeq2</p>
 <section id="quick-start" class="level2">
 <h2 class="anchored" data-anchor-id="quick-start">Quick Start</h2>
 <p>This section follows on from <a href="../..\training/bulk-rnaseq_part1/index.html">Part 1</a> where we saw how to import raw RNA-seq counts into <code>DESeq2</code> and perform some quality assessment. Several packages are required, which can be downloaded with this code:-</p>
@@ -274,7 +274,6 @@ window.Quarto = {
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"Robjects/"</span>,<span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/files/training/bulk_rnaseq/dds.rds"</span>,<span class="at">destfile =</span> <span class="st">"Robjects/dds.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-</section>
 </section>
 <section id="differential-expression-with-deseq2" class="level1">
 <h1>Differential expression with <code>DESeq2</code></h1>
