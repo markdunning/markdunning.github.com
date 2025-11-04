@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Mark Dunning">
+<meta name="dcterms.date" content="2025-11-04">
+<meta name="description" content="Can I retrain myself to use tidy methods for bulk rna-seq analysis?">
+
+<title>Teaching an old dog new tricks; tidy analysis of RNA-seq – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-2fef5ea3f8957b3e4ecc936fc74692ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-1688d9e1630bd0bcb1ec498477fd8fb7.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-96TB60ETKS"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cv.html"> 
+<span class="menu-text">CV</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../training.html"> 
+<span class="menu-text">Training Materials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#pre-amble" id="toc-pre-amble" class="nav-link active" data-scroll-target="#pre-amble">Pre-amble</a></li>
+  <li><a href="#introduction-to-tidybulk" id="toc-introduction-to-tidybulk" class="nav-link" data-scroll-target="#introduction-to-tidybulk">Introduction to tidybulk</a></li>
+  <li><a href="#dimensionality-reduction" id="toc-dimensionality-reduction" class="nav-link" data-scroll-target="#dimensionality-reduction">Dimensionality reduction</a></li>
+  <li><a href="#gene-annotations" id="toc-gene-annotations" class="nav-link" data-scroll-target="#gene-annotations">Gene Annotations</a></li>
+  <li><a href="#testing-for-differential-expression" id="toc-testing-for-differential-expression" class="nav-link" data-scroll-target="#testing-for-differential-expression">Testing for differential expression</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Teaching an old dog new tricks; tidy analysis of RNA-seq</h1>
+</div>
+
+<div>
+  <div class="description">
+    Can I retrain myself to use tidy methods for bulk rna-seq analysis?
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Mark Dunning </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 4, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="pre-amble" class="level2">
+<h2 class="anchored" data-anchor-id="pre-amble">Pre-amble</h2>
+<p>I have been analysing RNA-seq data for rather longer than I care to mention, and have mostly stuck to the same tried and tested workflow. Whilst re-writing the workflow for these pages it occurred to me that the materials, that mostly use base R, would benefit from some of the same tidy methodology I employ on a daily basis for general data manipulation and visualisation. Fortunately in recent years there has been a drive to introduce tidy frameworks for omics. Can this new framework replace my daily workhorse?</p>
+<p>We’ll start by downloading some example data. This is the same example dataset used in my recent bulk RNA-seq dataset.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Create two folders for the meta data and counts</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"meta_data"</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"raw_counts"</span>,<span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="do">## Download the raw data files</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/meta_data/sampleInfo.csv"</span>, <span class="at">destfile =</span> <span class="st">"meta_data/sampleInfo.csv"</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/raw_counts/raw_counts_matrix.tsv"</span>, <span class="at">destfile =</span> <span class="st">"raw_counts/raw_counts_matrix.tsv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The packages you will need can be installed via</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">require</span>(BiocManager)) <span class="fu">install.packages</span>(<span class="st">"BiocManager"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">require</span>(SummarizedExperiment)) BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"SummarizedExperiment"</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">require</span>(tidybulk)) BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"tidybulk"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The data have to be read into R first. It consists of two files containing the counts and “metadata” about the samples. Both are in tab-delimited files so we can use the <code>read.table</code> function from base R. However, since the counts are required to be in a numeric matrix form with <code>rownames</code> being gene or feature identifiers we have to manipulate the input data accordingly. Specifically, we need to set the rownames to be the gene names and remove the first column from the input data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>meta <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"meta_data/sampleInfo.csv"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">condition =</span> stringr<span class="sc">::</span><span class="fu">str_to_upper</span>(condition))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>raw <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(<span class="st">"raw_counts/raw_counts_matrix.tsv"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>counts <span class="ot">&lt;-</span> raw[,<span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(counts) <span class="ot">&lt;-</span> raw<span class="sc">$</span>ENSEMBL</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(counts) <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_remove_all</span>(<span class="fu">colnames</span>(counts), <span class="st">"X"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The route into using the tidy framework seems to be via a <code>SummarizedExperiment</code> object rather than the <code>DESeqDataset</code> that I am used to so We will briefly examine this format.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SummarizedExperiment)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>caf_data <span class="ot">&lt;-</span> <span class="fu">SummarizedExperiment</span>(<span class="at">assays=</span><span class="fu">list</span>(<span class="at">counts=</span>counts),</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                     <span class="at">colData=</span>meta,)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>caf_data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>class: SummarizedExperiment 
+dim: 57914 9 
+metadata(0):
+assays(1): counts
+rownames(57914): ENSG00000000003 ENSG00000000005 ... ENSG00000284747
+  ENSG00000284748
+rowData names(0):
+colnames(9): 1_CTR_BC_2 2_TGF_BC_4 ... 8_TGF_BC_14 9_IR_BC_15
+colData names(5): Run condition Name Replicate Treated</code></pre>
+</div>
+</div>
+<p>The <em>raw</em> counts can be accessed using the <code>assay</code> function. Each entry is the number of counts assigned to a particular gene (row) in a given sample (column). The row and column names are the Ensembl gene identifier, and sample name from TCGA.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Use select and slice to print fewer items to the screen</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Feel free to remove these lines if you want to see the full output</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">assay</span>(caf_data) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                1_CTR_BC_2 2_TGF_BC_4 3_IR_BC_5 4_CTR_BC_6
+ENSG00000000003       1579       1547      1342       1704
+ENSG00000000005          0          0         0          0
+ENSG00000000419       1774       1775      1866       1809
+ENSG00000000457        698        617       601        733
+ENSG00000000460        246        309       116        224
+ENSG00000000938         10          5        11          6
+ENSG00000000971       6370       5238      5008       6486
+ENSG00000001036       4009       3335      3855       4224
+ENSG00000001084       1037        940       928        970
+ENSG00000001167       1498       1622      1042       1406</code></pre>
+</div>
+</div>
+<p>If we want to know more information about the biological samples we have to use the <code>colData</code> function</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colData</span>(caf_data) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  data.frame </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                     Run condition  Name Replicate Treated
+1_CTR_BC_2   1_CTR_BC_2        CTR CTR_1         1       N
+2_TGF_BC_4    2_TGF_BC_4       TGF TGF_1         1       Y
+3_IR_BC_5      3_IR_BC_5        IR  IR_1         1       Y
+4_CTR_BC_6    4_CTR_BC_6       CTR CTR_2         2       N
+5_TGF_BC_7    5_TGF_BC_7       TGF TGF_2         2       Y
+6_IR_BC_12    6_IR_BC_12        IR  IR_2         2       Y
+7_CTR_BC_13 7_CTR_BC_13        CTR CTR_3         3       N
+8_TGF_BC_14  8_TGF_BC_14       TGF TGF_3         3       Y
+9_IR_BC_15    9_IR_BC_15        IR  IR_3         3       Y</code></pre>
+</div>
+</div>
+<p>The data representation was adopted during the days of microarrays as a way to <strong>standardize and unify the storage and handling of complex genomic data</strong>. It is a perfectly natural for the counts for a particular gene to be found by looking across columns for a particular row, and indeed this is often how we interact with count data in spreadsheets. Furthermore, the linear model interface of <code>limma</code> and associated packages made use of this data structure. Since we didn’t have <code>ggplot2</code> and friends at the time we were happy using base R’s <code>boxplot</code> and other functions.</p>
+<p>However, the format is not immediately accessible to those familiar with a “<code>tidyverse</code>” mindset. I find this particularly jarring during my RNA-seq teaching which based upon the foundation of <code>dplyr</code> and <code>ggplot2</code>. It is somewhat disappointing to tell students that the code they learnt about in the introductory R classes cannot be applied to the new data type of RNA-seq without some serious data manipulation.</p>
+<p>The problems arise because the data are “wide” and not “long”. Consider the code to visualise the distribution of each sample as a boxplot (which is a common QC task)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Do not try to run this!</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(data, <span class="fu">aes</span>(<span class="at">x =</span> ..., <span class="at">y =</span>...)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>From a “tidy” standpoint we require a a variable in our dataset that can be mapped to the <code>x</code> axis. In a boxplot this should be the sample name. Of course, we can get around this problem via the usage of <code>pivot_longer</code> from <code>tidyr</code> but this is a bit more work than I would like. I would rather concentrate on the data visualisation and interpretation</p>
+<p>We might also like to subset our data according to particular sample groupings, or retrieve the data for a given gene and then plot. This is complicated by the counts and meta data being stored separately, meaning they have to be joined. Again, not impossible but does distract from the key learning objectives of learning about RNA-seq.</p>
+</section>
+<section id="introduction-to-tidybulk" class="level2">
+<h2 class="anchored" data-anchor-id="introduction-to-tidybulk">Introduction to tidybulk</h2>
+<p>The <code>tidybulk</code> package solves these issues, and also provides a way of performing other common analysis tasks. Once the <code>tidybulk</code> function is applied, the long nature of the data in this format is immediately apparent as we have a huge amount of rows. However, we have all the information we require in the table to permit queries using standard <code>tidyverse</code> operations.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidybulk)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="ot">&lt;-</span> caf_data <span class="sc">%&gt;%</span> <span class="fu">tidybulk</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Not evaluated to print excessive printing to screen for the HTML notes.</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can now remove the <code>caf_data</code> object to save memory</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(caf_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Say for example we want the counts for a particular gene, and which sample it is most highly-expressed in</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.feature <span class="sc">==</span> <span class="st">"ENSG00000000003"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(counts,Run) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(<span class="fu">desc</span>(counts)) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 9 × 2
+  counts Run           
+   &lt;int&gt; &lt;chr&gt;         
+1   1704 "4_CTR_BC_6"  
+2   1579 "1_CTR_BC_2 " 
+3   1556 "7_CTR_BC_13 "
+4   1547 "2_TGF_BC_4"  
+5   1395 "5_TGF_BC_7"  
+6   1370 "8_TGF_BC_14" 
+7   1342 "3_IR_BC_5"   
+8   1269 "9_IR_BC_15"  
+9   1264 "6_IR_BC_12"  </code></pre>
+</div>
+</div>
+<p>Or calculate the average expression in different groups.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.feature <span class="sc">==</span> <span class="st">"ENSG00000000003"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(condition) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="fu">mean</span>(counts))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 2
+  condition `mean(counts)`
+  &lt;chr&gt;              &lt;dbl&gt;
+1 CTR                1613 
+2 IR                 1292.
+3 TGF                1437.</code></pre>
+</div>
+</div>
+<p>A basic QC metric is to count the total number of reads for each sample. In a typical bulk RNA-seq study we should be getting 10s of millions of reads - although the total number will vary. Any samples with dramatically lower numbers could be cause for concern.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.sample) <span class="sc">%&gt;%</span> </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">LibrarySize =</span> <span class="fu">sum</span>(counts)) <span class="sc">%&gt;%</span> </span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Library Size - Millions of Reads</span><span class="st">`</span> <span class="ot">=</span> LibrarySize <span class="sc">/</span> <span class="fl">1e6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 9 × 3
+  .sample     LibrarySize `Library Size - Millions of Reads`
+  &lt;chr&gt;             &lt;int&gt;                              &lt;dbl&gt;
+1 1_CTR_BC_2     37966392                               38.0
+2 2_TGF_BC_4     42302453                               42.3
+3 3_IR_BC_5      33300002                               33.3
+4 4_CTR_BC_6     39401879                               39.4
+5 5_TGF_BC_7     37716366                               37.7
+6 6_IR_BC_12     32599748                               32.6
+7 7_CTR_BC_13    34273109                               34.3
+8 8_TGF_BC_14    38522174                               38.5
+9 9_IR_BC_15     36478190                               36.5</code></pre>
+</div>
+</div>
+<p>The resulting data can be visualised using a <code>geom_col</code> in <code>ggplot2</code> for example.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.sample) <span class="sc">%&gt;%</span> </span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">LibrarySize =</span> <span class="fu">sum</span>(counts)) <span class="sc">%&gt;%</span> </span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Library Size - Millions of Reads</span><span class="st">`</span> <span class="ot">=</span> LibrarySize <span class="sc">/</span> <span class="fl">1e6</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>.sample, <span class="at">y =</span> <span class="st">`</span><span class="at">Library Size - Millions of Reads</span><span class="st">`</span>)) <span class="sc">+</span> <span class="fu">geom_col</span>(<span class="at">fill=</span><span class="st">"steelblue"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/barPlotOfLibSize-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>It looks very promising so far 🎉. The above were examples of using the standard <code>tidyverse</code> operations. The <code>tidybulk</code> package also has functions for implementing the steps in a standard RNA-seq workflow.</p>
+</section>
+<section id="dimensionality-reduction" class="level2">
+<h2 class="anchored" data-anchor-id="dimensionality-reduction">Dimensionality reduction</h2>
+<p>My next go-to method for RNA-seq is to use a PCA to visualise my data. Principal Component Analysis (<strong>PCA</strong>) and Multi-Dimensional Scaling (<strong>MDS</strong>) plots are among the most crucial visualizations for analyzing RNA-sequencing data as these techniques reduce the dimensionality of the data, allowing us to identify the primary sources of variation.</p>
+<p>There is are a couple of recommended steps before running the PCA to filter out lowly-expressed genes and normalize for differences in sequencing depth (<code>scale_abundance</code>).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Scale/Normalize the counts</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>caf_tidy_scaled <span class="ot">&lt;-</span> caf_tidy <span class="sc">%&gt;%</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter out lowly expressed genes (recommended best practice)</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">identify_abundant</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_abundant</span>(<span class="at">factor_of_interest =</span> condition) <span class="sc">%&gt;%</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Normalize for sequencing depth (creates a 'count_scaled' column)</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Default method is TMM (recommended for bulk RNA-seq)</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_abundance</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The <code>tidybulk</code> package has several dimensionality reduction techniques available, so you can use whichever one you prefer. I’ll stick with PCA and base the analysis on the 500 most-variable genes - which is the default in the <code>plotPCA</code> function of <code>DESeq2</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>ntop_genes <span class="ot">&lt;-</span> <span class="dv">500</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>pca_results <span class="ot">&lt;-</span> caf_tidy_scaled <span class="sc">%&gt;%</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce_dimensions</span>(</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">"PCA"</span>,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">.value =</span> count_scaled,</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">top =</span> ntop_genes,</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">transform =</span> log1p </span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>pca_results <span class="sc">%&gt;%</span> </span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 14
+   .feature     .sample counts Run   condition Name  Replicate Treated .abundant
+   &lt;chr&gt;        &lt;chr&gt;    &lt;int&gt; &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;int&gt; &lt;chr&gt;   &lt;lgl&gt;    
+ 1 ENSG0000000… 1_CTR_…   1579 "1_C… CTR       CTR_1         1 N       TRUE     
+ 2 ENSG0000000… 1_CTR_…   1774 "1_C… CTR       CTR_1         1 N       TRUE     
+ 3 ENSG0000000… 1_CTR_…    698 "1_C… CTR       CTR_1         1 N       TRUE     
+ 4 ENSG0000000… 1_CTR_…    246 "1_C… CTR       CTR_1         1 N       TRUE     
+ 5 ENSG0000000… 1_CTR_…   6370 "1_C… CTR       CTR_1         1 N       TRUE     
+ 6 ENSG0000000… 1_CTR_…   4009 "1_C… CTR       CTR_1         1 N       TRUE     
+ 7 ENSG0000000… 1_CTR_…   1037 "1_C… CTR       CTR_1         1 N       TRUE     
+ 8 ENSG0000000… 1_CTR_…   1498 "1_C… CTR       CTR_1         1 N       TRUE     
+ 9 ENSG0000000… 1_CTR_…    285 "1_C… CTR       CTR_1         1 N       TRUE     
+10 ENSG0000000… 1_CTR_…   3948 "1_C… CTR       CTR_1         1 N       TRUE     
+# ℹ 5 more variables: TMM &lt;dbl&gt;, multiplier &lt;dbl&gt;, counts_scaled &lt;dbl&gt;,
+#   PC1 &lt;dbl&gt;, PC2 &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<p>If you print the <code>pca_results</code> object to screen you will notice that it is still in “long”/“tidy” format, which on this occasion is not particularly useful for visualisation as many of the variables we need for plotting are repeated many times. To provide a simple summary of PC values for each sample we can use the <code>pivot_sample</code> function. Because we are already using the tidy format, the biological and experimental groups we might want to include on the plot are already available to us.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>pca_results <span class="sc">%&gt;%</span> <span class="fu">pivot_sample</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(.sample,condition,<span class="fu">contains</span>(<span class="st">"PC"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 9 × 4
+  .sample     condition    PC1   PC2
+  &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;dbl&gt;
+1 1_CTR_BC_2  CTR        -6.07 11.1 
+2 2_TGF_BC_4  TGF       -20.6  -8.72
+3 3_IR_BC_5   IR         23.8  -3.27
+4 4_CTR_BC_6  CTR        -5.40 10.6 
+5 5_TGF_BC_7  TGF       -18.9  -7.34
+6 6_IR_BC_12  IR         21.3  -3.21
+7 7_CTR_BC_13 CTR        -1.78 12.8 
+8 8_TGF_BC_14 TGF       -16.7  -6.44
+9 9_IR_BC_15  IR         24.4  -5.46</code></pre>
+</div>
+</div>
+<p>A basic PCA visualisation will show the values of PC1 and PC2 using a scatter plot with <code>ggplot2</code>. The results are pretty similar indeed to the <a href="https://mdbioinformatics.com/training/bulk-rnaseq_1/#principal-components-analysis-pca"><code>DESeq2</code> equivalent workflow</a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>pca_results <span class="sc">%&gt;%</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_sample</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>PC1, <span class="at">y=</span>PC2, <span class="at">col =</span> condition)) <span class="sc">+</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/plotPCA-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="gene-annotations" class="level2">
+<h2 class="anchored" data-anchor-id="gene-annotations">Gene Annotations</h2>
+<p>At the moment we don’t have particularly meaningful gene names that we can use. We have an Ensembl ID, and have ways to convert between. One of which is using an organism-specific package in Bioconductor. First, we get all the IDs we have.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>ens_ids <span class="ot">&lt;-</span> <span class="fu">pull</span>(caf_tidy, .feature) <span class="sc">%&gt;%</span> unique</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The overall strategy is to use <code>org.Hs.eg.db</code> to convert between one type of ID (ENSEMBL in our case) to another. We can try the official gene symbol and gene name. For non-human data, equivalent packages are available. e.g.&nbsp;<code>org.Mm.eg.db</code> for mouse.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(org.Hs.eg.db)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>anno <span class="ot">&lt;-</span> AnnotationDbi<span class="sc">::</span><span class="fu">select</span>(org.Hs.eg.db,</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>                              <span class="at">keys =</span> ens_ids,</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>                              <span class="at">columns =</span> <span class="fu">c</span>(<span class="st">"SYMBOL"</span>,<span class="st">"GENENAME"</span>),</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>                              <span class="at">keytype =</span> <span class="st">"ENSEMBL"</span>)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>anno <span class="sc">%&gt;%</span> <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           ENSEMBL SYMBOL
+1  ENSG00000000003 TSPAN6
+2  ENSG00000000005   TNMD
+3  ENSG00000000419   DPM1
+4  ENSG00000000457  SCYL3
+5  ENSG00000000460  FIRRM
+6  ENSG00000000938    FGR
+7  ENSG00000000971    CFH
+8  ENSG00000001036  FUCA2
+9  ENSG00000001084   GCLC
+10 ENSG00000001167   NFYA
+                                                      GENENAME
+1                                                tetraspanin 6
+2                                                  tenomodulin
+3  dolichyl-phosphate mannosyltransferase subunit 1, catalytic
+4                                     SCY1 like pseudokinase 3
+5    FIGNL1 interacting regulator of recombination and mitosis
+6               FGR proto-oncogene, Src family tyrosine kinase
+7                                          complement factor H
+8                                         alpha-L-fucosidase 2
+9                  glutamate-cysteine ligase catalytic subunit
+10                nuclear transcription factor Y subunit alpha</code></pre>
+</div>
+</div>
+</section>
+<section id="testing-for-differential-expression" class="level2">
+<h2 class="anchored" data-anchor-id="testing-for-differential-expression">Testing for differential expression</h2>
+<p>The <code>tidybulk</code> package has simplified workflows to test for differential expression between different conditions. The workflow is not completely automated however because we still need to specify what sample groups to compare and which contrasts to make. This is achieved via the <code>.formula</code> argument. The <code>.contrasts</code> argument also allows us to explicitly define the <em>direction</em> of the contrast and which group to use as a baseline; which will affect the sign of the fold-change.</p>
+<p>Note that I am using the <code>caf_tidy</code> object here rather than the scaled version as <code>DESeq2</code> will do it’s own normalization as part of the workflow.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>counts_de <span class="ot">&lt;-</span> caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">test_differential_abundance</span>(</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>      <span class="at">.formula =</span> <span class="sc">~</span> condition,</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"deseq2"</span>,</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">.contrasts =</span> <span class="fu">list</span>(<span class="fu">c</span>(<span class="st">"condition"</span>, <span class="st">"TGF"</span>,<span class="st">"CTR"</span>)),</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>      <span class="do">## As we're only doing one contrast, this will make the column names cleaner</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">omit_contrast_in_colnames =</span> <span class="cn">TRUE</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Running the code gives me the same messages printed to screen as if I was running the <code>DESeq</code> function (which it is clearly doing under the hood). There is also a warning about not filtering highly abundant transcripts. I didn’t think that removing such transcripts was required for <code>DESeq2</code>, but perhaps I will have to read up on that.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>counts_de <span class="sc">%&gt;%</span> </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 14
+   .feature      .sample counts Run   condition Name  Replicate Treated baseMean
+   &lt;chr&gt;         &lt;chr&gt;    &lt;int&gt; &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;int&gt; &lt;chr&gt;      &lt;dbl&gt;
+ 1 ENSG00000000… 1_CTR_…   1579 "1_C… CTR       CTR_1         1 N       1431.   
+ 2 ENSG00000000… 1_CTR_…      0 "1_C… CTR       CTR_1         1 N          0.114
+ 3 ENSG00000000… 1_CTR_…   1774 "1_C… CTR       CTR_1         1 N       1791.   
+ 4 ENSG00000000… 1_CTR_…    698 "1_C… CTR       CTR_1         1 N        641.   
+ 5 ENSG00000000… 1_CTR_…    246 "1_C… CTR       CTR_1         1 N        206.   
+ 6 ENSG00000000… 1_CTR_…     10 "1_C… CTR       CTR_1         1 N          7.41 
+ 7 ENSG00000000… 1_CTR_…   6370 "1_C… CTR       CTR_1         1 N       5318.   
+ 8 ENSG00000001… 1_CTR_…   4009 "1_C… CTR       CTR_1         1 N       3630.   
+ 9 ENSG00000001… 1_CTR_…   1037 "1_C… CTR       CTR_1         1 N        923.   
+10 ENSG00000001… 1_CTR_…   1498 "1_C… CTR       CTR_1         1 N       1261.   
+# ℹ 5 more variables: log2FoldChange &lt;dbl&gt;, lfcSE &lt;dbl&gt;, stat &lt;dbl&gt;,
+#   pvalue &lt;dbl&gt;, padj &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<p>The results are still in a <em>long</em> format table. Again, this is actually not very helpful and would prefer to have a single row for each gene tested. The function <code>pivot_transcript</code> performs the reshaping. We can now add the gene annotation we created earlier, but retain the original Ensembl IDs so we can retrieve count information. The final <code>arrange</code> line orders by significance.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>results_table <span class="ot">&lt;-</span> counts_de <span class="sc">%&gt;%</span> </span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_transcript</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(anno, <span class="at">by=</span><span class="fu">c</span>(<span class="st">".feature"</span><span class="ot">=</span><span class="st">"ENSEMBL"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(padj)</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>results_table <span class="sc">%&gt;%</span> <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 9
+   .feature      baseMean log2FoldChange  lfcSE  stat    pvalue      padj SYMBOL
+   &lt;chr&gt;            &lt;dbl&gt;          &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt; 
+ 1 ENSG00000119…    6472.           2.37 0.0708  33.5 2.44e-246 4.37e-242 LTBP2 
+ 2 ENSG00000120…   22002.           1.44 0.0590  24.3 9.25e-131 8.29e-127 TGFBI 
+ 3 ENSG00000172…    1482.           2.38 0.0984  24.2 1.11e-129 6.61e-126 LRRC15
+ 4 ENSG00000049…     932.           4.00 0.176   22.8 7.23e-115 3.24e-111 ELN   
+ 5 ENSG00000060…    1512.           2.12 0.0953  22.3 6.45e-110 2.31e-106 COL11…
+ 6 ENSG00000115…  683349.           1.45 0.0687  21.2 2.18e- 99 6.52e- 96 FN1   
+ 7 ENSG00000187…   30609.           1.46 0.0693  21.1 1.78e- 98 4.55e- 95 COL4A1
+ 8 ENSG00000186…   14380.           1.47 0.0700  21.0 9.71e- 98 2.18e- 94 THBS2 
+ 9 ENSG00000087…   51862.           1.28 0.0661  19.4 9.03e- 84 1.80e- 80 MMP2  
+10 ENSG00000139…    2302.           2.07 0.109   19.0 2.02e- 80 3.62e- 77 AMIGO2
+# ℹ 1 more variable: GENENAME &lt;chr&gt;</code></pre>
+</div>
+</div>
+<p>We can write the results to a spreadsheet for further investigation.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(results_table, <span class="st">"DESeq2_TGF_vs_CTR.csv"</span>,<span class="at">quote=</span><span class="cn">FALSE</span>,<span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Could remove counts_de if no longer needed</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="do">## rm(counts_de)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A volcano plot is a common visualisation that shows the degree of significance and magnitude of change. Genes of biological significance are likely to be those with low p-value and more extreme fold-change.</p>
+<p>It would be perfectly possible to make the plot using standard <code>ggplot2</code> code. However, the <code>EnhancedVolcano</code> package simplifies the process and offers some additional features such as automatically labeling the significant genes.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EnhancedVolcano)</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">EnhancedVolcano</span>(results_table, </span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">lab =</span> results_table<span class="sc">$</span>SYMBOL,</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">x =</span> <span class="st">"log2FoldChange"</span>,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">y =</span> <span class="st">"padj"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/makeVolcano-1.png" class="img-fluid figure-img" width="1152"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Some “sanity checks” are always a good idea too. This can include visualising the scaled counts of the top genes to see if their significance is driven by biological effects, and not technical. First we get the names of the most significant genes. The names have to be in ensembl format as we are going to retrieve information on these from the counts data - which has ensembl as an identifier.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>top_genes <span class="ot">&lt;-</span> <span class="fu">slice_min</span>(results_table, padj, <span class="at">n=</span>N) <span class="sc">%&gt;%</span> <span class="fu">pull</span>(.feature)</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>top_genes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "ENSG00000119681" "ENSG00000120708" "ENSG00000172061" "ENSG00000049540"
+ [5] "ENSG00000060718" "ENSG00000115414" "ENSG00000187498" "ENSG00000186340"
+ [9] "ENSG00000087245" "ENSG00000139211"</code></pre>
+</div>
+</div>
+<p>The annotation information is included to allow more meaningful labels.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_abundance</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.feature <span class="sc">%in%</span> top_genes) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(anno, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">".feature"</span> <span class="ot">=</span> <span class="st">"ENSEMBL"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A series of boxplots can now be created, with a facet introduced so that a separate plot is made for each gene.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>plot_data <span class="sc">%&gt;%</span> </span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> condition, <span class="at">y =</span> counts_scaled,<span class="at">col=</span>condition)) <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span> <span class="fu">scale_y_log10</span>() <span class="sc">+</span> <span class="fu">facet_wrap</span>(<span class="sc">~</span>SYMBOL,<span class="at">scales=</span><span class="st">"free_y"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/makeGenePlots-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="summary" class="level1">
+<h1>Summary</h1>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

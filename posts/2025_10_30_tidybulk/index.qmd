@@ -1,0 +1,334 @@
+---
+title: "Teaching an old dog new tricks; tidy analysis of RNA-seq"
+author: Mark Dunning
+date: 2025-11-04
+theme: darkly
+image: logo.png
+description: "Can I retrain myself to use tidy methods for bulk rna-seq analysis?"
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+
+```
+
+## Pre-amble
+
+I have been analysing RNA-seq data for rather longer than I care to mention, and have mostly stuck to the same tried and tested workflow. Whilst re-writing the workflow for these pages it occurred to me that the materials, that mostly use base R, would benefit from some of the same tidy methodology I employ on a daily basis for general data manipulation and visualisation. Fortunately in recent years there has been a drive to introduce tidy frameworks for omics. Can this new framework replace my daily workhorse?
+
+![](logo.png)
+
+We'll start by downloading some example data. This is the same example dataset used in my recent bulk RNA-seq dataset.
+
+```{r cache = TRUE}
+## Create two folders for the meta data and counts
+dir.create("meta_data", showWarnings = FALSE)
+dir.create("raw_counts",showWarnings = FALSE)
+
+
+## Download the raw data files
+download.file("https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/meta_data/sampleInfo.csv", destfile = "meta_data/sampleInfo.csv")
+download.file("https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/files/training/bulk_rnaseq/raw_counts/raw_counts_matrix.tsv", destfile = "raw_counts/raw_counts_matrix.tsv")
+```
+
+The packages you will need can be installed via
+
+```{r}
+if (!require(BiocManager)) install.packages("BiocManager")
+
+if (!require(SummarizedExperiment)) BiocManager::install("SummarizedExperiment")
+
+if (!require(tidybulk)) BiocManager::install("tidybulk")
+```
+
+The data have to be read into R first. It consists of two files containing the counts and "metadata" about the samples. Both are in tab-delimited files so we can use the `read.table` function from base R. However, since the counts are required to be in a numeric matrix form with `rownames` being gene or feature identifiers we have to manipulate the input data accordingly. Specifically, we need to set the rownames to be the gene names and remove the first column from the input data.
+
+```{r load_data}
+meta <- read.csv("meta_data/sampleInfo.csv") |>
+  dplyr::mutate(condition = stringr::str_to_upper(condition))
+  
+
+raw <- read.delim("raw_counts/raw_counts_matrix.tsv")
+counts <- raw[,-1]
+rownames(counts) <- raw$ENSEMBL
+colnames(counts) <- stringr::str_remove_all(colnames(counts), "X")
+```
+
+The route into using the tidy framework seems to be via a `SummarizedExperiment` object rather than the `DESeqDataset` that I am used to so We will briefly examine this format.
+
+```{r createSE,message=FALSE}
+library(SummarizedExperiment)
+caf_data <- SummarizedExperiment(assays=list(counts=counts),
+                     colData=meta,)
+caf_data
+```
+
+The *raw* counts can be accessed using the `assay` function. Each entry is the number of counts assigned to a particular gene (row) in a given sample (column). The row and column names are the Ensembl gene identifier, and sample name from TCGA.
+
+```{r preview_counts}
+## Use select and slice to print fewer items to the screen
+## Feel free to remove these lines if you want to see the full output
+library(dplyr)
+assay(caf_data) %>% 
+  select(1:4) %>% 
+  slice(1:10)
+```
+
+If we want to know more information about the biological samples we have to use the `colData` function
+
+```{r preview_colData}
+colData(caf_data) %>% 
+  data.frame 
+```
+
+The data representation was adopted during the days of microarrays as a way to **standardize and unify the storage and handling of complex genomic data**. It is a perfectly natural for the counts for a particular gene to be found by looking across columns for a particular row, and indeed this is often how we interact with count data in spreadsheets. Furthermore, the linear model interface of `limma` and associated packages made use of this data structure. Since we didn't have `ggplot2` and friends at the time we were happy using base R's `boxplot` and other functions.
+
+However, the format is not immediately accessible to those familiar with a "`tidyverse`" mindset. I find this particularly jarring during my RNA-seq teaching which based upon the foundation of `dplyr` and `ggplot2`. It is somewhat disappointing to tell students that the code they learnt about in the introductory R classes cannot be applied to the new data type of RNA-seq without some serious data manipulation.
+
+The problems arise because the data are "wide" and not "long". Consider the code to visualise the distribution of each sample as a boxplot (which is a common QC task)
+
+```{r eval=FALSE}
+## Do not try to run this!
+ggplot(data, aes(x = ..., y =...)) + geom_boxplot()
+```
+
+From a "tidy" standpoint we require a a variable in our dataset that can be mapped to the `x` axis. In a boxplot this should be the sample name. Of course, we can get around this problem via the usage of `pivot_longer` from `tidyr` but this is a bit more work than I would like. I would rather concentrate on the data visualisation and interpretation
+
+We might also like to subset our data according to particular sample groupings, or retrieve the data for a given gene and then plot. This is complicated by the counts and meta data being stored separately, meaning they have to be joined. Again, not impossible but does distract from the key learning objectives of learning about RNA-seq.
+
+## Introduction to tidybulk
+
+The `tidybulk` package solves these issues, and also provides a way of performing other common analysis tasks. Once the `tidybulk` function is applied, the long nature of the data in this format is immediately apparent as we have a huge amount of rows. However, we have all the information we require in the table to permit queries using standard `tidyverse` operations.
+
+```{r makeTidyBulk, message=FALSE}
+library(tidybulk)
+caf_tidy <- caf_data %>% tidybulk()
+```
+
+```{r eval=FALSE}
+## Not evaluated to print excessive printing to screen for the HTML notes.
+caf_tidy %>% 
+  slice_head(n = 10)
+```
+
+We can now remove the `caf_data` object to save memory
+
+```{r remove_obj}
+rm(caf_data)
+```
+
+Say for example we want the counts for a particular gene, and which sample it is most highly-expressed in
+
+```{r getGeneExprs}
+caf_tidy %>% 
+  filter(.feature == "ENSG00000000003") %>% 
+    dplyr::select(counts,Run) %>% 
+    arrange(desc(counts)) %>% 
+  slice(1:10)
+```
+
+Or calculate the average expression in different groups.
+
+```{r summarise_gene_expr}
+caf_tidy %>% 
+  filter(.feature == "ENSG00000000003") %>% 
+    group_by(condition) %>% 
+    summarise(mean(counts))
+```
+
+A basic QC metric is to count the total number of reads for each sample. In a typical bulk RNA-seq study we should be getting 10s of millions of reads - although the total number will vary. Any samples with dramatically lower numbers could be cause for concern.
+
+```{r getLibSizes}
+caf_tidy %>% 
+  group_by(.sample) %>% 
+  summarise(LibrarySize = sum(counts)) %>% 
+  mutate(`Library Size - Millions of Reads` = LibrarySize / 1e6)
+```
+
+The resulting data can be visualised using a `geom_col` in `ggplot2` for example.
+
+```{r barPlotOfLibSize}
+library(ggplot2)
+caf_tidy %>% 
+  group_by(.sample) %>% 
+  summarise(LibrarySize = sum(counts)) %>% 
+  mutate(`Library Size - Millions of Reads` = LibrarySize / 1e6) %>% 
+  ggplot(aes(x=.sample, y = `Library Size - Millions of Reads`)) + geom_col(fill="steelblue")
+```
+
+It looks very promising so far 🎉. The above were examples of using the standard `tidyverse` operations. The `tidybulk` package also has functions for implementing the steps in a standard RNA-seq workflow.
+
+## Dimensionality reduction
+
+My next go-to method for RNA-seq is to use a PCA to visualise my data. Principal Component Analysis (**PCA**) and Multi-Dimensional Scaling (**MDS**) plots are among the most crucial visualizations for analyzing RNA-sequencing data as these techniques reduce the dimensionality of the data, allowing us to identify the primary sources of variation.
+
+There is are a couple of recommended steps before running the PCA to filter out lowly-expressed genes and normalize for differences in sequencing depth (`scale_abundance`).
+
+```{r prepPCA}
+# 1. Scale/Normalize the counts
+caf_tidy_scaled <- caf_tidy %>%
+  # Filter out lowly expressed genes (recommended best practice)
+  identify_abundant() %>%
+  keep_abundant(factor_of_interest = condition) %>%
+  # Normalize for sequencing depth (creates a 'count_scaled' column)
+  # Default method is TMM (recommended for bulk RNA-seq)
+  scale_abundance()
+
+```
+
+The `tidybulk` package has several dimensionality reduction techniques available, so you can use whichever one you prefer. I'll stick with PCA and base the analysis on the 500 most-variable genes - which is the default in the `plotPCA` function of `DESeq2`.
+
+```{r doPCA}
+ntop_genes <- 500
+
+pca_results <- caf_tidy_scaled %>%
+  reduce_dimensions(
+    method = "PCA",
+    .value = count_scaled,
+    top = ntop_genes,
+    transform = log1p 
+  )
+
+pca_results %>% 
+  slice_head(n = 10)
+```
+
+If you print the `pca_results` object to screen you will notice that it is still in "long"/"tidy" format, which on this occasion is not particularly useful for visualisation as many of the variables we need for plotting are repeated many times. To provide a simple summary of PC values for each sample we can use the `pivot_sample` function. Because we are already using the tidy format, the biological and experimental groups we might want to include on the plot are already available to us.
+
+```{r reshape_PCA}
+pca_results %>% pivot_sample() %>% 
+  dplyr::select(.sample,condition,contains("PC"))
+```
+
+A basic PCA visualisation will show the values of PC1 and PC2 using a scatter plot with `ggplot2`. The results are pretty similar indeed to the [`DESeq2` equivalent workflow](https://mdbioinformatics.com/training/bulk-rnaseq_1/#principal-components-analysis-pca)
+
+```{r plotPCA}
+pca_results %>%
+    pivot_sample() %>%
+    ggplot(aes(x=PC1, y=PC2, col = condition)) +
+    geom_point() 
+```
+
+## Gene Annotations
+
+At the moment we don't have particularly meaningful gene names that we can use. We have an Ensembl ID, and have ways to convert between. One of which is using an organism-specific package in Bioconductor. First, we get all the IDs we have.
+
+```{r get_ens_id}
+ens_ids <- pull(caf_tidy, .feature) %>% unique
+
+```
+
+The overall strategy is to use `org.Hs.eg.db` to convert between one type of ID (ENSEMBL in our case) to another. We can try the official gene symbol and gene name. For non-human data, equivalent packages are available. e.g. `org.Mm.eg.db` for mouse.
+
+```{r getAnno}
+library(org.Hs.eg.db)
+anno <- AnnotationDbi::select(org.Hs.eg.db,
+                              keys = ens_ids,
+                              columns = c("SYMBOL","GENENAME"),
+                              keytype = "ENSEMBL")
+anno %>% slice(1:10)
+```
+
+## Testing for differential expression
+
+The `tidybulk` package has simplified workflows to test for differential expression between different conditions. The workflow is not completely automated however because we still need to specify what sample groups to compare and which contrasts to make. This is achieved via the `.formula` argument. The `.contrasts` argument also allows us to explicitly define the *direction* of the contrast and which group to use as a baseline; which will affect the sign of the fold-change.
+
+Note that I am using the `caf_tidy` object here rather than the scaled version as `DESeq2` will do it's own normalization as part of the workflow.
+
+```{r doDESeq}
+counts_de <- caf_tidy %>% 
+    test_differential_abundance(
+      .formula = ~ condition,
+      method = "deseq2",
+      .contrasts = list(c("condition", "TGF","CTR")),
+      ## As we're only doing one contrast, this will make the column names cleaner
+      omit_contrast_in_colnames = TRUE
+    )
+```
+
+Running the code gives me the same messages printed to screen as if I was running the `DESeq` function (which it is clearly doing under the hood). There is also a warning about not filtering highly abundant transcripts. I didn't think that removing such transcripts was required for `DESeq2`, but perhaps I will have to read up on that.
+
+```{r showDE}
+counts_de %>% 
+  slice_head(n = 10)
+```
+
+The results are still in a *long* format table. Again, this is actually not very helpful and would prefer to have a single row for each gene tested. The function `pivot_transcript` performs the reshaping. We can now add the gene annotation we created earlier, but retain the original Ensembl IDs so we can retrieve count information. The final `arrange` line orders by significance.
+
+```{r showResults}
+results_table <- counts_de %>% 
+  pivot_transcript() %>% 
+  left_join(anno, by=c(".feature"="ENSEMBL")) %>% 
+  arrange(padj)
+results_table %>% slice_head(n = 10)
+```
+
+We can write the results to a spreadsheet for further investigation.
+
+```{r saveResults}
+write.csv(results_table, "DESeq2_TGF_vs_CTR.csv",quote=FALSE,row.names = FALSE)
+
+## Could remove counts_de if no longer needed
+## rm(counts_de)
+```
+
+A volcano plot is a common visualisation that shows the degree of significance and magnitude of change. Genes of biological significance are likely to be those with low p-value and more extreme fold-change.
+
+It would be perfectly possible to make the plot using standard `ggplot2` code. However, the `EnhancedVolcano` package simplifies the process and offers some additional features such as automatically labeling the significant genes.
+
+```{r makeVolcano,fig.width=12}
+library(EnhancedVolcano)
+EnhancedVolcano(results_table, 
+                lab = results_table$SYMBOL,
+                x = "log2FoldChange",
+                y = "padj")
+```
+
+Some "sanity checks" are always a good idea too. This can include visualising the scaled counts of the top genes to see if their significance is driven by biological effects, and not technical. First we get the names of the most significant genes. The names have to be in ensembl format as we are going to retrieve information on these from the counts data - which has ensembl as an identifier.
+
+```{r getTopGenes}
+N <- 10
+top_genes <- slice_min(results_table, padj, n=N) %>% pull(.feature)
+top_genes
+```
+
+The annotation information is included to allow more meaningful labels.
+
+```{r makeDataForGenePlots}
+plot_data <- caf_tidy %>% 
+  scale_abundance() %>% 
+  filter(.feature %in% top_genes) %>% 
+  left_join(anno, by = c(".feature" = "ENSEMBL"))
+```
+
+A series of boxplots can now be created, with a facet introduced so that a separate plot is made for each gene.
+
+```{r makeGenePlots}
+plot_data %>% 
+  ggplot(aes(x = condition, y = counts_scaled,col=condition)) + geom_jitter(width = 0.1) + scale_y_log10() + facet_wrap(~SYMBOL,scales="free_y")
+```
+
+You can use the `results_table` to carry out your enrichment or pathways analysis in your usual workflow. However, I note that `tidybulk` includes `test_gene_enrichment` and `test_gene_overrepresentation` functions that I expect will automate this as part of the same workflow.
+
+# Summary
+
+I have to say that I'm impressed at the way `tidybulk` integrates the workflow that I am familiar with to `tidyverse` principles. I like the fact that `tidybulk` doesn't force you to abandon DESeq2 entirely. Instead, it allows you to integrate core `DESeq2` functions (like `DESeq()` for differential expression) within the tidy workflow, applying them to the data and seamlessly returning the results in a tidy format.
+
+On the other hand, one can easily swap out analysis methods (e.g., use `edgeR` normalization or `limma-voom` for differential expression) without changing the overall data structure or workflow. It would even be possible to try several methods and compare the results. In the [official vignette](https://www.bioconductor.org/packages/devel/bioc/vignettes/tidybulk/inst/doc/introduction.html#34_Step_3:_Differential_Expression_Analysis) there is an example of how to do this:-
+
+The package also looks to have batch-correction built-in via the ComBatSeq method, which sounds incredibly convenient.
+
+-   <https://www.bioconductor.org/packages/devel/bioc/vignettes/tidybulk/inst/doc/introduction.html#35_Step_4:_Batch_Effect_Correction>
+
+I've also noticed there are methods for de-convolution and correcting for the celluarity of samples. I don't have any particular need for this right now (at least, I don't think I do), but good to know that it is easy to integrate.
+
+-   <https://www.bioconductor.org/packages/devel/bioc/vignettes/tidybulk/inst/doc/introduction.html#37_Step_6:_Cellularity_Analysis>
+
+I've only really scratched the surface of what is possible, but for my next proper analysis I will definitely be using this framework 👍
