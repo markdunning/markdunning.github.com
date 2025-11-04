@@ -584,7 +584,6 @@ png("heatmap_top10_genes.png",width=800,height=800)
 pheatmap(assay(vsd)[top_genes,],
          annotation_col = sampleInfo,
          scale = "row")
-# dev.off()
 ```
 
 There are many arguments to explore in `pheatmap`. A useful option is to specific our own labels for the rows (genes). The default is to use the rownames of the count matrix. In our case these are ENSEMBL IDs and not easy to interpret.

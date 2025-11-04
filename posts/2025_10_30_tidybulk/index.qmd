@@ -21,11 +21,11 @@ knitr::opts_chunk$set(
 
 ## Pre-amble
 
-I have been analysing RNA-seq data for rather longer than I care to mention, and have mostly stuck to the same tried and tested workflow. Whilst re-writing the workflow for these pages it occurred to me that the materials, that mostly use base R, would benefit from some of the same tidy methodology I employ on a daily basis for general data manipulation and visualisation. Fortunately in recent years there has been a drive to introduce tidy frameworks for omics. Can this new framework replace my daily workhorse?
+I have been analysing RNA-seq data for rather longer than I care to mention, and have mostly stuck to the same tried and tested workflow. Whilst re-writing [my tutorials](https://mdbioinformatics.com/training.html) for these pages it occurred to me that the materials, that mostly use base R, would benefit from some of the same tidy methodology I employ on a daily basis for general data manipulation and visualisation. Fortunately in recent years there has been a drive to introduce tidy frameworks for omics. Can this new framework replace my daily workhorse?
 
 ![](logo.png)
 
-We'll start by downloading some example data. This is the same example dataset used in my recent bulk RNA-seq dataset.
+We'll start by downloading some example data. This is the same example dataset used in my recent bulk RNA-seq tutorial.
 
 ```{r cache = TRUE}
 ## Create two folders for the meta data and counts
@@ -61,7 +61,7 @@ rownames(counts) <- raw$ENSEMBL
 colnames(counts) <- stringr::str_remove_all(colnames(counts), "X")
 ```
 
-The route into using the tidy framework seems to be via a `SummarizedExperiment` object rather than the `DESeqDataset` that I am used to so We will briefly examine this format.
+The route into using the tidy framework seems to be via a `SummarizedExperiment` object rather than the `DESeqDataset` that I am used to. We will briefly examine this format.
 
 ```{r createSE,message=FALSE}
 library(SummarizedExperiment)
@@ -70,7 +70,7 @@ caf_data <- SummarizedExperiment(assays=list(counts=counts),
 caf_data
 ```
 
-The *raw* counts can be accessed using the `assay` function. Each entry is the number of counts assigned to a particular gene (row) in a given sample (column). The row and column names are the Ensembl gene identifier, and sample name from TCGA.
+The *raw* counts can be accessed using the `assay` function. Each entry is the number of counts assigned to a particular gene (row) in a given sample (column). The row and column names are the Ensembl gene identifier, and a sample name respectively.
 
 ```{r preview_counts}
 ## Use select and slice to print fewer items to the screen
@@ -112,7 +112,7 @@ library(tidybulk)
 caf_tidy <- caf_data %>% tidybulk()
 ```
 
-```{r eval=FALSE}
+```{r}
 ## Not evaluated to print excessive printing to screen for the HTML notes.
 caf_tidy %>% 
   slice_head(n = 10)
@@ -242,7 +242,7 @@ The `tidybulk` package has simplified workflows to test for differential express
 
 Note that I am using the `caf_tidy` object here rather than the scaled version as `DESeq2` will do it's own normalization as part of the workflow.
 
-```{r doDESeq}
+```{r doDESeq, warning=TRUE,message=TRUE}
 counts_de <- caf_tidy %>% 
     test_differential_abundance(
       .formula = ~ condition,
@@ -323,12 +323,9 @@ I have to say that I'm impressed at the way `tidybulk` integrates the workflow t
 
 On the other hand, one can easily swap out analysis methods (e.g., use `edgeR` normalization or `limma-voom` for differential expression) without changing the overall data structure or workflow. It would even be possible to try several methods and compare the results. In the [official vignette](https://www.bioconductor.org/packages/devel/bioc/vignettes/tidybulk/inst/doc/introduction.html#34_Step_3:_Differential_Expression_Analysis) there is an example of how to do this:-
 
-The package also looks to have batch-correction built-in via the ComBatSeq method, which sounds incredibly convenient.
+The package also looks to have [batch-correction](https://www.bioconductor.org/packages/devel/bioc/vignettes/tidybulk/inst/doc/introduction.html#35_Step_4:_Batch_Effect_Correction) built-in via the ComBatSeq method, which sounds incredibly convenient.
 
--   <https://www.bioconductor.org/packages/devel/bioc/vignettes/tidybulk/inst/doc/introduction.html#35_Step_4:_Batch_Effect_Correction>
+I've also noticed there are methods for [de-convolution and correcting for the celluarity of samples](https://www.bioconductor.org/packages/devel/bioc/vignettes/tidybulk/inst/doc/introduction.html#37_Step_6:_Cellularity_Analysis). I don't have any particular need for this right now (at least, I don't think I do), but good to know that it is easy to integrate.
 
-I've also noticed there are methods for de-convolution and correcting for the celluarity of samples. I don't have any particular need for this right now (at least, I don't think I do), but good to know that it is easy to integrate.
-
--   <https://www.bioconductor.org/packages/devel/bioc/vignettes/tidybulk/inst/doc/introduction.html#37_Step_6:_Cellularity_Analysis>
 
 I've only really scratched the surface of what is possible, but for my next proper analysis I will definitely be using this framework 👍

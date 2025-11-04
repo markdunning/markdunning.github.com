@@ -218,8 +218,9 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
 
 <section id="pre-amble" class="level2">
 <h2 class="anchored" data-anchor-id="pre-amble">Pre-amble</h2>
-<p>I have been analysing RNA-seq data for rather longer than I care to mention, and have mostly stuck to the same tried and tested workflow. Whilst re-writing the workflow for these pages it occurred to me that the materials, that mostly use base R, would benefit from some of the same tidy methodology I employ on a daily basis for general data manipulation and visualisation. Fortunately in recent years there has been a drive to introduce tidy frameworks for omics. Can this new framework replace my daily workhorse?</p>
-<p>We’ll start by downloading some example data. This is the same example dataset used in my recent bulk RNA-seq dataset.</p>
+<p>I have been analysing RNA-seq data for rather longer than I care to mention, and have mostly stuck to the same tried and tested workflow. Whilst re-writing <a href="https://mdbioinformatics.com/training.html">my tutorials</a> for these pages it occurred to me that the materials, that mostly use base R, would benefit from some of the same tidy methodology I employ on a daily basis for general data manipulation and visualisation. Fortunately in recent years there has been a drive to introduce tidy frameworks for omics. Can this new framework replace my daily workhorse?</p>
+<p><img src="logo.png" class="img-fluid"></p>
+<p>We’ll start by downloading some example data. This is the same example dataset used in my recent bulk RNA-seq tutorial.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Create two folders for the meta data and counts</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"meta_data"</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
@@ -249,7 +250,7 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(counts) <span class="ot">&lt;-</span> raw<span class="sc">$</span>ENSEMBL</span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(counts) <span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_remove_all</span>(<span class="fu">colnames</span>(counts), <span class="st">"X"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>The route into using the tidy framework seems to be via a <code>SummarizedExperiment</code> object rather than the <code>DESeqDataset</code> that I am used to so We will briefly examine this format.</p>
+<p>The route into using the tidy framework seems to be via a <code>SummarizedExperiment</code> object rather than the <code>DESeqDataset</code> that I am used to. We will briefly examine this format.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SummarizedExperiment)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>caf_data <span class="ot">&lt;-</span> <span class="fu">SummarizedExperiment</span>(<span class="at">assays=</span><span class="fu">list</span>(<span class="at">counts=</span>counts),</span>
@@ -267,7 +268,7 @@ colnames(9): 1_CTR_BC_2 2_TGF_BC_4 ... 8_TGF_BC_14 9_IR_BC_15
 colData names(5): Run condition Name Replicate Treated</code></pre>
 </div>
 </div>
-<p>The <em>raw</em> counts can be accessed using the <code>assay</code> function. Each entry is the number of counts assigned to a particular gene (row) in a given sample (column). The row and column names are the Ensembl gene identifier, and sample name from TCGA.</p>
+<p>The <em>raw</em> counts can be accessed using the <code>assay</code> function. Each entry is the number of counts assigned to a particular gene (row) in a given sample (column). The row and column names are the Ensembl gene identifier, and a sample name respectively.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Use select and slice to print fewer items to the screen</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Feel free to remove these lines if you want to see the full output</span></span>
@@ -327,18 +328,33 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Not evaluated to print excessive printing to screen for the HTML notes.</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 8
+   .feature        .sample    counts Run       condition Name  Replicate Treated
+   &lt;chr&gt;           &lt;chr&gt;       &lt;int&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt;     &lt;int&gt; &lt;chr&gt;  
+ 1 ENSG00000000003 1_CTR_BC_2   1579 "1_CTR_B… CTR       CTR_1         1 N      
+ 2 ENSG00000000005 1_CTR_BC_2      0 "1_CTR_B… CTR       CTR_1         1 N      
+ 3 ENSG00000000419 1_CTR_BC_2   1774 "1_CTR_B… CTR       CTR_1         1 N      
+ 4 ENSG00000000457 1_CTR_BC_2    698 "1_CTR_B… CTR       CTR_1         1 N      
+ 5 ENSG00000000460 1_CTR_BC_2    246 "1_CTR_B… CTR       CTR_1         1 N      
+ 6 ENSG00000000938 1_CTR_BC_2     10 "1_CTR_B… CTR       CTR_1         1 N      
+ 7 ENSG00000000971 1_CTR_BC_2   6370 "1_CTR_B… CTR       CTR_1         1 N      
+ 8 ENSG00000001036 1_CTR_BC_2   4009 "1_CTR_B… CTR       CTR_1         1 N      
+ 9 ENSG00000001084 1_CTR_BC_2   1037 "1_CTR_B… CTR       CTR_1         1 N      
+10 ENSG00000001167 1_CTR_BC_2   1498 "1_CTR_B… CTR       CTR_1         1 N      </code></pre>
+</div>
 </div>
 <p>We can now remove the <code>caf_data</code> object to save memory</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(caf_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(caf_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Say for example we want the counts for a particular gene, and which sample it is most highly-expressed in</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.feature <span class="sc">==</span> <span class="st">"ENSG00000000003"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(counts,Run) <span class="sc">%&gt;%</span> </span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(<span class="fu">desc</span>(counts)) <span class="sc">%&gt;%</span> </span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.feature <span class="sc">==</span> <span class="st">"ENSG00000000003"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(counts,Run) <span class="sc">%&gt;%</span> </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(<span class="fu">desc</span>(counts)) <span class="sc">%&gt;%</span> </span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 9 × 2
   counts Run           
@@ -356,10 +372,10 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 </div>
 <p>Or calculate the average expression in different groups.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.feature <span class="sc">==</span> <span class="st">"ENSG00000000003"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(condition) <span class="sc">%&gt;%</span> </span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="fu">mean</span>(counts))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.feature <span class="sc">==</span> <span class="st">"ENSG00000000003"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(condition) <span class="sc">%&gt;%</span> </span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="fu">mean</span>(counts))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 2
   condition `mean(counts)`
@@ -371,10 +387,10 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 </div>
 <p>A basic QC metric is to count the total number of reads for each sample. In a typical bulk RNA-seq study we should be getting 10s of millions of reads - although the total number will vary. Any samples with dramatically lower numbers could be cause for concern.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.sample) <span class="sc">%&gt;%</span> </span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">LibrarySize =</span> <span class="fu">sum</span>(counts)) <span class="sc">%&gt;%</span> </span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Library Size - Millions of Reads</span><span class="st">`</span> <span class="ot">=</span> LibrarySize <span class="sc">/</span> <span class="fl">1e6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.sample) <span class="sc">%&gt;%</span> </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">LibrarySize =</span> <span class="fu">sum</span>(counts)) <span class="sc">%&gt;%</span> </span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Library Size - Millions of Reads</span><span class="st">`</span> <span class="ot">=</span> LibrarySize <span class="sc">/</span> <span class="fl">1e6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 9 × 3
   .sample     LibrarySize `Library Size - Millions of Reads`
@@ -392,12 +408,12 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 </div>
 <p>The resulting data can be visualised using a <code>geom_col</code> in <code>ggplot2</code> for example.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.sample) <span class="sc">%&gt;%</span> </span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">LibrarySize =</span> <span class="fu">sum</span>(counts)) <span class="sc">%&gt;%</span> </span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Library Size - Millions of Reads</span><span class="st">`</span> <span class="ot">=</span> LibrarySize <span class="sc">/</span> <span class="fl">1e6</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>.sample, <span class="at">y =</span> <span class="st">`</span><span class="at">Library Size - Millions of Reads</span><span class="st">`</span>)) <span class="sc">+</span> <span class="fu">geom_col</span>(<span class="at">fill=</span><span class="st">"steelblue"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.sample) <span class="sc">%&gt;%</span> </span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">LibrarySize =</span> <span class="fu">sum</span>(counts)) <span class="sc">%&gt;%</span> </span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Library Size - Millions of Reads</span><span class="st">`</span> <span class="ot">=</span> LibrarySize <span class="sc">/</span> <span class="fl">1e6</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>.sample, <span class="at">y =</span> <span class="st">`</span><span class="at">Library Size - Millions of Reads</span><span class="st">`</span>)) <span class="sc">+</span> <span class="fu">geom_col</span>(<span class="at">fill=</span><span class="st">"steelblue"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -413,29 +429,29 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 <p>My next go-to method for RNA-seq is to use a PCA to visualise my data. Principal Component Analysis (<strong>PCA</strong>) and Multi-Dimensional Scaling (<strong>MDS</strong>) plots are among the most crucial visualizations for analyzing RNA-sequencing data as these techniques reduce the dimensionality of the data, allowing us to identify the primary sources of variation.</p>
 <p>There is are a couple of recommended steps before running the PCA to filter out lowly-expressed genes and normalize for differences in sequencing depth (<code>scale_abundance</code>).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Scale/Normalize the counts</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>caf_tidy_scaled <span class="ot">&lt;-</span> caf_tidy <span class="sc">%&gt;%</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter out lowly expressed genes (recommended best practice)</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">identify_abundant</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_abundant</span>(<span class="at">factor_of_interest =</span> condition) <span class="sc">%&gt;%</span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Normalize for sequencing depth (creates a 'count_scaled' column)</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Default method is TMM (recommended for bulk RNA-seq)</span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_abundance</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Scale/Normalize the counts</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>caf_tidy_scaled <span class="ot">&lt;-</span> caf_tidy <span class="sc">%&gt;%</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter out lowly expressed genes (recommended best practice)</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">identify_abundant</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_abundant</span>(<span class="at">factor_of_interest =</span> condition) <span class="sc">%&gt;%</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Normalize for sequencing depth (creates a 'count_scaled' column)</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Default method is TMM (recommended for bulk RNA-seq)</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_abundance</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The <code>tidybulk</code> package has several dimensionality reduction techniques available, so you can use whichever one you prefer. I’ll stick with PCA and base the analysis on the 500 most-variable genes - which is the default in the <code>plotPCA</code> function of <code>DESeq2</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>ntop_genes <span class="ot">&lt;-</span> <span class="dv">500</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>pca_results <span class="ot">&lt;-</span> caf_tidy_scaled <span class="sc">%&gt;%</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce_dimensions</span>(</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">"PCA"</span>,</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">.value =</span> count_scaled,</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">top =</span> ntop_genes,</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">transform =</span> log1p </span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>pca_results <span class="sc">%&gt;%</span> </span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>ntop_genes <span class="ot">&lt;-</span> <span class="dv">500</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>pca_results <span class="ot">&lt;-</span> caf_tidy_scaled <span class="sc">%&gt;%</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce_dimensions</span>(</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">"PCA"</span>,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">.value =</span> count_scaled,</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">top =</span> ntop_genes,</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">transform =</span> log1p </span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>pca_results <span class="sc">%&gt;%</span> </span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 10 × 14
    .feature     .sample counts Run   condition Name  Replicate Treated .abundant
@@ -456,8 +472,8 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 </div>
 <p>If you print the <code>pca_results</code> object to screen you will notice that it is still in “long”/“tidy” format, which on this occasion is not particularly useful for visualisation as many of the variables we need for plotting are repeated many times. To provide a simple summary of PC values for each sample we can use the <code>pivot_sample</code> function. Because we are already using the tidy format, the biological and experimental groups we might want to include on the plot are already available to us.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>pca_results <span class="sc">%&gt;%</span> <span class="fu">pivot_sample</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(.sample,condition,<span class="fu">contains</span>(<span class="st">"PC"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>pca_results <span class="sc">%&gt;%</span> <span class="fu">pivot_sample</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(.sample,condition,<span class="fu">contains</span>(<span class="st">"PC"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 9 × 4
   .sample     condition    PC1   PC2
@@ -475,10 +491,10 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 </div>
 <p>A basic PCA visualisation will show the values of PC1 and PC2 using a scatter plot with <code>ggplot2</code>. The results are pretty similar indeed to the <a href="https://mdbioinformatics.com/training/bulk-rnaseq_1/#principal-components-analysis-pca"><code>DESeq2</code> equivalent workflow</a></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>pca_results <span class="sc">%&gt;%</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_sample</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>PC1, <span class="at">y=</span>PC2, <span class="at">col =</span> condition)) <span class="sc">+</span></span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>pca_results <span class="sc">%&gt;%</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_sample</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>PC1, <span class="at">y=</span>PC2, <span class="at">col =</span> condition)) <span class="sc">+</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -492,16 +508,16 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 <h2 class="anchored" data-anchor-id="gene-annotations">Gene Annotations</h2>
 <p>At the moment we don’t have particularly meaningful gene names that we can use. We have an Ensembl ID, and have ways to convert between. One of which is using an organism-specific package in Bioconductor. First, we get all the IDs we have.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>ens_ids <span class="ot">&lt;-</span> <span class="fu">pull</span>(caf_tidy, .feature) <span class="sc">%&gt;%</span> unique</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>ens_ids <span class="ot">&lt;-</span> <span class="fu">pull</span>(caf_tidy, .feature) <span class="sc">%&gt;%</span> unique</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The overall strategy is to use <code>org.Hs.eg.db</code> to convert between one type of ID (ENSEMBL in our case) to another. We can try the official gene symbol and gene name. For non-human data, equivalent packages are available. e.g.&nbsp;<code>org.Mm.eg.db</code> for mouse.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(org.Hs.eg.db)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>anno <span class="ot">&lt;-</span> AnnotationDbi<span class="sc">::</span><span class="fu">select</span>(org.Hs.eg.db,</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>                              <span class="at">keys =</span> ens_ids,</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>                              <span class="at">columns =</span> <span class="fu">c</span>(<span class="st">"SYMBOL"</span>,<span class="st">"GENENAME"</span>),</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>                              <span class="at">keytype =</span> <span class="st">"ENSEMBL"</span>)</span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>anno <span class="sc">%&gt;%</span> <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(org.Hs.eg.db)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>anno <span class="ot">&lt;-</span> AnnotationDbi<span class="sc">::</span><span class="fu">select</span>(org.Hs.eg.db,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>                              <span class="at">keys =</span> ens_ids,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>                              <span class="at">columns =</span> <span class="fu">c</span>(<span class="st">"SYMBOL"</span>,<span class="st">"GENENAME"</span>),</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>                              <span class="at">keytype =</span> <span class="st">"ENSEMBL"</span>)</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>anno <span class="sc">%&gt;%</span> <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>           ENSEMBL SYMBOL
 1  ENSG00000000003 TSPAN6
@@ -533,19 +549,49 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 <p>The <code>tidybulk</code> package has simplified workflows to test for differential expression between different conditions. The workflow is not completely automated however because we still need to specify what sample groups to compare and which contrasts to make. This is achieved via the <code>.formula</code> argument. The <code>.contrasts</code> argument also allows us to explicitly define the <em>direction</em> of the contrast and which group to use as a baseline; which will affect the sign of the fold-change.</p>
 <p>Note that I am using the <code>caf_tidy</code> object here rather than the scaled version as <code>DESeq2</code> will do it’s own normalization as part of the workflow.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>counts_de <span class="ot">&lt;-</span> caf_tidy <span class="sc">%&gt;%</span> </span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">test_differential_abundance</span>(</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>      <span class="at">.formula =</span> <span class="sc">~</span> condition,</span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"deseq2"</span>,</span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">.contrasts =</span> <span class="fu">list</span>(<span class="fu">c</span>(<span class="st">"condition"</span>, <span class="st">"TGF"</span>,<span class="st">"CTR"</span>)),</span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>      <span class="do">## As we're only doing one contrast, this will make the column names cleaner</span></span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">omit_contrast_in_colnames =</span> <span class="cn">TRUE</span></span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>counts_de <span class="ot">&lt;-</span> caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">test_differential_abundance</span>(</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>      <span class="at">.formula =</span> <span class="sc">~</span> condition,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"deseq2"</span>,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">.contrasts =</span> <span class="fu">list</span>(<span class="fu">c</span>(<span class="st">"condition"</span>, <span class="st">"TGF"</span>,<span class="st">"CTR"</span>)),</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>      <span class="do">## As we're only doing one contrast, this will make the column names cleaner</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">omit_contrast_in_colnames =</span> <span class="cn">TRUE</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: The `.contrasts` argument of `test_differential_abundance()` is deprecated as
+of tidybulk 1.7.4.
+ℹ The argument .contrasts is now deprecated please use contrasts (without the
+  dot).</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>=====================================
+tidybulk says: All testing methods use raw counts, irrespective of if scale_abundance
+or adjust_abundance have been calculated. Therefore, it is essential to add covariates
+such as batch effects (if applicable) in the formula.
+=====================================
+This message is displayed once per session.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in eval(dots[[i]][[action]], env, env): tidybulk says: highly abundant
+transcripts were not identified (i.e. identify_abundant()) or filtered (i.e.,
+keep_abundant), therefore this operation will be performed on unfiltered data.
+In rare occasions this could be wanted. In standard whole-transcriptome
+workflows is generally unwanted.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>estimating size factors
+estimating dispersions
+gene-wise dispersion estimates
+mean-dispersion relationship
+final dispersion estimates
+fitting model and testing
+tidybulk says: to access the raw results (fitted GLM) do `attr(..., "internals")$DESeq2`</code></pre>
+</div>
 </div>
 <p>Running the code gives me the same messages printed to screen as if I was running the <code>DESeq</code> function (which it is clearly doing under the hood). There is also a warning about not filtering highly abundant transcripts. I didn’t think that removing such transcripts was required for <code>DESeq2</code>, but perhaps I will have to read up on that.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>counts_de <span class="sc">%&gt;%</span> </span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>counts_de <span class="sc">%&gt;%</span> </span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 10 × 14
    .feature      .sample counts Run   condition Name  Replicate Treated baseMean
@@ -566,11 +612,11 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 </div>
 <p>The results are still in a <em>long</em> format table. Again, this is actually not very helpful and would prefer to have a single row for each gene tested. The function <code>pivot_transcript</code> performs the reshaping. We can now add the gene annotation we created earlier, but retain the original Ensembl IDs so we can retrieve count information. The final <code>arrange</code> line orders by significance.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>results_table <span class="ot">&lt;-</span> counts_de <span class="sc">%&gt;%</span> </span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_transcript</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(anno, <span class="at">by=</span><span class="fu">c</span>(<span class="st">".feature"</span><span class="ot">=</span><span class="st">"ENSEMBL"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(padj)</span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>results_table <span class="sc">%&gt;%</span> <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>results_table <span class="ot">&lt;-</span> counts_de <span class="sc">%&gt;%</span> </span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_transcript</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(anno, <span class="at">by=</span><span class="fu">c</span>(<span class="st">".feature"</span><span class="ot">=</span><span class="st">"ENSEMBL"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(padj)</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>results_table <span class="sc">%&gt;%</span> <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 10 × 9
    .feature      baseMean log2FoldChange  lfcSE  stat    pvalue      padj SYMBOL
@@ -590,19 +636,19 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 </div>
 <p>We can write the results to a spreadsheet for further investigation.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(results_table, <span class="st">"DESeq2_TGF_vs_CTR.csv"</span>,<span class="at">quote=</span><span class="cn">FALSE</span>,<span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Could remove counts_de if no longer needed</span></span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="do">## rm(counts_de)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(results_table, <span class="st">"DESeq2_TGF_vs_CTR.csv"</span>,<span class="at">quote=</span><span class="cn">FALSE</span>,<span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Could remove counts_de if no longer needed</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a><span class="do">## rm(counts_de)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>A volcano plot is a common visualisation that shows the degree of significance and magnitude of change. Genes of biological significance are likely to be those with low p-value and more extreme fold-change.</p>
 <p>It would be perfectly possible to make the plot using standard <code>ggplot2</code> code. However, the <code>EnhancedVolcano</code> package simplifies the process and offers some additional features such as automatically labeling the significant genes.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EnhancedVolcano)</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">EnhancedVolcano</span>(results_table, </span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">lab =</span> results_table<span class="sc">$</span>SYMBOL,</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">x =</span> <span class="st">"log2FoldChange"</span>,</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">y =</span> <span class="st">"padj"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EnhancedVolcano)</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="fu">EnhancedVolcano</span>(results_table, </span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">lab =</span> results_table<span class="sc">$</span>SYMBOL,</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">x =</span> <span class="st">"log2FoldChange"</span>,</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">y =</span> <span class="st">"padj"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -613,9 +659,9 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 </div>
 <p>Some “sanity checks” are always a good idea too. This can include visualising the scaled counts of the top genes to see if their significance is driven by biological effects, and not technical. First we get the names of the most significant genes. The names have to be in ensembl format as we are going to retrieve information on these from the counts data - which has ensembl as an identifier.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">10</span></span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>top_genes <span class="ot">&lt;-</span> <span class="fu">slice_min</span>(results_table, padj, <span class="at">n=</span>N) <span class="sc">%&gt;%</span> <span class="fu">pull</span>(.feature)</span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>top_genes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>top_genes <span class="ot">&lt;-</span> <span class="fu">slice_min</span>(results_table, padj, <span class="at">n=</span>N) <span class="sc">%&gt;%</span> <span class="fu">pull</span>(.feature)</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>top_genes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "ENSG00000119681" "ENSG00000120708" "ENSG00000172061" "ENSG00000049540"
  [5] "ENSG00000060718" "ENSG00000115414" "ENSG00000187498" "ENSG00000186340"
@@ -624,15 +670,15 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 </div>
 <p>The annotation information is included to allow more meaningful labels.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> caf_tidy <span class="sc">%&gt;%</span> </span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_abundance</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.feature <span class="sc">%in%</span> top_genes) <span class="sc">%&gt;%</span> </span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(anno, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">".feature"</span> <span class="ot">=</span> <span class="st">"ENSEMBL"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> caf_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_abundance</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.feature <span class="sc">%in%</span> top_genes) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(anno, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">".feature"</span> <span class="ot">=</span> <span class="st">"ENSEMBL"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>A series of boxplots can now be created, with a facet introduced so that a separate plot is made for each gene.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>plot_data <span class="sc">%&gt;%</span> </span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> condition, <span class="at">y =</span> counts_scaled,<span class="at">col=</span>condition)) <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span> <span class="fu">scale_y_log10</span>() <span class="sc">+</span> <span class="fu">facet_wrap</span>(<span class="sc">~</span>SYMBOL,<span class="at">scales=</span><span class="st">"free_y"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>plot_data <span class="sc">%&gt;%</span> </span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> condition, <span class="at">y =</span> counts_scaled,<span class="at">col=</span>condition)) <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span> <span class="fu">scale_y_log10</span>() <span class="sc">+</span> <span class="fu">facet_wrap</span>(<span class="sc">~</span>SYMBOL,<span class="at">scales=</span><span class="st">"free_y"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -641,9 +687,15 @@ ENSG00000001167       1498       1622      1042       1406</code></pre>
 </div>
 </div>
 </div>
+<p>You can use the <code>results_table</code> to carry out your enrichment or pathways analysis in your usual workflow. However, I note that <code>tidybulk</code> includes <code>test_gene_enrichment</code> and <code>test_gene_overrepresentation</code> functions that I expect will automate this as part of the same workflow.</p>
 </section>
 <section id="summary" class="level1">
 <h1>Summary</h1>
+<p>I have to say that I’m impressed at the way <code>tidybulk</code> integrates the workflow that I am familiar with to <code>tidyverse</code> principles. I like the fact that <code>tidybulk</code> doesn’t force you to abandon DESeq2 entirely. Instead, it allows you to integrate core <code>DESeq2</code> functions (like <code>DESeq()</code> for differential expression) within the tidy workflow, applying them to the data and seamlessly returning the results in a tidy format.</p>
+<p>On the other hand, one can easily swap out analysis methods (e.g., use <code>edgeR</code> normalization or <code>limma-voom</code> for differential expression) without changing the overall data structure or workflow. It would even be possible to try several methods and compare the results. In the <a href="https://www.bioconductor.org/packages/devel/bioc/vignettes/tidybulk/inst/doc/introduction.html#34_Step_3:_Differential_Expression_Analysis">official vignette</a> there is an example of how to do this:-</p>
+<p>The package also looks to have <a href="https://www.bioconductor.org/packages/devel/bioc/vignettes/tidybulk/inst/doc/introduction.html#35_Step_4:_Batch_Effect_Correction">batch-correction</a> built-in via the ComBatSeq method, which sounds incredibly convenient.</p>
+<p>I’ve also noticed there are methods for <a href="https://www.bioconductor.org/packages/devel/bioc/vignettes/tidybulk/inst/doc/introduction.html#37_Step_6:_Cellularity_Analysis">de-convolution and correcting for the celluarity of samples</a>. I don’t have any particular need for this right now (at least, I don’t think I do), but good to know that it is easy to integrate.</p>
+<p>I’ve only really scratched the surface of what is possible, but for my next proper analysis I will definitely be using this framework 👍</p>
 
 
 </section>
