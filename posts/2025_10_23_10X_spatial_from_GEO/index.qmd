@@ -1,7 +1,7 @@
 ---
 title: "Reading 10X Spatial Data from GEO into R"
 author: Mark Dunning
-date: today
+date: 2025-10-23
 theme: darkly
 image: preview.png
 ---
@@ -16,7 +16,7 @@ The dataset I will be looking comes from [Spatial single cell analysis of tumor 
 
 Here is an overview of the study.
 
-![](paper_abstract.jpg) 
+![](paper_abstract.jpg)
 
 If we are interested in tumour microenvironment we might want to explore the dataset for ourselves and test some hypotheses. The data are available in Gene Expression Onmibus (GEO), but unfortunately not in a form that we can immediately use.
 
@@ -67,8 +67,7 @@ getGEOSuppFiles("GSE230207")
 
 You should now have a file called `GSE230207_RAW.tar` in a folder called `GSE230207`. This `tar` file is essentially a way of transferring a dataset consisting many separate files into a single download.
 
-:::{.callout-note}
-
+::: callout-note
 The name tar is short for **T**ape **AR**chive and harks back to the early days of computing.
 
 The format and its associated command-line utility were originally developed for archiving files onto magnetic tape drives on Unix systems in the early days of computing.
@@ -120,7 +119,7 @@ Sample_1
 
 In other words, we need to create a separate folder for each of the four samples named according to the sample name. The "h5" file should be placed here and all other image data should be in a folder named `spatial`. As the IDs created by GEO are completely arbitrary and not related to the underlying question we will rename to some relating to the sample groups. This labels for this are found in the `title` column of the meta data.
 
-# The code to rename and move files 
+# The code to rename and move files
 
 First we'll define a few variables
 
@@ -194,6 +193,7 @@ We can check for a particular sample if the correct structure is in place
 ```{r}
 list.files("TME_cold/",recursive = TRUE)
 ```
+
 # Loading into Seurat
 
 We can load `Seurat` and hopefully it will be able to read the data 🤞
@@ -211,8 +211,8 @@ VlnPlot(tme_cold, features = "nCount_Spatial", pt.size = 0.1) + NoLegend()
 
 And what we will be interested in is how these counts are distributed across the tissue.
 
-
 ```{r warning=FALSE,message=FALSE}
 SpatialFeaturePlot(tme_cold, features = "nCount_Spatial")
 ```
+
 More next time!

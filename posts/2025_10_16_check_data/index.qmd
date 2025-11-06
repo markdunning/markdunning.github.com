@@ -1,7 +1,7 @@
 ---
 title: "Always check your input data"
 author: Mark Dunning
-date: today
+date: 2025-10-16
 theme: darkly
 ---
 
@@ -85,12 +85,12 @@ Similarly, `tail` will show the last rows in the data
 tail(covid)
 ```
 
-
-I saved a copy of the csv file that was downloaded during the same session that created the erroneous covid line plot. 
+I saved a copy of the csv file that was downloaded during the same session that created the erroneous covid line plot.
 
 ```{r}
 covid_bad <- read_csv("time_series_covid19_confirmed_global_BAD.csv")
 ```
+
 The first rows of the `tibble` look to be the same
 
 ```{r}
@@ -115,13 +115,11 @@ What is incredibly unlucky in my case was that not all of the `United Kingdom` r
 filter(covid, `Country/Region` == "United Kingdom")
 ```
 
-
 Here are the rows for `United Kingdom` in the truncated data
 
 ```{r}
 filter(covid_bad, `Country/Region` == "United Kingdom")
 ```
-
 
 What's worse is that the row containing the covid cases for mainland Uk are only present in the full dataset. This is where most of the cases occur.
 
@@ -129,17 +127,18 @@ What's worse is that the row containing the covid cases for mainland Uk are only
 filter(covid, `Country/Region` == "United Kingdom", is.na(`Province/State`))
 ```
 
-
 ```{r}
 filter(covid_bad, `Country/Region` == "United Kingdom", is.na(`Province/State`))
 ```
-We can filter the data for `United Kingdom` and use `select` to show the last column. The helper function `last_col()` is incredibly useful for this as we don't need to know the name of the column. Using `summarise` we can add all the values in the column. This is the cumulative number of casees at the last date in the dataset. Dividing by one million (`1e6`) makes the numbers a bit easier to read. 
+
+We can filter the data for `United Kingdom` and use `select` to show the last column. The helper function `last_col()` is incredibly useful for this as we don't need to know the name of the column. Using `summarise` we can add all the values in the column. This is the cumulative number of casees at the last date in the dataset. Dividing by one million (`1e6`) makes the numbers a bit easier to read.
 
 ```{r}
 filter(covid, `Country/Region` == "United Kingdom") %>% 
   select(last_col()) %>% 
   summarise(sum(.) / 1e6)
 ```
+
 For the truncated dataset, the number of counts is substantially lower as we are missing the mainland Uk data. So it is not surprisingly that the trend lines for the Uk did not look correct.
 
 ```{r}
@@ -159,6 +158,7 @@ file.size("raw_data/time_series_covid19_confirmed_global.csv")
 ```{r}
 file.size("time_series_covid19_confirmed_global_BAD.csv")
 ```
+
 A bit more rigourous is to calculate a *checksum*. In short, this is a calculated value that represents **the exact contents of a file**. If the file changes — even by a single byte — the checksum changes as well. That’s why it’s often described as a "digital fingerprint" for data integrity. This can be done in R by first loading the `tools` library and using the `md5sum` function.
 
 ```{r}
@@ -175,22 +175,19 @@ checksum
 checksum_bad <- md5sum("time_series_covid19_confirmed_global_BAD.csv")
 checksum_bad
 ```
+
 In practice if someone is sending data you large, especially if the file is large, they will also send a file containing checksums for you to check data integrity. The following would print `TRUE` if both files had exactly the same contents.
 
 ```{r}
 checksum == checksum_bad
 ```
 
-
 # Conclusion
 
-So I should have checked the input data more thoroughly before plotting. Thankfully it was an example for a workshop, but even so I should be demonstrating best practices. I was particularly unlucky that the data stopped halfway through the particular subset I was trying to plot. 
+So I should have checked the input data more thoroughly before plotting. Thankfully it was an example for a workshop, but even so I should be demonstrating best practices. I was particularly unlucky that the data stopped halfway through the particular subset I was trying to plot.
 
 There are other ways of checking that your outputs are correct involving something called "unit tests", which are primarily used during software development but could also be useful in this context. I may just talk about these in the future.
-
-
 
 ```{r}
 list.files("raw_data/")
 ```
-
