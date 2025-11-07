@@ -115,8 +115,8 @@ query.brca_normal_tumor <- GDCquery(
   data.category = "Transcriptome Profiling",
   data.type = "Gene Expression Quantification",
   workflow.type = "STAR - Counts",
-  # Key change: Requesting both Primary Tumor and Solid Tissue Normal
-  sample.type = c("Primary Tumor", "Solid Tissue Normal")
+  # Request "Primary Tumor only
+  sample.type ="Primary Tumor"
 )
 
 # --- Download the Data ---
@@ -238,24 +238,133 @@ saveRDS(brca_gene_filtered, "brca_gene_filtered_SE.rds")
 
 ## Some data Exploration
 
+Before embarking on any machine learning (which we will tackle next time), it is worth spending some time getting familiar with your data. Armed with some domain knowledge we can run a few basic checks. If you haven't worked with RNA-seq data in R before, it might be worth taking a look over these examples.
+
+```{r eval=FALSE}
+brca_gene_filtered <- readRDS("brca_gene_filtered_SE.rds")
+```
+
+
+When working on breast cancer, and coming from a purely computational background, I quickly learnt about the importance of **Estrogen Receptor (ER) status** and the gene that encodes the Estrogen Receptor protein **ESR1**. The status of a breast cancer patient is a well-established biomarker and can indicate whether the patient's cancer is likely to respond to hormone-blocking therapies. In other words, patients that can been categorised as ER positive should have higher expression of ESR1. In this dataset ER status looks to have been investigated by Immunohistochemistry (IHC) and recorded in the `er_status_by_ihc`. This is one of the variables present in the BCR clinical data.
+
+To get the data for just `ESR1` It's actually more efficient in this case to filter the gene from the `SummarizedExperiment` object before calling `tidybulk`. I'm not sure if this is the intended workflow, but our data are so large that calling  `tidybulk` on the entire dataset takes too much RAM in my case.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+
+brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ESR1"] |>
+  tidybulk() |>
+  ggplot(aes(x = er_status_by_ihc, y = fpkm_uq)) + geom_boxplot() + geom_jitter(width = 0.1)
+```
+
+Phew! So `ESR1` expression is indeed higher in ER positive samples. The plot also highlights some discrepancy in the recording of the ER status which should be cleaned prior to analysis. For the sake of the plot we can filter out the offending entries.
+
+```{r}
+brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ESR1"] |>
+  tidybulk() |>
+  filter(er_status_by_ihc %in% c("Positive", "Negative")) %>% 
+  ggplot(aes(x = er_status_by_ihc, y = fpkm_uq)) + geom_boxplot() + geom_jitter(width = 0.1) + stat_compare_means() + xlab("ER Status")
+```
+
+In a similar vein, the gene **ERBB2** should be higher in patients that are positive for **Her2** staining by IHC.
+
+
+```{r}
+brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ERBB2"] |>
+  tidybulk() |> 
+  filter(her2_status_by_ihc %in% c("Positive", "Negative")) %>% 
+  ggplot(aes(x = her2_status_by_ihc, y = fpkm_uq)) + geom_boxplot() + geom_jitter() + scale_y_log10()
+```
+Breast cancer was traditionally classified into five *intrinsic* subtypes, and microarray studies sought to identify genes that define these subtypes. On such 50 gene panel was derived using a prediction analysis of microarray (PAM) and hence called **PAM50**. The samples in the TCGA dataset have been classified using this method, and we can check the expression level of **ESR1** and **ERBB2** respectively.
+
+```{r}
+brca_gene_filtered[rowData(brca_gene_filtered)$gene_name %in% c("ESR1","ERBB2")] |>
+  tidybulk() |>
+  filter(!is.na(paper_BRCA_Subtype_PAM50)) %>% 
+  ggplot(aes(x = paper_BRCA_Subtype_PAM50, y = fpkm_uq, fill = paper_BRCA_Subtype_PAM50)) + 
+  geom_boxplot() + 
+  geom_jitter(alpha=0.1) + 
+  scale_y_log10() + 
+  facet_wrap(~gene_name) + 
+  scale_fill_manual(values = c("red", "pink", "darkblue", "lightblue", "yellow"))
+```
+
+Again, this all makes perfect sense as *Luminal A* and *Luminal B* are *ER-positive* groups, *Basal* and *Her2* are *ER-negative* and *ERBB2* should be highly expressed in the *Her2* subtype.
+
+So, are the Pam50 subtypes are major source of variation in our data? The `tidybulk` package allows us to run dimensionality reduction techniques such as PCA to look at this issue. The `reduce_dimensions` function computes the Principal Components and these can be added to our data ready for visualisation.
 
 ```{r}
 brca_gene_filtered |>
   scale_abundance() |>
-  reduce_dimensions(method = "PCA")
-
+  reduce_dimensions(method = "PCA") |>
+  pivot_sample() %>% 
+  select(.sample, PC1, PC2)
 ```
 
+
+It is now straightforward to plot, and also colour according to the PAM50 subtype of each sample. 
+
 ```{r}
-library(ggplot2)
+
 brca_gene_filtered |>
   scale_abundance() |>
   reduce_dimensions(method = "PCA") |>
   pivot_sample() |>
-  ggplot(aes(x = PC1, y = PC2, col = paper_BRCA_Subtype_PAM50 )) + geom_point()
+  filter(!is.na(paper_BRCA_Subtype_PAM50)) %>% 
+  ggplot(aes(x = PC1, y = PC2, col = paper_BRCA_Subtype_PAM50 )) + 
+  geom_point()  + 
+  scale_color_manual(values = c("red", "pink", "darkblue", "lightblue", "yellow"))
 ```
 
+This looks pretty good, with the main separation being between *basal* and *Luminal A/B*. Furthermore, we can get from the literature the names of the genes used in the PAM50 classifier. I got these from the [`genefu`](https://bioconductor.org/packages/release/bioc/html/genefu.html) Bioconductor package and saved as a small text file. Armed with these genes we can subset the data according and create a suitable matrix to plot in a *heatmap*. The format of the data for the heatmap needs to be *wide* with one row for each gene and a column for each sample. Only numeric values are allowed, so we must put the sample names as rownames and supply and information about the samples that we want to include (e.g. the ER status and PAM50 subtype) as a separate data frame.
 
+I noticed that a few genes had extreme values when scaled, so **for the purposes of visualistion** I truncate the values shown on the plot to a range between -10 and 10. That is, and values 10 or over get shown in the same colour (and the same for values less than -10).
+
+
+```{r, fig.width=12}
+
+pam50_genes <- read.table("PAM50_genes.txt")[,1]
+pam50_data <- brca_gene_filtered[rowData(brca_gene_filtered)$gene_name %in% pam50_genes,] %>% 
+  ## once filtered, make a "tidy" version
+  tidybulk() %>% 
+  ## use tidybulk to correct for library size
+  scale_abundance() %>% 
+  ## get the counts, samples and genes
+  dplyr::select(gene_name, .sample, fpkm_uq) %>% 
+  ## make a "wide" matrix for the heatmap
+  tidyr::pivot_wider(everything(), names_from = .sample, values_from = fpkm_uq) %>% 
+  tibble::column_to_rownames("gene_name") 
+
+samp_anno <- colData(brca_gene_filtered) %>% 
+  data.frame() %>% 
+  ## Get just the ER status and PAM50
+  dplyr::select(ER=er_status_by_ihc, PAM50=paper_BRCA_Subtype_PAM50) %>% 
+  ## Make all other entries for ER status NA if not Positive or Negative
+  mutate(ER = ifelse(ER %in% c("Positive", "Negative"), ER, NA))
+
+
+library(pheatmap)
+
+# Create a smooth gradient from dark blue (low) to white (zero) to dark red (high)
+my_colors <- colorRampPalette(c("navy", "white", "firebrick"))(100)
+# Define the break points to map the 100 colors smoothly
+# Using your requested range of -10 to +10
+my_breaks <- seq(-10, 10, length.out = 101)
+
+pheatmap(pam50_data, scale="row", 
+         labels_col = "", 
+         annotation_col = samp_anno, 
+         annotation_colors = list("PAM50" = c("Basal" = "red", "Her2" = "pink", "LumA" = "darkblue", "LumB" = "lightblue", "Normal" = "yellow"),
+                                  "ER" = c("Negative" = "orange", "Positive" = "Purple")),
+         color = my_colors,
+         breaks = my_breaks)
+```
+
+Showing the data in this manner also us to see which genes look to be over- or under-expressed in certain subtypes. Eventually, we will progress to doing our own classification so it will be useful to compare to this information.
+
+Finally, a pertinent question to ask is whether the subtypes are *clinically-meaningful*. If we know what subtype a patient has, what can this tell us about their survival chances?
 
 ```{r}
 library(survminer)

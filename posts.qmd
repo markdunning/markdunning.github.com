@@ -3,6 +3,9 @@ title: "Posts"
 listing:
   contents: posts  # <-- the sub-directory with blog content
   type: grid          # <-- my preferred layout type
+  fields: [image, date, title, reading-time, description]  
 ---
 
 You will find some [comprehensive training materials](/training.html) on this site, and here I will add some shorter musings on other aspects of data analysis and Bioinformatics that I have found useful
+
+
