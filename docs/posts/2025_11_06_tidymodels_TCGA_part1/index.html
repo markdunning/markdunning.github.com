@@ -746,15 +746,15 @@ colData names(205): barcode patient ... tissue_source_site
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>clin_data_corrected <span class="ot">&lt;-</span> <span class="fu">colData</span>(brca_gene_filtered) <span class="sc">|&gt;</span></span>
 <span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">|&gt;</span></span>
 <span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(classification_of_tumor <span class="sc">==</span> <span class="st">"primary"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 2. Define Time (Coalesce death date and follow-up date)</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">#Define Time (Coalesce death date and follow-up date)</span></span>
 <span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
 <span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Use days_to_death if available; otherwise, use days_to_last_follow_up</span></span>
 <span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">Time =</span> <span class="fu">as.numeric</span>(dplyr<span class="sc">::</span><span class="fu">coalesce</span>(days_to_death, days_to_last_follow_up)),</span>
-<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 3. Define Status (REVERSED AND CORRECTED)</span></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define Status </span></span>
 <span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Event=1 (Dead), Censored=0 (Alive)</span></span>
 <span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">Status =</span> <span class="fu">ifelse</span>(vital_status.x <span class="sc">==</span> <span class="st">"Dead"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
 <span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 4. Final Clean-up: Remove rows with NA in Time, Status, or Subtype</span></span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Remove rows with NA in Time, Status, or Subtype</span></span>
 <span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Time), Time <span class="sc">&gt;</span> <span class="dv">0</span>, Status <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), paper_BRCA_Subtype_PAM50 <span class="sc">!=</span> <span class="st">"NA"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">PAM50 =</span> paper_BRCA_Subtype_PAM50)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -768,14 +768,14 @@ colData names(205): barcode patient ... tissue_source_site
 <span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  fit, </span>
 <span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> clin_data_corrected, </span>
 <span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">pval =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add risk table and confidence intervals for a better plot</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add risk table and confidence intervals for nicer better plot</span></span>
 <span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">risk.table =</span> <span class="cn">TRUE</span>,</span>
 <span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"red"</span>, <span class="st">"pink"</span>, <span class="st">"darkblue"</span>, <span class="st">"lightblue"</span>, <span class="st">"yellow"</span>)</span>
 <span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="index_files/figure-html/plotKM-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/plotKM-1.png" class="img-fluid figure-img" width="960"></p>
 </figure>
 </div>
 </div>
