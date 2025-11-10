@@ -1,5 +1,5 @@
 /.quarto/
 .Rproj.user
-posts/2025_11_06_tidymodels_TCGA_part1/brca.data_combined.RDS
+posts/2025_11_06_tidymodels_TCGA_part1/GDCdata/
+posts/2025_11_06_tidymodels_TCGA_part1/brca.data_full.rds
 posts/2025_11_06_tidymodels_TCGA_part1/brca_fpkm_uq_unstrand.rds
-posts/2025_11_06_tidymodels_TCGA_part1/brca_gene_filtered_SE.rds

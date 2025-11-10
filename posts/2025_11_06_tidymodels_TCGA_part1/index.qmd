@@ -1,10 +1,10 @@
 ---
 title: "Tidymodels for omics data: Part 1"
 author: Mark Dunning
-date: 2025-11-04
+date: 2025-11-10
 theme: darkly
-image: logo.png
-description: "Downloading and exploring TCGA (breast cancer) expression data from GEO so we can proceed to use machine learning. We'll also make some exploratory plots such as survival analysis"
+image: preview.png
+description: "Downloading and exploring TCGA (breast cancer) expression data from GEO so we can proceed to use machine learning later. We'll also make some exploratory plots such as survival analysis"
 ---
 
 ```{r}
@@ -23,19 +23,24 @@ knitr::opts_chunk$set(
 
 This will be the first in a series where I look at machine learning techniques applied to omics data. However, before we get ahead of ourselves we'll need some data. I decided to use breast cancer samples available through The Cancer Genome Atlas. 
 
-We need the `TCGAbiolinks` package that will do most of the work and `tidybulk` for manipulation.
+We need the `TCGAbiolinks` package that will do most of the work of downloading, and `tidybulk` for manipulation.
 
 ```{r eval=FALSE}
 if(!require(BiocManager)) install.packages("BiocManager")
 
 if(!require(TCGAbiolinks)) BiocManager::install("TCGAbiolinks")
+if(!require(SummarizedExperiment)) BiocManager::install("SummarizedExperiment")
 if(!require(tidybulk)) BiocManager::install("tidybulk")
 
 if(!require(dplyr)) install.packages("dplyr")
 if(!require(ggplot2)) install.packages("ggplot2")
+if(!require(tidyr)) install.packages("tidyr")
 
 ## needed for some example survival analysis
 if(!require(survminer)) install.packages("survminer")
+
+## required for heatmap example
+if(!require(pheatmap)) install.packages("pheatmap")
 
 
 ```
@@ -44,7 +49,9 @@ if(!require(survminer)) install.packages("survminer")
 
 First of all, we need to decide what dataset we want to download. The Cancer Genome Atlas (TCGA) studies have unique codes (e.g. breast cancer is "TCGA-BRCA") and if you don't know the code you can query it. `TCGA-BRCA` is one of the first studies returned.
 
-```{r}
+N.B. I'm only showing the first few here.
+
+```{r getTCGAProjects, cache=TRUE}
 library(TCGAbiolinks)
 # Retrieve the full list of projects
 all_gdc_projects <- getGDCprojects()
@@ -52,33 +59,41 @@ all_gdc_projects <- getGDCprojects()
 # View the result
 # The output is typically a data frame or tibble
 all_gdc_projects |>
-  dplyr::select(id, name)
+  dplyr::select(id, name) |>
+  slice_head(n = 5)
 ```
+
+To see all the data interactively within RStudio you can use the `View` function.
+
+```{r eval=FALSE}
+all_gdc_projects |>
+  dplyr::select(id, name) |> View()
+```
+
 
 What data are available for breast cancer?
 
-```{r}
+```{r getProjectSummary,cache=TRUE}
 getProjectSummary("TCGA-BRCA")
 ```
 
 
-We'll first obtain some *clinical* information for the TCGA breast cancer samples. The function we will eventually use to download counts will give us *some* information about the samples, but not everything we would want. For example, in my initial development of these materials I noticed the *Estrogen Receptor* (ER) status was missing which is a vital clinical indicator variable. For analyses that use site-specific characteristic (i.e. breast in this case), this kind of clinical information is more useful. Detailed clinical information can be downloaded with the following command:- 
+We'll first obtain some *clinical* information for the TCGA breast cancer samples. The function we will eventually use to download counts will give us *some* information about the samples, but not everything we would want. For example, in my initial development of these materials I noticed the *Estrogen Receptor* (ER) status was missing which is a vital clinical indicator variable. For analyses that use site-specific characteristis (e.g. breast in this case), this kind of clinical information is more useful. Detailed clinical information can be downloaded with the following command:- 
 
 - project "TCGA-BRCA" specifies the cancer cohort and must match one of the IDs returned by `getGDCprojects`
 - data.category "Clinical" specifies the type of data. In this case information about the patients and their disease.
 - data.type "Clinical Supplement" specifies a subset of clinical data: This often points to highly detailed or manually curated clinical record
 - data.format "BCR Biotab" files are comprehensive, non-standardized tables created by the Biospecimen Core Resource (BCR) and can be converted into a data frame for manipulation in R.
 
-```{r}
+```{r, GDCquery_Clinical, cache=TRUE}
 query <- GDCquery(project = "TCGA-BRCA",
                   data.category = "Clinical",
                   data.type = "Clinical Supplement",
                   data.format = "BCR Biotab")
-query
 ```
 The function we have used only get the download ready and doesn't actually fetch any data. To actually download the data we need `GDCdownload`.
 
-```{r}
+```{r makeClinicalQuery, cache=TRUE, echo=FALSE}
 GDCdownload(query)
 ```
 
@@ -87,7 +102,8 @@ This downloads the raw files to our computer. If we want the data in a usable fo
 
 N.B. I'm not showing the output as it's quite lengthy.
 
-```{r echo=FALSE}
+```{r which_clinical_to_use, cache=TRUE, eval=FALSE}
+library(TCGAbiolinks)
 clinical.all <- GDCprepare(query)
 lapply(clinical.all, head)
 lapply(clinical.all, colnames)
@@ -95,22 +111,33 @@ lapply(clinical.all, colnames)
 ## purrr::map(clinical.all, head)
 
 tcga_brca.clin <- clinical.all$clinical_patient_brca
+readr::write_tsv(tcga_brca.clin, "tcga_brca.clin.tsv")
 ```
 
 To get the *transcriptomic* data we are going to follow a similar approach using the `GDCquery`, `GDCdownload` and `GDCprepare` functions. This will take a *lot* longer depending on your network connection. The output of `GDCprepare` in this case is a `SummarizedExperiment` object which is a standard data type for RNA-seq. As a final step in the code I save the `SummarizedExperiment` to disk and check if this file exists before starting. This makes sure I don't repeat the lengthy download.
 
-For my transcriptomic data I am choosing the `STAR - Counts` option and requesting both tumours and normals. If repeating these steps on a different disease you may need to change these options.
+For my transcriptomic data I am choosing the `STAR - Counts` option and requesting both tumours only (TCGA also holds data for "normal"/healthy tissue). If repeating these steps on a different disease you may need to change these options.
 
-```{r message=FALSE, warning=FALSE}
+
+:::{callout-note}
+
+If you are interested in other types of data (Proteome, Methylation, Exome,...) the general procedure is the same as presented here, but the values for `workflow.type` and `data.type` will need to be different. The [TCGAbiolinks webpage](https://bioconductor.org/packages/devel/bioc/vignettes/TCGAbiolinks/inst/doc/download_prepare.html) has many examples of downloading data of different types. 
+
+:::
+
+TCGAbiolinks will make use of a temporary folder to download file to. I noticed that on my Windows laptop the names of these temporary folders were extremely long and Windows seems to have a limit on a file name. Hence in the following code it will make use of a specific temporary folder. Otherwise on Mac or Unix it will download to your working directory.
+
+```{r big_GDC_query, message=FALSE, warning=FALSE}
 
 # 1. Load necessary packages
 
 library(SummarizedExperiment)
+library(TCGAbiolinks)
 
-if(!file.exists("brca.data_combined.RDS")){
+if(!file.exists("brca.data_full.rds")){
 
-# --- Define the Query to include both Tumor and Normal samples ---
-query.brca_normal_tumor <- GDCquery(
+# --- Define the Query to include just the Tumour samples ---
+query.brca_tumor <- GDCquery(
   project = "TCGA-BRCA",
   data.category = "Transcriptome Profiling",
   data.type = "Gene Expression Quantification",
@@ -119,44 +146,51 @@ query.brca_normal_tumor <- GDCquery(
   sample.type ="Primary Tumor"
 )
 
-# --- Download the Data ---
-# Note: This will download files for both sample types.
-GDCdownload(query.brca_normal_tumor)
+## I'm on Windows and had to change the temporary directory
+
+if(.Platform$OS.type == "windows")
+  GDCdownload(query.brca_tumor,directory = "C:\\tmp")
+else GDCdownload(query.brca_tumor)
 
 # --- Prepare the Data ---
 # This converts the downloaded files into a single SummarizedExperiment object
-brca.data_combined <- GDCprepare(query = query.brca_normal_tumor)
+if(.Platform$OS.type == "windows") GDCprepare(query = query.brca_tumor,directory = "C:\\tmp")
+else brca.data_full <- GDCprepare(query = query.brca_tumor)
 
-saveRDS(brca.data_combined, "brca.data_combined.RDS")
+saveRDS(brca.data_full, "brca.data_full.rds")
 } else {
-  brca.data_combined <- readRDS("brca.data_combined.RDS")
+  brca.data_full <- readRDS("brca.data_full.rds")
 }
 ```
 
-The object, for me at least is `r file.size("brca.data_combined.RDS")/1048576`MB. We going to see how to reduce the amount of data we are working with.
+The object, for me at least is `r round(file.size("brca.data_full.rds")/1048576,2)`MB. We going to see how to reduce the amount of data we are working with.
 
 
-```{r}
-brca.data_combined
+```{r print_initial_obj}
+brca.data_full
 ```
 
 Firstly, this object contains many types of "count", and normalised versions thereof. We're only going to need one of these for our purposes, and each one we keep is going to make our data dramatically larger. 
 
-```{r}
-assayNames(brca.data_combined)
+```{r check_assay_name}
+assayNames(brca.data_full)
 ```
 
-The one we shall use is `fpkm_uq_unstrand` and we'll create a new `SummarizedExperiment` object from scratch that will hold just these data. We can also take the opportunity to join the sample information included with the `SummarizedExperiment` as standard with the data we queried.
+The `unstranded` assay column contains the integer count of reads mapped to each gene, summed across both the forward and reverse strands. This is the closest representation of the true number of RNA fragments sequenced for that gene. If our main priority was for differential expression (DE), we would choose these values. However, our plan to use `tidybulk` and `tidymodels` for a classification exercise (not formal DE analysis), so we will prefer the `fpkm_uq_unstrand` as these are better suited for regression-based machine learning models and visualisation. The data have already undergone some normalisation make values comparable across samples. The "FPKM" stands for the standard normalisation of sequencing depth (per millions reaads) and gene length, whereas UQ means "Upper-Quartile" scaling to reduce the influence of extreme outliers.
+
+We'll create a new `SummarizedExperiment` object from scratch that will hold just these data. We can also take the opportunity to join the sample information included with the `SummarizedExperiment` as standard, with the data we queried.
 
 
-```{r}
+```{r makeNewSE}
 
-fpkm_uq_assay <- assay(brca.data_combined, "fpkm_uq_unstrand")
+tcga_brca.clin <- readr::read_tsv("tcga_brca.clin.tsv", show_col_types = FALSE)
+
+fpkm_uq_assay <- assay(brca.data_full, "fpkm_uq_unstrand")
 
 # 2. Get the rowData (gene information) and colData (sample information)
 # These components are used directly from the original object
-gene_info <- rowData(brca.data_combined)
-sample_info <- colData(brca.data_combined) |>
+gene_info <- rowData(brca.data_full)
+sample_info <- colData(brca.data_full) |>
   data.frame() |>
   dplyr::left_join(tcga_brca.clin, by = c("patient"="bcr_patient_barcode"))
  
@@ -172,24 +206,24 @@ saveRDS(brca_fpkm_uq_unstrand, "brca_fpkm_uq_unstrand.rds")
 rm(fpkm_uq_assay)
 ```
 
-Since we don't need the object we orignally created we can delete it from memory in R.
+Since we don't need the object we originally created we can delete it from memory in R.
 
 ```{r}
-rm(brca.data_combined)
+rm(brca.data_full)
 ```
 
 
 ## Reducing the amount of data
 
-We are **not** going to be running any machine learning methods on the data we have now. More than anything else, it would take far too long to run and require huge amounts of compute resource. The data consists of `r nrow(brca_fpkm_uq_unstrand)` "genes" and `r ncol(brca_fpkm_uq_unstrand)` samples. Considering the genes first of all, not all of them are going to be informative and will only contribute noise to our data making any machine learning more complicated. In [a previous post](https://mdbioinformatics.com/posts/2025_10_30_tidybulk/) I introduced the `tidybulk` package for dealing with RNA-seq in a manner consistent with the `tidyverse` framework in R.
+We are **not** going to be running any machine learning methods or visualisation on the data we have now. More than anything else, it would take far too long to run and require huge amounts of compute resource. The data consists of `r nrow(brca_fpkm_uq_unstrand)` "genes" and `r ncol(brca_fpkm_uq_unstrand)` samples. Considering the genes first of all, not all of them are going to be informative and will only contribute noise to our data making any machine learning more complicated. In [a previous post](https://mdbioinformatics.com/posts/2025_10_30_tidybulk/) I introduced the `tidybulk` package for dealing with RNA-seq in a manner consistent with the `tidyverse` framework in R.
 
-```{r}
+```{r loadtidybulk}
 library(tidybulk)
 ```
 
 The package I will be eventually using (SPOILER ALERT:`tidymodels`) has some pre-processing steps for removing uninformative features that are usually recommended. However, I am going to revert to some domain knowledge and use some functionality from `tidybulk` which are specifically developed for RNA-seq. First of all, we can remove genes that are lowly-expressed using the `keep_abundant` function. I played around with the settings for `keep_abundant` here as the defaults were a bit too aggressive. On inspecting the names of the genes retained (see commented code below) I found that `PTEN` and `ESR1` were no longer in my data using the default, and from my knowledge of breast cancer I figure these are important.
 
-```{r}
+```{r getabundant}
 ##NB using the base pipe |> here as we haven't loaded tidyverse yet
 
 brca_fpkm_uq_unstrand_expressed <- brca_fpkm_uq_unstrand |>
@@ -201,9 +235,9 @@ rm(brca_fpkm_uq_unstrand)
 # rowData(brca_fpkm_uq_unstrand_expressed) |> data.frame() |> View()
 ```
 
-The reduction in the number of genes is quite dramatic - but this is a good thing for our purposes as it will make things run quicker. The next step is to remove genes that do not have enough *variability* in the data. Variability is important as genes whose expression level stays the same across samples are not going to be very informative for distinguishing different subtypes. However, in the following code I will keep the names of the variable genes, but not actually do the filtering yet. Conveniently, `tidybulk` allows the usage of the pipe (`|>` or `%>%`) so we don't have to create any new variables. Explictly creating a `tidybulk` object means we can use `dplyr` operations such as `pull`ing the `gene_name` name.
+The reduction in the number of genes is quite dramatic - but this is a good thing for our purposes as it will make things run quicker. The next step is to remove genes that do not have enough *variability* in the data. Variability is important as genes whose expression level stays the same across samples are not going to be very informative for distinguishing different subtypes. However, in the following code I will keep the names of the variable genes, but not actually do the filtering yet. Conveniently, `tidybulk` allows the usage of the pipe (`|>` or `%>%`) so we don't have to create any new variables. Explicitly creating a `tidybulk` object means we can use `dplyr` operations such as `pull`ing the `gene_name` name.
 
-```{r}
+```{r getvargenes}
 var_genes <- brca_fpkm_uq_unstrand_expressed |>
   keep_variable(top = 2000) |>
   tidybulk() |>
@@ -216,12 +250,14 @@ var_genes[1:10]
 
 I'd like my data to be somewhat informed by biology, so will also use a set of Cancer genes. I got the set of genes following from [OncoKB](https://www.oncokb.org/cancer-genes)
 
-```{r}
+```{r getcancergenes}
 cancer_genes <- read.delim("cancerGeneList.tsv")
 cancer_genes |> head(n=10)
 ```
 
-```{r}
+Now we have a set of gene names that we want to keep in the analysis
+
+```{r final_filter}
 cancer_gene_names <- cancer_genes$Hugo.Symbol
 
 
@@ -240,19 +276,14 @@ saveRDS(brca_gene_filtered, "brca_gene_filtered_SE.rds")
 
 Before embarking on any machine learning (which we will tackle next time), it is worth spending some time getting familiar with your data. Armed with some domain knowledge we can run a few basic checks. If you haven't worked with RNA-seq data in R before, it might be worth taking a look over these examples.
 
-```{r eval=FALSE}
-brca_gene_filtered <- readRDS("brca_gene_filtered_SE.rds")
-```
-
-
 When working on breast cancer, and coming from a purely computational background, I quickly learnt about the importance of **Estrogen Receptor (ER) status** and the gene that encodes the Estrogen Receptor protein **ESR1**. The status of a breast cancer patient is a well-established biomarker and can indicate whether the patient's cancer is likely to respond to hormone-blocking therapies. In other words, patients that can been categorised as ER positive should have higher expression of ESR1. In this dataset ER status looks to have been investigated by Immunohistochemistry (IHC) and recorded in the `er_status_by_ihc`. This is one of the variables present in the BCR clinical data.
 
 To get the data for just `ESR1` It's actually more efficient in this case to filter the gene from the `SummarizedExperiment` object before calling `tidybulk`. I'm not sure if this is the intended workflow, but our data are so large that calling  `tidybulk` on the entire dataset takes too much RAM in my case.
 
-```{r}
+```{r esr1_allcats}
 library(ggplot2)
 library(dplyr)
-library(ggpubr)
+
 
 brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ESR1"] |>
   tidybulk() |>
@@ -261,25 +292,27 @@ brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ESR1"] |>
 
 Phew! So `ESR1` expression is indeed higher in ER positive samples. The plot also highlights some discrepancy in the recording of the ER status which should be cleaned prior to analysis. For the sake of the plot we can filter out the offending entries.
 
-```{r}
+```{r esr1}
 brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ESR1"] |>
   tidybulk() |>
   filter(er_status_by_ihc %in% c("Positive", "Negative")) %>% 
-  ggplot(aes(x = er_status_by_ihc, y = fpkm_uq)) + geom_boxplot() + geom_jitter(width = 0.1) + stat_compare_means() + xlab("ER Status")
+  ggplot(aes(x = er_status_by_ihc, y = fpkm_uq)) + geom_boxplot() + geom_jitter(width = 0.1) + xlab("ER Status")
 ```
 
 In a similar vein, the gene **ERBB2** should be higher in patients that are positive for **Her2** staining by IHC.
 
 
-```{r}
+```{r erbb2}
 brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ERBB2"] |>
   tidybulk() |> 
   filter(her2_status_by_ihc %in% c("Positive", "Negative")) %>% 
   ggplot(aes(x = her2_status_by_ihc, y = fpkm_uq)) + geom_boxplot() + geom_jitter() + scale_y_log10()
 ```
+
+
 Breast cancer was traditionally classified into five *intrinsic* subtypes, and microarray studies sought to identify genes that define these subtypes. On such 50 gene panel was derived using a prediction analysis of microarray (PAM) and hence called **PAM50**. The samples in the TCGA dataset have been classified using this method, and we can check the expression level of **ESR1** and **ERBB2** respectively.
 
-```{r}
+```{r esr1_erbb2_plots}
 brca_gene_filtered[rowData(brca_gene_filtered)$gene_name %in% c("ESR1","ERBB2")] |>
   tidybulk() |>
   filter(!is.na(paper_BRCA_Subtype_PAM50)) %>% 
@@ -293,12 +326,12 @@ brca_gene_filtered[rowData(brca_gene_filtered)$gene_name %in% c("ESR1","ERBB2")]
 
 Again, this all makes perfect sense as *Luminal A* and *Luminal B* are *ER-positive* groups, *Basal* and *Her2* are *ER-negative* and *ERBB2* should be highly expressed in the *Her2* subtype.
 
-So, are the Pam50 subtypes are major source of variation in our data? The `tidybulk` package allows us to run dimensionality reduction techniques such as PCA to look at this issue. The `reduce_dimensions` function computes the Principal Components and these can be added to our data ready for visualisation.
+So, are the Pam50 subtypes are major source of variation in our data? The `tidybulk` package allows us to run dimensionality reduction techniques such as PCA to look at this issue. The `reduce_dimensions` function computes the Principal Components and these can be added to our data ready for visualisation. Normally `tidybulk` would require a `scale_abundance` step here to correct for differences in sequencing depth between samples, but since we are using values that are already normalised to some extent this is not needed on this ocassion. 
 
-```{r}
+```{r pca_dryrun}
 brca_gene_filtered |>
-  scale_abundance() |>
   reduce_dimensions(method = "PCA") |>
+  ## not needed here: scale_abundance() |>
   pivot_sample() %>% 
   select(.sample, PC1, PC2)
 ```
@@ -306,10 +339,9 @@ brca_gene_filtered |>
 
 It is now straightforward to plot, and also colour according to the PAM50 subtype of each sample. 
 
-```{r}
+```{r PAM50PCA}
 
 brca_gene_filtered |>
-  scale_abundance() |>
   reduce_dimensions(method = "PCA") |>
   pivot_sample() |>
   filter(!is.na(paper_BRCA_Subtype_PAM50)) %>% 
@@ -318,86 +350,93 @@ brca_gene_filtered |>
   scale_color_manual(values = c("red", "pink", "darkblue", "lightblue", "yellow"))
 ```
 
-This looks pretty good, with the main separation being between *basal* and *Luminal A/B*. Furthermore, we can get from the literature the names of the genes used in the PAM50 classifier. I got these from the [`genefu`](https://bioconductor.org/packages/release/bioc/html/genefu.html) Bioconductor package and saved as a small text file. Armed with these genes we can subset the data according and create a suitable matrix to plot in a *heatmap*. The format of the data for the heatmap needs to be *wide* with one row for each gene and a column for each sample. Only numeric values are allowed, so we must put the sample names as rownames and supply and information about the samples that we want to include (e.g. the ER status and PAM50 subtype) as a separate data frame.
+### A heatmap of genes from the literature
 
-I noticed that a few genes had extreme values when scaled, so **for the purposes of visualistion** I truncate the values shown on the plot to a range between -10 and 10. That is, and values 10 or over get shown in the same colour (and the same for values less than -10).
+The PCA looks pretty good, with the main separation being between *basal* and *Luminal A/B*. Furthermore, we can get from the literature the names of the genes used in the PAM50 classifier. I got these from the [`genefu`](https://bioconductor.org/packages/release/bioc/html/genefu.html) Bioconductor package and saved as a small text file. My previous go-to package for heatmaps was `pheatmap`, but whilst writing this up I came across `tidyHeatmap`
 
+- [tidyHeatmap](https://github.com/stemangiola/tidyHeatmap)
 
-```{r, fig.width=12}
+This package works quite well with our workflow of using a "tidy" framework. It requires data in a `tbl_df` or `tibble` format, which we can create from `tidybulk` once we are done with pre-processing the data. Although the data we are working with are normalised, we must apply a log$_2$ transformation for the purposes of visualisation. I've also applied some basic data cleaning 
+
+```{r makePAM50Heatmap, fig.width=12}
 
 pam50_genes <- read.table("PAM50_genes.txt")[,1]
-pam50_data <- brca_gene_filtered[rowData(brca_gene_filtered)$gene_name %in% pam50_genes,] %>% 
+
+library(tidyHeatmap)
+
+ brca_gene_filtered[rowData(brca_gene_filtered)$gene_name %in% pam50_genes,] %>% 
   ## once filtered, make a "tidy" version
   tidybulk() %>% 
-  ## use tidybulk to correct for library size
-  scale_abundance() %>% 
+  mutate(logcount = log2(fpkm_uq + 1)) %>% 
   ## get the counts, samples and genes
-  dplyr::select(gene_name, .sample, fpkm_uq) %>% 
-  ## make a "wide" matrix for the heatmap
-  tidyr::pivot_wider(everything(), names_from = .sample, values_from = fpkm_uq) %>% 
-  tibble::column_to_rownames("gene_name") 
-
-samp_anno <- colData(brca_gene_filtered) %>% 
-  data.frame() %>% 
-  ## Get just the ER status and PAM50
-  dplyr::select(ER=er_status_by_ihc, PAM50=paper_BRCA_Subtype_PAM50) %>% 
-  ## Make all other entries for ER status NA if not Positive or Negative
-  mutate(ER = ifelse(ER %in% c("Positive", "Negative"), ER, NA))
-
-
-library(pheatmap)
-
-# Create a smooth gradient from dark blue (low) to white (zero) to dark red (high)
-my_colors <- colorRampPalette(c("navy", "white", "firebrick"))(100)
-# Define the break points to map the 100 colors smoothly
-# Using your requested range of -10 to +10
-my_breaks <- seq(-10, 10, length.out = 101)
-
-pheatmap(pam50_data, scale="row", 
-         labels_col = "", 
-         annotation_col = samp_anno, 
-         annotation_colors = list("PAM50" = c("Basal" = "red", "Her2" = "pink", "LumA" = "darkblue", "LumB" = "lightblue", "Normal" = "yellow"),
-                                  "ER" = c("Negative" = "orange", "Positive" = "Purple")),
-         color = my_colors,
-         breaks = my_breaks)
+  rename(ER = er_status_by_ihc, PAM50 =paper_BRCA_Subtype_PAM50) %>%
+  as_tibble() %>% 
+  mutate(ER = ifelse(ER %in% c("Positive", "Negative"), ER, NA)) %>% 
+  filter(!is.na(ER), !is.na(PAM50)) %>% 
+  tidyHeatmap::heatmap(
+        .column = .sample,
+        .row = gene_name,
+        .value = logcount,   
+        scale = "row",
+        palette_value = circlize::colorRamp2(
+            seq(-5, 5, length.out = 11), 
+            RColorBrewer::brewer.pal(11, "RdBu")
+        )
+    ) %>% 
+   annotation_tile(ER ,palette = c("orange","purple")) %>% 
+  annotation_tile(PAM50,palette = c("darkblue", "pink", "lightblue", "yellow", "red"))
+ 
 ```
+
 
 Showing the data in this manner also us to see which genes look to be over- or under-expressed in certain subtypes. Eventually, we will progress to doing our own classification so it will be useful to compare to this information.
 
-Finally, a pertinent question to ask is whether the subtypes are *clinically-meaningful*. If we know what subtype a patient has, what can this tell us about their survival chances?
+### Survival Analysis
 
-```{r}
+Finally, a pertinent question to ask is whether the subtypes are *clinically-meaningful*. If we know what subtype a patient has, what can this tell us about their survival prospects? A *kaplan-meier* (KM) curve is a standard way to estimate and visualize the survival probability over a specified period, and can be created by the `survival` package and visualised using the package`survminer`. The curve starts at 100% (or probability 1.0) at time zero and steps down each time a patient dies. A tick mark on the curve indicates a patient who was lost to follow-up or was still alive when the data was collected (censored). These patients contribute to the probability calculation up until the time they were last observed.
+
+The clinical data we have needs modifying slightly to run the analysis. In particular we need to create "Status" and "Time" columns which records if a patient is alive (0) or dead (1) at the end of the study, and the time to either death or total follow-up time. We will also remove any patients where the Time or status is missing or inaccurate. The dataset also includes some metastatic or recurrent tumours, but for the purposes of the curve we will use only "primary" samples.
+
+
+```{r prepareKM}
 library(survminer)
 library(survival)
 clin_data_corrected <- colData(brca_gene_filtered) |>
   data.frame() |>
-  # 1. Filter: Ensure only Primary Tumors are included (shortLetterCode = "01" is safer than "TP")
-  # "TP" (Tumor, Primary) is the definition of "01" (Primary Tumor)
-  dplyr::filter(shortLetterCode %in% c("01", "TP")) |>
   dplyr::filter(classification_of_tumor == "primary") |>
   # 2. Define Time (Coalesce death date and follow-up date)
   dplyr::mutate(
     # Use days_to_death if available; otherwise, use days_to_last_follow_up
     Time = as.numeric(dplyr::coalesce(days_to_death, days_to_last_follow_up)),
-    
     # 3. Define Status (REVERSED AND CORRECTED)
     # Event=1 (Dead), Censored=0 (Alive)
     Status = ifelse(vital_status.x == "Dead", 1, 0)
   ) |>
-  
   # 4. Final Clean-up: Remove rows with NA in Time, Status, or Subtype
   dplyr::filter(!is.na(Time), Time > 0, Status %in% c(0, 1), paper_BRCA_Subtype_PAM50 != "NA") |>
   dplyr::mutate(PAM50 = paper_BRCA_Subtype_PAM50)
+
+```
+
+
+Running the analysis and plotting can then be achieved using the `survfit` and `ggsurvplot` packages respectively. The p-value requested is the p-value for there being *any* difference in survival between different groups and is calculated using a log-rank test. 
+
+```{r plotKM}
 # --- Run Survival Analysis ---
-fit_corrected <- survfit(Surv(Time, Status) ~ PAM50, data = clin_data_corrected)
+fit <- survfit(Surv(Time, Status) ~ PAM50, data = clin_data_corrected)
 
 # --- Plot ---
 ggsurvplot(
-  fit_corrected, 
+  fit, 
   data = clin_data_corrected, 
   pval = TRUE,
   # Add risk table and confidence intervals for a better plot
-  risk.table = TRUE
+  risk.table = TRUE,
+  palette = c("red", "pink", "darkblue", "lightblue", "yellow")
 )
 ```
 
+
+# Next time
+
+Make sure the gene filtered object `brca_gene_filtered` is saved for next time and we will start some machine learning tasks.
