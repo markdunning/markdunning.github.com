@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Mark Dunning">
-<meta name="dcterms.date" content="2025-11-07">
+<meta name="dcterms.date" content="2025-11-10">
 <meta name="description" content="Downloading and exploring TCGA (breast cancer) expression data from GEO so we can proceed to use machine learning later. We’ll also make some exploratory plots such as survival analysis">
 
 <title>Tidymodels for omics data: Part 1 – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
@@ -115,6 +115,35 @@ gtag('js', new Date());
 gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
 </script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../../styles.css">
 </head>
@@ -207,7 +236,7 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 7, 2025</p>
+      <p class="date">November 10, 2025</p>
     </div>
   </div>
   
@@ -222,7 +251,7 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
 <section id="pre-amble" class="level2">
 <h2 class="anchored" data-anchor-id="pre-amble">Pre-amble</h2>
 <p>This will be the first in a series where I look at machine learning techniques applied to omics data. However, before we get ahead of ourselves we’ll need some data. I decided to use breast cancer samples available through The Cancer Genome Atlas.</p>
-<p>We need the <code>TCGAbiolinks</code> package that will do most of the work and <code>tidybulk</code> for manipulation.</p>
+<p>We need the <code>TCGAbiolinks</code> package that will do most of the work of downloading, and <code>tidybulk</code> for manipulation.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(BiocManager)) <span class="fu">install.packages</span>(<span class="st">"BiocManager"</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -244,6 +273,7 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
 <section id="downloading-the-data" class="level2">
 <h2 class="anchored" data-anchor-id="downloading-the-data">Downloading the data</h2>
 <p>First of all, we need to decide what dataset we want to download. The Cancer Genome Atlas (TCGA) studies have unique codes (e.g.&nbsp;breast cancer is “TCGA-BRCA”) and if you don’t know the code you can query it. <code>TCGA-BRCA</code> is one of the first studies returned.</p>
+<p>N.B. I’m only showing the first few here.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(TCGAbiolinks)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Retrieve the full list of projects</span></span>
@@ -252,191 +282,25 @@ gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># View the result</span></span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># The output is typically a data frame or tibble</span></span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>all_gdc_projects <span class="sc">|&gt;</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(id, name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(id, name) <span class="sc">|&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="at">n =</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>                          id
-1                CTSP-DLBCL1
-2                  TCGA-BRCA
-3                  TCGA-LUAD
-4                    CPTAC-3
-5                APOLLO-LUAD
-6                    MATCH-B
-7                    CMI-ASC
-8                   MATCH-C1
-9      BEATAML1.0-CRENOLANIB
-10              CDDP_EAGLE-1
-11                   CMI-MPC
-12                  MATCH-S1
-13                   MATCH-W
-14                 MATCH-Z1D
-15                 MATCH-Z1A
-16                   MATCH-Y
-17                   MATCH-U
-18                 MATCH-Z1B
-19                  MATCH-S2
-20                     FM-AD
-21            VAREPOP-APOLLO
-22                   MATCH-I
-23                   MATCH-P
-24                   MATCH-R
-25                   MATCH-N
-26                   MATCH-Q
-27                   MATCH-H
-28                   CMI-MBC
-29                 MATCH-Z1I
-30         BEATAML1.0-COHORT
-31                  OHSU-CNL
-32       ORGANOID-PANCREATIC
-33              NCICCR-DLBCL
-34                   CPTAC-2
-35                  TRIO-CRU
-36             MMRF-COMMPASS
-37                WCDT-MCRPC
-38                 MP2PRT-WT
-39                MP2PRT-ALL
-40                 REBC-THYR
-41                 APOLLO-OV
-42                  CCDI-MCI
-43                 TCGA-DLBC
-44                 TCGA-COAD
-45                 TCGA-CESC
-46                 TCGA-CHOL
-47                 TCGA-ESCA
-48                 TCGA-LIHC
-49                 TCGA-MESO
-50                 TCGA-KIRP
-51                 TCGA-LAML
-52                 TCGA-PCPG
-53                 TCGA-HNSC
-54          CGCI-HTMCP-DLBCL
-55                 TCGA-READ
-56                 TCGA-PAAD
-57                  TCGA-UCS
-58                 TCGA-KIRC
-59                  TCGA-GBM
-60                 TCGA-KICH
-61 EXCEPTIONAL_RESPONDERS-ER
-62             CGCI-HTMCP-LC
-63                 TARGET-OS
-64             TARGET-ALL-P3
-65                CGCI-BLGSP
-66                 TCGA-THYM
-67                  TCGA-UVM
-68                 TARGET-RT
-69               TARGET-CCSK
-70                TARGET-NBL
-71                 TCGA-SKCM
-72                 TCGA-THCA
-73                 TCGA-STAD
-74             TARGET-ALL-P2
-75                  TCGA-ACC
-76             TARGET-ALL-P1
-77                 TARGET-WT
-78                  TCGA-LGG
-79                 HCMI-CMDC
-80                 TCGA-SARC
-81             CGCI-HTMCP-CC
-82                   TCGA-OV
-83                 TCGA-BLCA
-84                 TCGA-UCEC
-85                 TCGA-PRAD
-86                TARGET-AML
-87                 TCGA-TGCT
-88                 TCGA-LUSC
-                                                                                                  name
-1                                               CTSP Diffuse Large B-Cell Lymphoma (DLBCL) CALGB 50303
-2                                                                            Breast Invasive Carcinoma
-3                                                                                  Lung Adenocarcinoma
-4                                           CPTAC-Brain, Head and Neck, Kidney, Lung, Pancreas, Uterus
-5                                       APOLLO1: Proteogenomic characterization of lung adenocarcinoma
-6                                                         Genomic Characterization CS-MATCH-0007 Arm B
-7                                                    Count Me In (CMI): The Angiosarcoma (ASC) Project
-8                                                        Genomic Characterization CS-MATCH-0007 Arm C1
-9      Clinical Resistance to Crenolanib in Acute Myeloid Leukemia Due to Diverse Molecular Mechanisms
-10                                          CDDP Integrative Analysis of Lung Adenocarcinoma (Phase 2)
-11                                     Count Me In (CMI): The Metastatic Prostate Cancer (MPC) Project
-12                                                       Genomic Characterization CS-MATCH-0007 Arm S1
-13                                                        Genomic Characterization CS-MATCH-0007 Arm W
-14                                                      Genomic Characterization CS-MATCH-0007 Arm Z1D
-15                                                      Genomic Characterization CS-MATCH-0007 Arm Z1A
-16                                                        Genomic Characterization CS-MATCH-0007 Arm Y
-17                                                        Genomic Characterization CS-MATCH-0007 Arm U
-18                                                      Genomic Characterization CS-MATCH-0007 Arm Z1B
-19                                                       Genomic Characterization CS-MATCH-0007 Arm S2
-20                                           Foundation Medicine Adult Cancer Clinical Dataset (FM-AD)
-21                                                              VA Research Precision Oncology Program
-22                                                        Genomic Characterization CS-MATCH-0007 Arm I
-23                                                        Genomic Characterization CS-MATCH-0007 Arm P
-24                                                        Genomic Characterization CS-MATCH-0007 Arm R
-25                                                        Genomic Characterization CS-MATCH-0007 Arm N
-26                                                        Genomic Characterization CS-MATCH-0007 Arm Q
-27                                                        Genomic Characterization CS-MATCH-0007 Arm H
-28                                       Count Me In (CMI): The Metastatic Breast Cancer (MBC) Project
-29                                                      Genomic Characterization CS-MATCH-0007 Arm Z1I
-30                                              Functional Genomic Landscape of Acute Myeloid Leukemia
-31                                    Philadelphia-Negative Neutrophilic Leukemias (CNL/aCML/MDS/MPNu)
-32                                                                  Pancreas Cancer Organoid Profiling
-33                                                 Genomic Variation in Diffuse Large B Cell Lymphomas
-34                                                                          CPTAC-Breast, Colon, Ovary
-35                                Ukrainian National Research Center for Radiation Medicine Trio Study
-36                                                                     Multiple Myeloma CoMMpass Study
-37                         Genomic Characterization of Metastatic Castration Resistant Prostate Cancer
-38                                  Molecular Profiling to Predict Response to Treatment - Wilms Tumor
-39               Molecular Profiling to Predict Response to Treatment for Acute Lymphoblastic Leukemia
-40 Comprehensive genomic characterization of radiation-related papillary thyroid cancer in the Ukraine
-41                        APOLLO2: Proteogenomic characterization of ovarian serous cystadenocarcinoma
-42                                                         Molecular Characterization Initiative (MCI)
-43                                                     Lymphoid Neoplasm Diffuse Large B-cell Lymphoma
-44                                                                                Colon Adenocarcinoma
-45                                    Cervical Squamous Cell Carcinoma and Endocervical Adenocarcinoma
-46                                                                                  Cholangiocarcinoma
-47                                                                                Esophageal Carcinoma
-48                                                                      Liver Hepatocellular Carcinoma
-49                                                                                        Mesothelioma
-50                                                               Kidney Renal Papillary Cell Carcinoma
-51                                                                              Acute Myeloid Leukemia
-52                                                                  Pheochromocytoma and Paraganglioma
-53                                                               Head and Neck Squamous Cell Carcinoma
-54                       HIV+ Tumor Molecular Characterization Project - Diffuse Large B-Cell Lymphoma
-55                                                                               Rectum Adenocarcinoma
-56                                                                           Pancreatic Adenocarcinoma
-57                                                                              Uterine Carcinosarcoma
-58                                                                   Kidney Renal Clear Cell Carcinoma
-59                                                                             Glioblastoma Multiforme
-60                                                                                  Kidney Chromophobe
-61                                                                              Exceptional Responders
-62                                         HIV+ Tumor Molecular Characterization Project - Lung Cancer
-63                                                                                        Osteosarcoma
-64                                                            Acute Lymphoblastic Leukemia - Phase III
-65                                                          Burkitt Lymphoma Genome Sequencing Project
-66                                                                                             Thymoma
-67                                                                                      Uveal Melanoma
-68                                                                                      Rhabdoid Tumor
-69                                                                    Clear Cell Sarcoma of the Kidney
-70                                                                                       Neuroblastoma
-71                                                                             Skin Cutaneous Melanoma
-72                                                                                   Thyroid Carcinoma
-73                                                                              Stomach Adenocarcinoma
-74                                                             Acute Lymphoblastic Leukemia - Phase II
-75                                                                            Adrenocortical Carcinoma
-76                                                              Acute Lymphoblastic Leukemia - Phase I
-77                                                                               High-Risk Wilms Tumor
-78                                                                            Brain Lower Grade Glioma
-79                                  NCI Cancer Model Development for the Human Cancer Model Initiative
-80                                                                                             Sarcoma
-81                                     HIV+ Tumor Molecular Characterization Project - Cervical Cancer
-82                                                                   Ovarian Serous Cystadenocarcinoma
-83                                                                        Bladder Urothelial Carcinoma
-84                                                                Uterine Corpus Endometrial Carcinoma
-85                                                                             Prostate Adenocarcinoma
-86                                                                              Acute Myeloid Leukemia
-87                                                                         Testicular Germ Cell Tumors
-88                                                                        Lung Squamous Cell Carcinoma</code></pre>
+<pre><code>           id                                                           name
+1 CTSP-DLBCL1         CTSP Diffuse Large B-Cell Lymphoma (DLBCL) CALGB 50303
+2   TCGA-BRCA                                      Breast Invasive Carcinoma
+3   TCGA-LUAD                                            Lung Adenocarcinoma
+4     CPTAC-3     CPTAC-Brain, Head and Neck, Kidney, Lung, Pancreas, Uterus
+5 APOLLO-LUAD APOLLO1: Proteogenomic characterization of lung adenocarcinoma</code></pre>
 </div>
+</div>
+<p>To see all the data interactively within RStudio you can use the <code>View</code> function.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>all_gdc_projects <span class="sc">|&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(id, name) <span class="sc">|&gt;</span> <span class="fu">View</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>What data are available for breast cancer?</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">getProjectSummary</span>(<span class="st">"TCGA-BRCA"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">getProjectSummary</span>(<span class="st">"TCGA-BRCA"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>$file_count
 [1] 70776
@@ -461,7 +325,7 @@ $file_size
 [1] 6.249966e+14</code></pre>
 </div>
 </div>
-<p>We’ll first obtain some <em>clinical</em> information for the TCGA breast cancer samples. The function we will eventually use to download counts will give us <em>some</em> information about the samples, but not everything we would want. For example, in my initial development of these materials I noticed the <em>Estrogen Receptor</em> (ER) status was missing which is a vital clinical indicator variable. For analyses that use site-specific characteristic (i.e.&nbsp;breast in this case), this kind of clinical information is more useful. Detailed clinical information can be downloaded with the following command:-</p>
+<p>We’ll first obtain some <em>clinical</em> information for the TCGA breast cancer samples. The function we will eventually use to download counts will give us <em>some</em> information about the samples, but not everything we would want. For example, in my initial development of these materials I noticed the <em>Estrogen Receptor</em> (ER) status was missing which is a vital clinical indicator variable. For analyses that use site-specific characteristis (e.g.&nbsp;breast in this case), this kind of clinical information is more useful. Detailed clinical information can be downloaded with the following command:-</p>
 <ul>
 <li>project “TCGA-BRCA” specifies the cancer cohort and must match one of the IDs returned by <code>getGDCprojects</code></li>
 <li>data.category “Clinical” specifies the type of data. In this case information about the patients and their disease.</li>
@@ -469,582 +333,68 @@ $file_size
 <li>data.format “BCR Biotab” files are comprehensive, non-standardized tables created by the Biospecimen Core Resource (BCR) and can be converted into a data frame for manipulation in R.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>query <span class="ot">&lt;-</span> <span class="fu">GDCquery</span>(<span class="at">project =</span> <span class="st">"TCGA-BRCA"</span>,</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data.category =</span> <span class="st">"Clinical"</span>,</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data.type =</span> <span class="st">"Clinical Supplement"</span>,</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data.format =</span> <span class="st">"BCR Biotab"</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>query</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       results   project data.category           data.type access
-1 c("f434b.... TCGA-BRCA      Clinical Clinical Supplement     NA
-  experimental.strategy platform sample.type barcode workflow.type
-1                    NA       NA          NA      NA            NA</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>query <span class="ot">&lt;-</span> <span class="fu">GDCquery</span>(<span class="at">project =</span> <span class="st">"TCGA-BRCA"</span>,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data.category =</span> <span class="st">"Clinical"</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data.type =</span> <span class="st">"Clinical Supplement"</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data.format =</span> <span class="st">"BCR Biotab"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The function we have used only get the download ready and doesn’t actually fetch any data. To actually download the data we need <code>GDCdownload</code>.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">GDCdownload</span>(query)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
 <p>This downloads the raw files to our computer. If we want the data in a usable form in R we have to use a final function <code>GDCprepare</code>. In this case it gives a <code>list</code> of data frame. Functions such as <code>head</code> and <code>colnames</code> could be used to inspect the contents of each (I’m using the base <code>lapply</code> as I don’t want to get into <code>purrr</code>in this particular tutorial). I’m looking for something about ER status and it looks like the best bet is <code>clinical_patient_brca</code>. We will save this as a data frame for use later.</p>
 <p>N.B. I’m not showing the output as it’s quite lengthy.</p>
 <div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>
-  |                                                                            
-  |                                                                      |   0%
-  |                                                                            
-  |========                                                              |  11%
-  |                                                                            
-  |================                                                      |  22%
-  |                                                                            
-  |=======================                                               |  33%
-  |                                                                            
-  |===============================                                       |  44%
-  |                                                                            
-  |=======================================                               |  56%
-  |                                                                            
-  |===============================================                       |  67%
-  |                                                                            
-  |======================================================                |  78%
-  |                                                                            
-  |==============================================================        |  89%
-  |                                                                            
-  |======================================================================| 100%</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$clinical_omf_v4.0_brca
-# A tibble: 6 × 30
-  bcr_patient_uuid              bcr_patient_barcode bcr_omf_barcode bcr_omf_uuid
-  &lt;chr&gt;                         &lt;chr&gt;               &lt;chr&gt;           &lt;chr&gt;       
-1 bcr_patient_uuid              bcr_patient_barcode bcr_omf_barcode bcr_omf_uuid
-2 CDE_ID:                       CDE_ID:2003301      CDE_ID:         CDE_ID:     
-3 86C6F993-327F-4525-9983-29C5… TCGA-5L-AAT0        TCGA-5L-AAT0-O… 9B562C8B-E5…
-4 16FC3677-0393-4ED1-AD3F-C835… TCGA-5L-AAT1        TCGA-5L-AAT1-O… A1B8ADE9-AA…
-5 a9bb8159-32f0-454c-a946-b328… TCGA-A1-A0SP        TCGA-A1-A0SP-O… 6B701B59-F7…
-6 64f67506-f2df-4f0a-b7be-29b4… TCGA-A2-A04V        TCGA-A2-A04V-O… E16FCCBC-06…
-# ℹ 26 more variables: form_completion_date &lt;chr&gt;, malignancy_type &lt;chr&gt;,
-#   other_malignancy_dx_days_to &lt;chr&gt;, surgery_indicator &lt;chr&gt;,
-#   other_malignancy_surgery_type &lt;chr&gt;,
-#   other_malignancy_surgery_days_to &lt;chr&gt;,
-#   pharmaceutical_therapy_indicator &lt;chr&gt;,
-#   pharmaceutical_therapy_extent &lt;chr&gt;,
-#   pharmaceutical_therapy_drug_name &lt;chr&gt;, …
-
-$clinical_follow_up_v4.0_nte_brca
-# A tibble: 6 × 35
-  bcr_patient_uuid bcr_patient_barcode bcr_followup_barcode new_tumor_event_type
-  &lt;chr&gt;            &lt;chr&gt;               &lt;chr&gt;                &lt;chr&gt;               
-1 bcr_patient_uuid bcr_patient_barcode bcr_followup_barcode new_neoplasm_event_…
-2 CDE_ID:          CDE_ID:2003301      CDE_ID:              CDE_ID:3119721      
-3 6E7D5EC6-A469-4… TCGA-3C-AAAU        TCGA-3C-AAAU-F68069  Distant Metastasis  
-4 ccd4a24b-d8cc-4… TCGA-A2-A04P        TCGA-A2-A04P-F71021  Locoregional Recurr…
-5 ccd4a24b-d8cc-4… TCGA-A2-A04P        TCGA-A2-A04P-F71021  Distant Metastasis  
-6 ccd4a24b-d8cc-4… TCGA-A2-A04P        TCGA-A2-A04P-F71021  Distant Metastasis  
-# ℹ 31 more variables: new_tumor_event_site &lt;chr&gt;,
-#   new_tumor_event_site_other &lt;chr&gt;, new_tumor_event_dx_days_to &lt;chr&gt;,
-#   new_tumor_event_surgery &lt;chr&gt;, new_tumor_event_surgery_days_to &lt;chr&gt;,
-#   new_tumor_event_radiation_tx &lt;chr&gt;,
-#   new_tumor_event_pharmaceutical_tx &lt;chr&gt;, nte_er_status &lt;chr&gt;,
-#   nte_er_status_ihc__positive &lt;chr&gt;, nte_er_positivity_scale_used &lt;chr&gt;,
-#   nte_er_ihc_intensity_score &lt;chr&gt;, nte_er_positivity_other_scale &lt;chr&gt;, …
-
-$clinical_follow_up_v2.1_brca
-# A tibble: 6 × 45
-  bcr_patient_uuid    bcr_patient_barcode bcr_followup_barcode bcr_followup_uuid
-  &lt;chr&gt;               &lt;chr&gt;               &lt;chr&gt;                &lt;chr&gt;            
-1 bcr_patient_uuid    bcr_patient_barcode bcr_followup_barcode bcr_followup_uuid
-2 CDE_ID:             CDE_ID:2003301      CDE_ID:              CDE_ID:          
-3 a5b44d66-c162-46b5… TCGA-A1-A0SK        TCGA-A1-A0SK-F15926  5F98C53B-5EE8-44…
-4 5c8983f2-9788-4dfa… TCGA-A2-A0CL        TCGA-A2-A0CL-F14457  CE691542-B93E-49…
-5 fe15c48b-116d-461e… TCGA-A2-A0CP        TCGA-A2-A0CP-F13741  7BF10142-06B6-4D…
-6 ab34a9a2-d72d-4106… TCGA-A2-A0CQ        TCGA-A2-A0CQ-F13723  3276C085-4370-48…
-# ℹ 41 more variables: form_completion_date &lt;chr&gt;,
-#   radiation_treatment_adjuvant &lt;chr&gt;, pharmaceutical_tx_adjuvant &lt;chr&gt;,
-#   tumor_status &lt;chr&gt;, vital_status &lt;chr&gt;, last_contact_days_to &lt;chr&gt;,
-#   death_days_to &lt;chr&gt;, new_tumor_event_dx_indicator &lt;chr&gt;,
-#   new_tumor_event_type &lt;chr&gt;, new_tumor_event_site &lt;chr&gt;,
-#   new_tumor_event_site_other &lt;chr&gt;, new_tumor_event_dx_days_to &lt;chr&gt;,
-#   new_tumor_event_radiation_tx &lt;chr&gt;, …
-
-$clinical_follow_up_v4.0_brca
-# A tibble: 6 × 13
-  bcr_patient_uuid    bcr_patient_barcode bcr_followup_barcode bcr_followup_uuid
-  &lt;chr&gt;               &lt;chr&gt;               &lt;chr&gt;                &lt;chr&gt;            
-1 bcr_patient_uuid    bcr_patient_barcode bcr_followup_barcode bcr_followup_uuid
-2 CDE_ID:             CDE_ID:2003301      CDE_ID:              CDE_ID:          
-3 6E7D5EC6-A469-467C… TCGA-3C-AAAU        TCGA-3C-AAAU-F68069  238F65F8-617D-45…
-4 6E7D5EC6-A469-467C… TCGA-3C-AAAU        TCGA-3C-AAAU-F71341  D7B0BC51-D86F-45…
-5 55262FCB-1B01-4480… TCGA-3C-AALI        TCGA-3C-AALI-F68057  4A52CBB9-665B-42…
-6 427D0648-3F77-4FFC… TCGA-3C-AALJ        TCGA-3C-AALJ-F68060  DF650B2E-12C2-46…
-# ℹ 9 more variables: form_completion_date &lt;chr&gt;, followup_lost_to &lt;chr&gt;,
-#   radiation_treatment_adjuvant &lt;chr&gt;, pharmaceutical_tx_adjuvant &lt;chr&gt;,
-#   tumor_status &lt;chr&gt;, vital_status &lt;chr&gt;, last_contact_days_to &lt;chr&gt;,
-#   death_days_to &lt;chr&gt;, new_tumor_event_dx_indicator &lt;chr&gt;
-
-$clinical_follow_up_v1.5_brca
-# A tibble: 6 × 63
-  bcr_patient_uuid    bcr_patient_barcode bcr_followup_barcode bcr_followup_uuid
-  &lt;chr&gt;               &lt;chr&gt;               &lt;chr&gt;                &lt;chr&gt;            
-1 bcr_patient_uuid    bcr_patient_barcode bcr_followup_barcode bcr_followup_uuid
-2 CDE_ID:             CDE_ID:2003301      CDE_ID:              CDE_ID:          
-3 197428f7-bd77-4c5f… TCGA-A2-A04N        TCGA-A2-A04N-F9336   B8DC7DC2-B3A7-4D…
-4 ccd4a24b-d8cc-4686… TCGA-A2-A04P        TCGA-A2-A04P-F2652   0D1BD57A-F783-43…
-5 ccd4a24b-d8cc-4686… TCGA-A2-A04P        TCGA-A2-A04P-F10241  1966A070-7389-43…
-6 b5fba77b-1f50-4e71… TCGA-A2-A04Q        TCGA-A2-A04Q-F9329   B7EAC97B-63C1-4D…
-# ℹ 59 more variables: form_completion_date &lt;chr&gt;,
-#   radiation_treatment_adjuvant &lt;chr&gt;, pharmaceutical_tx_adjuvant &lt;chr&gt;,
-#   tumor_status &lt;chr&gt;, vital_status &lt;chr&gt;, last_contact_days_to &lt;chr&gt;,
-#   death_days_to &lt;chr&gt;, new_tumor_event_dx_days_to &lt;chr&gt;,
-#   new_tumor_event_radiation_tx &lt;chr&gt;,
-#   new_tumor_event_pharmaceutical_tx &lt;chr&gt;, nte_er_status &lt;chr&gt;,
-#   nte_er_status_ihc__positive &lt;chr&gt;, nte_er_ihc_intensity_score &lt;chr&gt;, …
-
-$clinical_patient_brca
-# A tibble: 6 × 112
-  bcr_patient_uuid                     bcr_patient_barcode form_completion_date
-  &lt;chr&gt;                                &lt;chr&gt;               &lt;chr&gt;               
-1 bcr_patient_uuid                     bcr_patient_barcode form_completion_date
-2 CDE_ID:                              CDE_ID:2003301      CDE_ID:             
-3 6E7D5EC6-A469-467C-B748-237353C23416 TCGA-3C-AAAU        2014-1-13           
-4 55262FCB-1B01-4480-B322-36570430C917 TCGA-3C-AALI        2014-7-28           
-5 427D0648-3F77-4FFC-B52C-89855426D647 TCGA-3C-AALJ        2014-7-28           
-6 C31900A4-5DCD-4022-97AC-638E86E889E4 TCGA-3C-AALK        2014-7-28           
-# ℹ 109 more variables: prospective_collection &lt;chr&gt;,
-#   retrospective_collection &lt;chr&gt;, birth_days_to &lt;chr&gt;, gender &lt;chr&gt;,
-#   menopause_status &lt;chr&gt;, race &lt;chr&gt;, ethnicity &lt;chr&gt;,
-#   history_other_malignancy &lt;chr&gt;, history_neoadjuvant_treatment &lt;chr&gt;,
-#   tumor_status &lt;chr&gt;, vital_status &lt;chr&gt;, last_contact_days_to &lt;chr&gt;,
-#   death_days_to &lt;chr&gt;, radiation_treatment_adjuvant &lt;chr&gt;,
-#   pharmaceutical_tx_adjuvant &lt;chr&gt;, histologic_diagnosis_other &lt;chr&gt;, …
-
-$clinical_radiation_brca
-# A tibble: 6 × 18
-  bcr_patient_uuid  bcr_patient_barcode bcr_radiation_barcode bcr_radiation_uuid
-  &lt;chr&gt;             &lt;chr&gt;               &lt;chr&gt;                 &lt;chr&gt;             
-1 bcr_patient_uuid  bcr_patient_barcode bcr_radiation_barcode bcr_radiation_uuid
-2 CDE_ID:           CDE_ID:2003301      CDE_ID:               CDE_ID:           
-3 55262FCB-1B01-44… TCGA-3C-AALI        TCGA-3C-AALI-R62901   2FE462E5-9AEE-417…
-4 86C6F993-327F-45… TCGA-5L-AAT0        TCGA-5L-AAT0-R63722   F11A131E-E0C5-4BC…
-5 2FD36838-5A83-43… TCGA-5T-A9QA        TCGA-5T-A9QA-R66894   C8E7F188-6E0A-469…
-6 0dc337fa-da8b-42… TCGA-A1-A0SN        TCGA-A1-A0SN-R12068   C407753A-0959-403…
-# ℹ 14 more variables: form_completion_date &lt;chr&gt;,
-#   radiation_therapy_type &lt;chr&gt;, radiation_therapy_site &lt;chr&gt;,
-#   radiation_total_dose &lt;chr&gt;, radiation_adjuvant_units &lt;chr&gt;,
-#   radiation_adjuvant_fractions_total &lt;chr&gt;,
-#   radiation_therapy_started_days_to &lt;chr&gt;,
-#   radiation_therapy_ongoing_indicator &lt;chr&gt;,
-#   radiation_therapy_ended_days_to &lt;chr&gt;, treatment_best_response &lt;chr&gt;, …
-
-$clinical_drug_brca
-# A tibble: 6 × 28
-  bcr_patient_uuid            bcr_patient_barcode bcr_drug_barcode bcr_drug_uuid
-  &lt;chr&gt;                       &lt;chr&gt;               &lt;chr&gt;            &lt;chr&gt;        
-1 bcr_patient_uuid            bcr_patient_barcode bcr_drug_barcode bcr_drug_uuid
-2 CDE_ID:                     CDE_ID:2003301      CDE_ID:          CDE_ID:      
-3 6E7D5EC6-A469-467C-B748-23… TCGA-3C-AAAU        TCGA-3C-AAAU-D6… B8C5D175-54E…
-4 55262FCB-1B01-4480-B322-36… TCGA-3C-AALI        TCGA-3C-AALI-D6… C09E3F7D-0FC…
-5 427D0648-3F77-4FFC-B52C-89… TCGA-3C-AALJ        TCGA-3C-AALJ-D6… D9762142-667…
-6 427D0648-3F77-4FFC-B52C-89… TCGA-3C-AALJ        TCGA-3C-AALJ-D6… EA7483F7-D53…
-# ℹ 24 more variables: form_completion_date &lt;chr&gt;,
-#   pharmaceutical_therapy_drug_name &lt;chr&gt;,
-#   clinical_trial_drug_classification &lt;chr&gt;,
-#   pharmaceutical_therapy_type &lt;chr&gt;, pharmaceutical_tx_started_days_to &lt;chr&gt;,
-#   pharmaceutical_tx_ongoing_indicator &lt;chr&gt;,
-#   pharmaceutical_tx_ended_days_to &lt;chr&gt;, treatment_best_response &lt;chr&gt;,
-#   days_to_stem_cell_transplantation &lt;chr&gt;, pharm_regimen &lt;chr&gt;, …
-
-$clinical_nte_brca
-# A tibble: 6 × 34
-  bcr_patient_uuid bcr_patient_barcode new_tumor_event_type new_tumor_event_site
-  &lt;chr&gt;            &lt;chr&gt;               &lt;chr&gt;                &lt;chr&gt;               
-1 bcr_patient_uuid bcr_patient_barcode new_neoplasm_event_… new_neoplasm_event_…
-2 CDE_ID:          CDE_ID:2003301      CDE_ID:3119721       CDE_ID:3108271      
-3 ccd4a24b-d8cc-4… TCGA-A2-A04P        [Not Available]      [Not Available]     
-4 64f67506-f2df-4… TCGA-A2-A04V        [Not Available]      [Not Available]     
-5 eb2dbb4f-66b6-4… TCGA-A2-A0CM        [Not Available]      [Not Available]     
-6 d071c16b-7cee-4… TCGA-A2-A0CS        [Not Available]      [Not Available]     
-# ℹ 30 more variables: new_tumor_event_site_other &lt;chr&gt;,
-#   new_tumor_event_dx_days_to &lt;chr&gt;, new_tumor_event_surgery &lt;chr&gt;,
-#   new_tumor_event_surgery_days_to &lt;chr&gt;, new_tumor_event_radiation_tx &lt;chr&gt;,
-#   new_tumor_event_pharmaceutical_tx &lt;chr&gt;, nte_er_status &lt;chr&gt;,
-#   nte_er_status_ihc__positive &lt;chr&gt;, nte_er_positivity_scale_used &lt;chr&gt;,
-#   nte_er_ihc_intensity_score &lt;chr&gt;, nte_er_positivity_other_scale &lt;chr&gt;,
-#   nte_er_positivity_define_method &lt;chr&gt;, nte_pr_status_by_ihc &lt;chr&gt;, …</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$clinical_omf_v4.0_brca
- [1] "bcr_patient_uuid"                       
- [2] "bcr_patient_barcode"                    
- [3] "bcr_omf_barcode"                        
- [4] "bcr_omf_uuid"                           
- [5] "form_completion_date"                   
- [6] "malignancy_type"                        
- [7] "other_malignancy_dx_days_to"            
- [8] "surgery_indicator"                      
- [9] "other_malignancy_surgery_type"          
-[10] "other_malignancy_surgery_days_to"       
-[11] "pharmaceutical_therapy_indicator"       
-[12] "pharmaceutical_therapy_extent"          
-[13] "pharmaceutical_therapy_drug_name"       
-[14] "pharmaceutical_tx_started_days_to"      
-[15] "radiation_therapy_indicator"            
-[16] "radiation_therapy_extent"               
-[17] "history_rt_tx_to_site_of_tcga_tumor"    
-[18] "radiation_therapy_started_days_to"      
-[19] "ajcc_staging_edition"                   
-[20] "ajcc_tumor_pathologic_pt"               
-[21] "ajcc_nodes_pathologic_pn"               
-[22] "ajcc_metastasis_pathologic_pm"          
-[23] "ajcc_pathologic_tumor_stage"            
-[24] "clinical_stage"                         
-[25] "other_malignancy_anatomic_site"         
-[26] "other_malignancy_anatomic_site_text"    
-[27] "other_malignancy_histological_type"     
-[28] "other_malignancy_histological_type_text"
-[29] "other_malignancy_laterality"            
-[30] "stage_other"                            
-
-$clinical_follow_up_v4.0_nte_brca
- [1] "bcr_patient_uuid"                  "bcr_patient_barcode"              
- [3] "bcr_followup_barcode"              "new_tumor_event_type"             
- [5] "new_tumor_event_site"              "new_tumor_event_site_other"       
- [7] "new_tumor_event_dx_days_to"        "new_tumor_event_surgery"          
- [9] "new_tumor_event_surgery_days_to"   "new_tumor_event_radiation_tx"     
-[11] "new_tumor_event_pharmaceutical_tx" "nte_er_status"                    
-[13] "nte_er_status_ihc__positive"       "nte_er_positivity_scale_used"     
-[15] "nte_er_ihc_intensity_score"        "nte_er_positivity_other_scale"    
-[17] "nte_er_positivity_define_method"   "nte_pr_status_by_ihc"             
-[19] "nte_pr_status_ihc__positive"       "nte_pr_positivity_scale_used"     
-[21] "nte_pr_ihc_intensity_score"        "nte_pr_positivity_other_scale"    
-[23] "nte_pr_positivity_define_method"   "nte_her2_status"                  
-[25] "nte_her2_status_ihc__positive"     "nte_her2_positivity_ihc_score"    
-[27] "nte_her2_positivity_other_scale"   "nte_her2_positivity_method"       
-[29] "nte_her2_fish_status"              "nte_her2_signal_number"           
-[31] "nte_cent_17_signal_number"         "her2_cent17_counted_cells_count"  
-[33] "nte_cent_17_her2_ratio"            "nte_cent17_her2_other_scale"      
-[35] "nte_her2_fish_define_method"      
-
-$clinical_follow_up_v2.1_brca
- [1] "bcr_patient_uuid"                               
- [2] "bcr_patient_barcode"                            
- [3] "bcr_followup_barcode"                           
- [4] "bcr_followup_uuid"                              
- [5] "form_completion_date"                           
- [6] "radiation_treatment_adjuvant"                   
- [7] "pharmaceutical_tx_adjuvant"                     
- [8] "tumor_status"                                   
- [9] "vital_status"                                   
-[10] "last_contact_days_to"                           
-[11] "death_days_to"                                  
-[12] "new_tumor_event_dx_indicator"                   
-[13] "new_tumor_event_type"                           
-[14] "new_tumor_event_site"                           
-[15] "new_tumor_event_site_other"                     
-[16] "new_tumor_event_dx_days_to"                     
-[17] "new_tumor_event_radiation_tx"                   
-[18] "new_tumor_event_pharmaceutical_tx"              
-[19] "nte_er_status"                                  
-[20] "nte_er_status_ihc__positive"                    
-[21] "nte_er_positivity_scale_used"                   
-[22] "nte_er_ihc_intensity_score"                     
-[23] "nte_er_positivity_other_scale"                  
-[24] "nte_er_positivity_define_method"                
-[25] "nte_pr_status_by_ihc"                           
-[26] "nte_pr_status_ihc__positive"                    
-[27] "nte_pr_positivity_scale_used"                   
-[28] "nte_pr_ihc_intensity_score"                     
-[29] "nte_pr_positivity_other_scale"                  
-[30] "nte_pr_positivity_define_method"                
-[31] "nte_her2_status"                                
-[32] "nte_her2_status_ihc__positive"                  
-[33] "nte_her2_positivity_ihc_score"                  
-[34] "nte_her2_positivity_other_scale"                
-[35] "nte_her2_positivity_method"                     
-[36] "nte_her2_fish_status"                           
-[37] "nte_her2_signal_number"                         
-[38] "nte_cent_17_signal_number"                      
-[39] "her2_cent17_counted_cells_count"                
-[40] "nte_cent_17_her2_ratio"                         
-[41] "nte_cent17_her2_other_scale"                    
-[42] "nte_her2_fish_define_method"                    
-[43] "days_to_additional_surgery_metastatic_procedure"
-[44] "followup_reason"                                
-[45] "new_tumor_event_surgery"                        
-
-$clinical_follow_up_v4.0_brca
- [1] "bcr_patient_uuid"             "bcr_patient_barcode"         
- [3] "bcr_followup_barcode"         "bcr_followup_uuid"           
- [5] "form_completion_date"         "followup_lost_to"            
- [7] "radiation_treatment_adjuvant" "pharmaceutical_tx_adjuvant"  
- [9] "tumor_status"                 "vital_status"                
-[11] "last_contact_days_to"         "death_days_to"               
-[13] "new_tumor_event_dx_indicator"
-
-$clinical_follow_up_v1.5_brca
- [1] "bcr_patient_uuid"                                 
- [2] "bcr_patient_barcode"                              
- [3] "bcr_followup_barcode"                             
- [4] "bcr_followup_uuid"                                
- [5] "form_completion_date"                             
- [6] "radiation_treatment_adjuvant"                     
- [7] "pharmaceutical_tx_adjuvant"                       
- [8] "tumor_status"                                     
- [9] "vital_status"                                     
-[10] "last_contact_days_to"                             
-[11] "death_days_to"                                    
-[12] "new_tumor_event_dx_days_to"                       
-[13] "new_tumor_event_radiation_tx"                     
-[14] "new_tumor_event_pharmaceutical_tx"                
-[15] "nte_er_status"                                    
-[16] "nte_er_status_ihc__positive"                      
-[17] "nte_er_ihc_intensity_score"                       
-[18] "nte_er_positivity_other_scale"                    
-[19] "nte_er_positivity_define_method"                  
-[20] "nte_pr_status_by_ihc"                             
-[21] "nte_pr_status_ihc__positive"                      
-[22] "nte_pr_ihc_intensity_score"                       
-[23] "nte_pr_positivity_other_scale"                    
-[24] "nte_pr_positivity_define_method"                  
-[25] "nte_her2_status"                                  
-[26] "nte_her2_status_ihc__positive"                    
-[27] "nte_her2_positivity_ihc_score"                    
-[28] "nte_her2_positivity_other_scale"                  
-[29] "nte_her2_positivity_method"                       
-[30] "nte_her2_fish_status"                             
-[31] "nte_her2_signal_number"                           
-[32] "nte_cent_17_signal_number"                        
-[33] "her2_cent17_counted_cells_count"                  
-[34] "nte_cent_17_her2_ratio"                           
-[35] "nte_cent17_her2_other_scale"                      
-[36] "nte_her2_fish_define_method"                      
-[37] "cent17_copy_number"                               
-[38] "days_to_additional_surgery_locoregional_procedure"
-[39] "days_to_additional_surgery_metastatic_procedure"  
-[40] "days_to_last_known_alive"                         
-[41] "er_ihc_score"                                     
-[42] "er_positivity_method"                             
-[43] "er_positivity_scale_other"                        
-[44] "er_status_by_ihc"                                 
-[45] "er_status_ihc_Percent_Positive"                   
-[46] "her2_and_cent17_cells_count"                      
-[47] "her2_and_cent17_scale_other"                      
-[48] "her2_cent17_ratio"                                
-[49] "her2_copy_number"                                 
-[50] "her2_fish_method"                                 
-[51] "her2_fish_status"                                 
-[52] "her2_ihc_percent_positive"                        
-[53] "her2_ihc_score"                                   
-[54] "her2_positivity_method_text"                      
-[55] "her2_positivity_scale_other"                      
-[56] "her2_status_by_ihc"                               
-[57] "new_tumor_event_surgery"                          
-[58] "new_tumor_event_surgery_met"                      
-[59] "pr_positivity_define_method"                      
-[60] "pr_positivity_ihc_intensity_score"                
-[61] "pr_positivity_scale_other"                        
-[62] "pr_status_by_ihc"                                 
-[63] "pr_status_ihc_percent_positive"                   
-
-$clinical_patient_brca
-  [1] "bcr_patient_uuid"                    
-  [2] "bcr_patient_barcode"                 
-  [3] "form_completion_date"                
-  [4] "prospective_collection"              
-  [5] "retrospective_collection"            
-  [6] "birth_days_to"                       
-  [7] "gender"                              
-  [8] "menopause_status"                    
-  [9] "race"                                
- [10] "ethnicity"                           
- [11] "history_other_malignancy"            
- [12] "history_neoadjuvant_treatment"       
- [13] "tumor_status"                        
- [14] "vital_status"                        
- [15] "last_contact_days_to"                
- [16] "death_days_to"                       
- [17] "radiation_treatment_adjuvant"        
- [18] "pharmaceutical_tx_adjuvant"          
- [19] "histologic_diagnosis_other"          
- [20] "initial_pathologic_dx_year"          
- [21] "age_at_diagnosis"                    
- [22] "method_initial_path_dx"              
- [23] "method_initial_path_dx_other"        
- [24] "surgical_procedure_first"            
- [25] "first_surgical_procedure_other"      
- [26] "margin_status"                       
- [27] "surgery_for_positive_margins"        
- [28] "surgery_for_positive_margins_other"  
- [29] "margin_status_reexcision"            
- [30] "axillary_staging_method"             
- [31] "axillary_staging_method_other"       
- [32] "micromet_detection_by_ihc"           
- [33] "lymph_nodes_examined"                
- [34] "lymph_nodes_examined_count"          
- [35] "lymph_nodes_examined_he_count"       
- [36] "lymph_nodes_examined_ihc_count"      
- [37] "ajcc_staging_edition"                
- [38] "ajcc_tumor_pathologic_pt"            
- [39] "ajcc_nodes_pathologic_pn"            
- [40] "ajcc_metastasis_pathologic_pm"       
- [41] "ajcc_pathologic_tumor_stage"         
- [42] "metastasis_site"                     
- [43] "metastasis_site_other"               
- [44] "er_status_by_ihc"                    
- [45] "er_status_ihc_Percent_Positive"      
- [46] "er_positivity_scale_used"            
- [47] "er_ihc_score"                        
- [48] "er_positivity_scale_other"           
- [49] "er_positivity_method"                
- [50] "pr_status_by_ihc"                    
- [51] "pr_status_ihc_percent_positive"      
- [52] "pr_positivity_scale_used"            
- [53] "pr_positivity_ihc_intensity_score"   
- [54] "pr_positivity_scale_other"           
- [55] "pr_positivity_define_method"         
- [56] "her2_status_by_ihc"                  
- [57] "her2_ihc_percent_positive"           
- [58] "her2_ihc_score"                      
- [59] "her2_positivity_scale_other"         
- [60] "her2_positivity_method_text"         
- [61] "her2_fish_status"                    
- [62] "her2_copy_number"                    
- [63] "cent17_copy_number"                  
- [64] "her2_and_cent17_cells_count"         
- [65] "her2_cent17_ratio"                   
- [66] "her2_and_cent17_scale_other"         
- [67] "her2_fish_method"                    
- [68] "new_tumor_event_dx_indicator"        
- [69] "nte_er_status"                       
- [70] "nte_er_status_ihc__positive"         
- [71] "nte_er_ihc_intensity_score"          
- [72] "nte_er_positivity_other_scale"       
- [73] "nte_er_positivity_define_method"     
- [74] "nte_pr_status_by_ihc"                
- [75] "nte_pr_status_ihc__positive"         
- [76] "nte_pr_ihc_intensity_score"          
- [77] "nte_pr_positivity_other_scale"       
- [78] "nte_pr_positivity_define_method"     
- [79] "nte_her2_status"                     
- [80] "nte_her2_status_ihc__positive"       
- [81] "nte_her2_positivity_ihc_score"       
- [82] "nte_her2_positivity_other_scale"     
- [83] "nte_her2_positivity_method"          
- [84] "nte_her2_fish_status"                
- [85] "nte_her2_signal_number"              
- [86] "nte_cent_17_signal_number"           
- [87] "her2_cent17_counted_cells_count"     
- [88] "nte_cent_17_her2_ratio"              
- [89] "nte_cent17_her2_other_scale"         
- [90] "nte_her2_fish_define_method"         
- [91] "anatomic_neoplasm_subdivision"       
- [92] "clinical_M"                          
- [93] "clinical_N"                          
- [94] "clinical_T"                          
- [95] "clinical_stage"                      
- [96] "days_to_initial_pathologic_diagnosis"
- [97] "days_to_patient_progression_free"    
- [98] "days_to_tumor_progression"           
- [99] "disease_code"                        
-[100] "extranodal_involvement"              
-[101] "histological_type"                   
-[102] "icd_10"                              
-[103] "icd_o_3_histology"                   
-[104] "icd_o_3_site"                        
-[105] "informed_consent_verified"           
-[106] "metastatic_tumor_indicator"          
-[107] "patient_id"                          
-[108] "project_code"                        
-[109] "site_of_primary_tumor_other"         
-[110] "stage_other"                         
-[111] "tissue_source_site"                  
-[112] "tumor_tissue_site"                   
-
-$clinical_radiation_brca
- [1] "bcr_patient_uuid"                    "bcr_patient_barcode"                
- [3] "bcr_radiation_barcode"               "bcr_radiation_uuid"                 
- [5] "form_completion_date"                "radiation_therapy_type"             
- [7] "radiation_therapy_site"              "radiation_total_dose"               
- [9] "radiation_adjuvant_units"            "radiation_adjuvant_fractions_total" 
-[11] "radiation_therapy_started_days_to"   "radiation_therapy_ongoing_indicator"
-[13] "radiation_therapy_ended_days_to"     "treatment_best_response"            
-[15] "course_number"                       "radiation_type_other"               
-[17] "therapy_regimen"                     "therapy_regimen_other"              
-
-$clinical_drug_brca
- [1] "bcr_patient_uuid"                    "bcr_patient_barcode"                
- [3] "bcr_drug_barcode"                    "bcr_drug_uuid"                      
- [5] "form_completion_date"                "pharmaceutical_therapy_drug_name"   
- [7] "clinical_trial_drug_classification"  "pharmaceutical_therapy_type"        
- [9] "pharmaceutical_tx_started_days_to"   "pharmaceutical_tx_ongoing_indicator"
-[11] "pharmaceutical_tx_ended_days_to"     "treatment_best_response"            
-[13] "days_to_stem_cell_transplantation"   "pharm_regimen"                      
-[15] "pharm_regimen_other"                 "pharma_adjuvant_cycles_count"       
-[17] "pharma_type_other"                   "pharmaceutical_tx_dose_units"       
-[19] "pharmaceutical_tx_total_dose_units"  "prescribed_dose"                    
-[21] "regimen_number"                      "route_of_administration"            
-[23] "stem_cell_transplantation"           "stem_cell_transplantation_type"     
-[25] "therapy_regimen"                     "therapy_regimen_other"              
-[27] "total_dose"                          "tx_on_clinical_trial"               
-
-$clinical_nte_brca
- [1] "bcr_patient_uuid"                  "bcr_patient_barcode"              
- [3] "new_tumor_event_type"              "new_tumor_event_site"             
- [5] "new_tumor_event_site_other"        "new_tumor_event_dx_days_to"       
- [7] "new_tumor_event_surgery"           "new_tumor_event_surgery_days_to"  
- [9] "new_tumor_event_radiation_tx"      "new_tumor_event_pharmaceutical_tx"
-[11] "nte_er_status"                     "nte_er_status_ihc__positive"      
-[13] "nte_er_positivity_scale_used"      "nte_er_ihc_intensity_score"       
-[15] "nte_er_positivity_other_scale"     "nte_er_positivity_define_method"  
-[17] "nte_pr_status_by_ihc"              "nte_pr_status_ihc__positive"      
-[19] "nte_pr_positivity_scale_used"      "nte_pr_ihc_intensity_score"       
-[21] "nte_pr_positivity_other_scale"     "nte_pr_positivity_define_method"  
-[23] "nte_her2_status"                   "nte_her2_status_ihc__positive"    
-[25] "nte_her2_positivity_ihc_score"     "nte_her2_positivity_other_scale"  
-[27] "nte_her2_positivity_method"        "nte_her2_fish_status"             
-[29] "nte_her2_signal_number"            "nte_cent_17_signal_number"        
-[31] "her2_cent17_counted_cells_count"   "nte_cent_17_her2_ratio"           
-[33] "nte_cent17_her2_other_scale"       "nte_her2_fish_define_method"      </code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(TCGAbiolinks)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>clinical.all <span class="ot">&lt;-</span> <span class="fu">GDCprepare</span>(query)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(clinical.all, head)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(clinical.all, colnames)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="do">## tidyverse equivlent</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="do">## purrr::map(clinical.all, head)</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>tcga_brca.clin <span class="ot">&lt;-</span> clinical.all<span class="sc">$</span>clinical_patient_brca</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>readr<span class="sc">::</span><span class="fu">write_tsv</span>(tcga_brca.clin, <span class="st">"tcga_brca.clin.tsv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>To get the <em>transcriptomic</em> data we are going to follow a similar approach using the <code>GDCquery</code>, <code>GDCdownload</code> and <code>GDCprepare</code> functions. This will take a <em>lot</em> longer depending on your network connection. The output of <code>GDCprepare</code> in this case is a <code>SummarizedExperiment</code> object which is a standard data type for RNA-seq. As a final step in the code I save the <code>SummarizedExperiment</code> to disk and check if this file exists before starting. This makes sure I don’t repeat the lengthy download.</p>
 <p>For my transcriptomic data I am choosing the <code>STAR - Counts</code> option and requesting both tumours only (TCGA also holds data for “normal”/healthy tissue). If repeating these steps on a different disease you may need to change these options.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Load necessary packages</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SummarizedExperiment)</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(TCGAbiolinks)</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"brca.data_full.rds"</span>)){</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Define the Query to include just the Tumour samples ---</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>query.brca_tumor <span class="ot">&lt;-</span> <span class="fu">GDCquery</span>(</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">project =</span> <span class="st">"TCGA-BRCA"</span>,</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">data.category =</span> <span class="st">"Transcriptome Profiling"</span>,</span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">data.type =</span> <span class="st">"Gene Expression Quantification"</span>,</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">workflow.type =</span> <span class="st">"STAR - Counts"</span>,</span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Request "Primary Tumor only</span></span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">sample.type =</span><span class="st">"Primary Tumor"</span></span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="do">## I'm on Windows and had to change the temporary directory</span></span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(.Platform<span class="sc">$</span>OS.type <span class="sc">==</span> <span class="st">"windows"</span>)</span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">GDCdownload</span>(query.brca_tumor,<span class="at">directory =</span> <span class="st">"C:</span><span class="sc">\\</span><span class="st">tmp"</span>)</span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span> <span class="fu">GDCdownload</span>(query.brca_tumor)</span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Prepare the Data ---</span></span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="co"># This converts the downloaded files into a single SummarizedExperiment object</span></span>
-<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(.Platform<span class="sc">$</span>OS.type <span class="sc">==</span> <span class="st">"windows"</span>) <span class="fu">GDCprepare</span>(<span class="at">query =</span> query.brca_tumor,<span class="at">directory =</span> <span class="st">"C:</span><span class="sc">\\</span><span class="st">tmp"</span>)</span>
-<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span> brca.data_full <span class="ot">&lt;-</span> <span class="fu">GDCprepare</span>(<span class="at">query =</span> query.brca_tumor)</span>
-<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(brca.data_full, <span class="st">"brca.data_full.rds"</span>)</span>
-<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
-<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>  brca.data_full <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"brca.data_full.rds"</span>)</span>
-<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="{callout-note}">
+<p>If you are interested in other types of data (Proteome, Methylation, Exome,…) the general procedure is the same as presented here, but the values for <code>workflow.type</code> and <code>data.type</code> will need to be different. The <a href="https://bioconductor.org/packages/devel/bioc/vignettes/TCGAbiolinks/inst/doc/download_prepare.html">TCGAbiolinks webpage</a> has many examples of downloading data of different types.</p>
 </div>
-<p>The object, for me at least is 653.4438181MB. We going to see how to reduce the amount of data we are working with.</p>
+<p>TCGAbiolinks will make use of a temporary folder to download file to. I noticed that on my Windows laptop the names of these temporary folders were extremely long and Windows seems to have a limit on a file name. Hence in the following code it will make use of a specific temporary folder. Otherwise on Mac or Unix it will download to your working directory.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>brca.data_full</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Load necessary packages</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SummarizedExperiment)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(TCGAbiolinks)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"brca.data_full.rds"</span>)){</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Define the Query to include just the Tumour samples ---</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>query.brca_tumor <span class="ot">&lt;-</span> <span class="fu">GDCquery</span>(</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">project =</span> <span class="st">"TCGA-BRCA"</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">data.category =</span> <span class="st">"Transcriptome Profiling"</span>,</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">data.type =</span> <span class="st">"Gene Expression Quantification"</span>,</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">workflow.type =</span> <span class="st">"STAR - Counts"</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Request "Primary Tumor only</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">sample.type =</span><span class="st">"Primary Tumor"</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="do">## I'm on Windows and had to change the temporary directory</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(.Platform<span class="sc">$</span>OS.type <span class="sc">==</span> <span class="st">"windows"</span>)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">GDCdownload</span>(query.brca_tumor,<span class="at">directory =</span> <span class="st">"C:</span><span class="sc">\\</span><span class="st">tmp"</span>)</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span> <span class="fu">GDCdownload</span>(query.brca_tumor)</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Prepare the Data ---</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a><span class="co"># This converts the downloaded files into a single SummarizedExperiment object</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(.Platform<span class="sc">$</span>OS.type <span class="sc">==</span> <span class="st">"windows"</span>) <span class="fu">GDCprepare</span>(<span class="at">query =</span> query.brca_tumor,<span class="at">directory =</span> <span class="st">"C:</span><span class="sc">\\</span><span class="st">tmp"</span>)</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span> brca.data_full <span class="ot">&lt;-</span> <span class="fu">GDCprepare</span>(<span class="at">query =</span> query.brca_tumor)</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(brca.data_full, <span class="st">"brca.data_full.rds"</span>)</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>  brca.data_full <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"brca.data_full.rds"</span>)</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The object, for me at least is 653.44MB. We going to see how to reduce the amount of data we are working with.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>brca.data_full</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>class: RangedSummarizedExperiment 
 dim: 60660 1111 
@@ -1062,34 +412,34 @@ colData names(94): barcode patient ... paper_PARADIGM Clusters
 </div>
 <p>Firstly, this object contains many types of “count”, and normalised versions thereof. We’re only going to need one of these for our purposes, and each one we keep is going to make our data dramatically larger.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">assayNames</span>(brca.data_full)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">assayNames</span>(brca.data_full)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "unstranded"       "stranded_first"   "stranded_second"  "tpm_unstrand"    
 [5] "fpkm_unstrand"    "fpkm_uq_unstrand"</code></pre>
 </div>
 </div>
-<p>The <code>unstranded</code> assay column contains the integer count of reads mapped to each gene, summed across both the forward and reverse strands. This is the closest representation of the true number of RNA fragments sequenced for that gene. If our main priority was for differential expression (DE), we would choose these values. However, our plan to use <code>tidybulk</code> and <code>tidymodels</code> for a classification exercise (not formal DE analysis), so we will prefer the <code>fpkm_uq_unstrand</code> as these are better suited for regression-based machine learning models and visualisation.</p>
+<p>The <code>unstranded</code> assay column contains the integer count of reads mapped to each gene, summed across both the forward and reverse strands. This is the closest representation of the true number of RNA fragments sequenced for that gene. If our main priority was for differential expression (DE), we would choose these values. However, our plan to use <code>tidybulk</code> and <code>tidymodels</code> for a classification exercise (not formal DE analysis), so we will prefer the <code>fpkm_uq_unstrand</code> as these are better suited for regression-based machine learning models and visualisation. The data have already undergone some normalisation make values comparable across samples. The “FPKM” stands for the standard normalisation of sequencing depth (per millions reaads) and gene length, whereas UQ means “Upper-Quartile” scaling to reduce the influence of extreme outliers.</p>
 <p>We’ll create a new <code>SummarizedExperiment</code> object from scratch that will hold just these data. We can also take the opportunity to join the sample information included with the <code>SummarizedExperiment</code> as standard, with the data we queried.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>tcga_brca.clin <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"tcga_brca.clin.csv"</span>)</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>fpkm_uq_assay <span class="ot">&lt;-</span> <span class="fu">assay</span>(brca.data_full, <span class="st">"fpkm_uq_unstrand"</span>)</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Get the rowData (gene information) and colData (sample information)</span></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co"># These components are used directly from the original object</span></span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>gene_info <span class="ot">&lt;-</span> <span class="fu">rowData</span>(brca.data_full)</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>sample_info <span class="ot">&lt;-</span> <span class="fu">colData</span>(brca.data_full) <span class="sc">|&gt;</span></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">|&gt;</span></span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(tcga_brca.clin, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"patient"</span><span class="ot">=</span><span class="st">"bcr_patient_barcode"</span>))</span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Create a new SummarizedExperiment object</span></span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>brca_fpkm_uq_unstrand <span class="ot">&lt;-</span> <span class="fu">SummarizedExperiment</span>(</span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">assays =</span> <span class="fu">SimpleList</span>(<span class="at">fpkm_uq =</span> fpkm_uq_assay),</span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">rowData =</span> gene_info,</span>
-<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">colData =</span> sample_info</span>
-<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>brca_fpkm_uq_unstrand</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>tcga_brca.clin <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_tsv</span>(<span class="st">"tcga_brca.clin.tsv"</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>fpkm_uq_assay <span class="ot">&lt;-</span> <span class="fu">assay</span>(brca.data_full, <span class="st">"fpkm_uq_unstrand"</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Get the rowData (gene information) and colData (sample information)</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co"># These components are used directly from the original object</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>gene_info <span class="ot">&lt;-</span> <span class="fu">rowData</span>(brca.data_full)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>sample_info <span class="ot">&lt;-</span> <span class="fu">colData</span>(brca.data_full) <span class="sc">|&gt;</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">|&gt;</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(tcga_brca.clin, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"patient"</span><span class="ot">=</span><span class="st">"bcr_patient_barcode"</span>))</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Create a new SummarizedExperiment object</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>brca_fpkm_uq_unstrand <span class="ot">&lt;-</span> <span class="fu">SummarizedExperiment</span>(</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">assays =</span> <span class="fu">SimpleList</span>(<span class="at">fpkm_uq =</span> fpkm_uq_assay),</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">rowData =</span> gene_info,</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">colData =</span> sample_info</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>brca_fpkm_uq_unstrand</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>class: SummarizedExperiment 
 dim: 60660 1111 
@@ -1104,41 +454,41 @@ colnames(1111): TCGA-EW-A2FS-01A-11R-A17B-07
 colData names(205): barcode patient ... tissue_source_site
   tumor_tissue_site</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(brca_fpkm_uq_unstrand, <span class="st">"brca_fpkm_uq_unstrand.rds"</span>)</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(fpkm_uq_assay)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(brca_fpkm_uq_unstrand, <span class="st">"brca_fpkm_uq_unstrand.rds"</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(fpkm_uq_assay)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Since we don’t need the object we originally created we can delete it from memory in R.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(brca.data_full)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(brca.data_full)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="reducing-the-amount-of-data" class="level2">
 <h2 class="anchored" data-anchor-id="reducing-the-amount-of-data">Reducing the amount of data</h2>
 <p>We are <strong>not</strong> going to be running any machine learning methods or visualisation on the data we have now. More than anything else, it would take far too long to run and require huge amounts of compute resource. The data consists of 60660 “genes” and 1111 samples. Considering the genes first of all, not all of them are going to be informative and will only contribute noise to our data making any machine learning more complicated. In <a href="https://mdbioinformatics.com/posts/2025_10_30_tidybulk/">a previous post</a> I introduced the <code>tidybulk</code> package for dealing with RNA-seq in a manner consistent with the <code>tidyverse</code> framework in R.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidybulk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidybulk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The package I will be eventually using (SPOILER ALERT:<code>tidymodels</code>) has some pre-processing steps for removing uninformative features that are usually recommended. However, I am going to revert to some domain knowledge and use some functionality from <code>tidybulk</code> which are specifically developed for RNA-seq. First of all, we can remove genes that are lowly-expressed using the <code>keep_abundant</code> function. I played around with the settings for <code>keep_abundant</code> here as the defaults were a bit too aggressive. On inspecting the names of the genes retained (see commented code below) I found that <code>PTEN</code> and <code>ESR1</code> were no longer in my data using the default, and from my knowledge of breast cancer I figure these are important.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="do">##NB using the base pipe |&gt; here as we haven't loaded tidyverse yet</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>brca_fpkm_uq_unstrand_expressed <span class="ot">&lt;-</span> brca_fpkm_uq_unstrand <span class="sc">|&gt;</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_abundant</span>(<span class="at">minimum_counts =</span> <span class="fl">0.5</span>,           <span class="co"># Lower the expression threshold</span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">minimum_proportion =</span> <span class="fl">0.025</span>     <span class="co"># Lower the proportion of samples required)</span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(brca_fpkm_uq_unstrand)</span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="co"># rowData(brca_fpkm_uq_unstrand_expressed) |&gt; data.frame() |&gt; View()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="do">##NB using the base pipe |&gt; here as we haven't loaded tidyverse yet</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>brca_fpkm_uq_unstrand_expressed <span class="ot">&lt;-</span> brca_fpkm_uq_unstrand <span class="sc">|&gt;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_abundant</span>(<span class="at">minimum_counts =</span> <span class="fl">0.5</span>,           <span class="co"># Lower the expression threshold</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">minimum_proportion =</span> <span class="fl">0.025</span>     <span class="co"># Lower the proportion of samples required)</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(brca_fpkm_uq_unstrand)</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="co"># rowData(brca_fpkm_uq_unstrand_expressed) |&gt; data.frame() |&gt; View()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The reduction in the number of genes is quite dramatic - but this is a good thing for our purposes as it will make things run quicker. The next step is to remove genes that do not have enough <em>variability</em> in the data. Variability is important as genes whose expression level stays the same across samples are not going to be very informative for distinguishing different subtypes. However, in the following code I will keep the names of the variable genes, but not actually do the filtering yet. Conveniently, <code>tidybulk</code> allows the usage of the pipe (<code>|&gt;</code> or <code>%&gt;%</code>) so we don’t have to create any new variables. Explicitly creating a <code>tidybulk</code> object means we can use <code>dplyr</code> operations such as <code>pull</code>ing the <code>gene_name</code> name.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>var_genes <span class="ot">&lt;-</span> brca_fpkm_uq_unstrand_expressed <span class="sc">|&gt;</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_variable</span>(<span class="at">top =</span> <span class="dv">2000</span>) <span class="sc">|&gt;</span></span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">|&gt;</span></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">duplicated</span>(gene_name)) <span class="sc">|&gt;</span></span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">pull</span>(gene_name)</span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>var_genes[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>var_genes <span class="ot">&lt;-</span> brca_fpkm_uq_unstrand_expressed <span class="sc">|&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_variable</span>(<span class="at">top =</span> <span class="dv">2000</span>) <span class="sc">|&gt;</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">|&gt;</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">duplicated</span>(gene_name)) <span class="sc">|&gt;</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">pull</span>(gene_name)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>var_genes[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "SCGB2A2"    "SCGB1D2"    "TFF1"       "PIP"        "CPB1"      
  [6] "AC093001.1" "S100A7"     "CLEC3A"     "LTF"        "IGHG1"     </code></pre>
@@ -1146,8 +496,8 @@ colData names(205): barcode patient ... tissue_source_site
 </div>
 <p>I’d like my data to be somewhat informed by biology, so will also use a set of Cancer genes. I got the set of genes following from <a href="https://www.oncokb.org/cancer-genes">OncoKB</a></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>cancer_genes <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(<span class="st">"cancerGeneList.tsv"</span>)</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>cancer_genes <span class="sc">|&gt;</span> <span class="fu">head</span>(<span class="at">n=</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>cancer_genes <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(<span class="st">"cancerGeneList.tsv"</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>cancer_genes <span class="sc">|&gt;</span> <span class="fu">head</span>(<span class="at">n=</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   Hugo.Symbol Entrez.Gene.ID  GRCh37.Isoform  GRCh37.RefSeq  GRCh38.Isoform
 1         ABL1             25 ENST00000318560    NM_005157.4 ENST00000318560
@@ -1208,14 +558,14 @@ colData names(205): barcode patient ... tissue_source_site
 </div>
 <p>Now we have a set of gene names that we want to keep in the analysis</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>cancer_gene_names <span class="ot">&lt;-</span> cancer_genes<span class="sc">$</span>Hugo.Symbol</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>to_keep <span class="ot">&lt;-</span> <span class="fu">rowData</span>(brca_fpkm_uq_unstrand_expressed)<span class="sc">$</span>gene_name <span class="sc">%in%</span> <span class="fu">c</span>(cancer_gene_names, var_genes)</span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered <span class="ot">&lt;-</span> brca_fpkm_uq_unstrand_expressed[to_keep,]</span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>cancer_gene_names <span class="ot">&lt;-</span> cancer_genes<span class="sc">$</span>Hugo.Symbol</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>to_keep <span class="ot">&lt;-</span> <span class="fu">rowData</span>(brca_fpkm_uq_unstrand_expressed)<span class="sc">$</span>gene_name <span class="sc">%in%</span> <span class="fu">c</span>(cancer_gene_names, var_genes)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered <span class="ot">&lt;-</span> brca_fpkm_uq_unstrand_expressed[to_keep,]</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>class: SummarizedExperiment 
 dim: 3119 1111 
@@ -1230,7 +580,7 @@ colnames(1111): TCGA-EW-A2FS-01A-11R-A17B-07
 colData names(205): barcode patient ... tissue_source_site
   tumor_tissue_site</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(brca_gene_filtered, <span class="st">"brca_gene_filtered_SE.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(brca_gene_filtered, <span class="st">"brca_gene_filtered_SE.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="some-data-exploration" class="level2">
@@ -1239,13 +589,13 @@ colData names(205): barcode patient ... tissue_source_site
 <p>When working on breast cancer, and coming from a purely computational background, I quickly learnt about the importance of <strong>Estrogen Receptor (ER) status</strong> and the gene that encodes the Estrogen Receptor protein <strong>ESR1</strong>. The status of a breast cancer patient is a well-established biomarker and can indicate whether the patient’s cancer is likely to respond to hormone-blocking therapies. In other words, patients that can been categorised as ER positive should have higher expression of ESR1. In this dataset ER status looks to have been investigated by Immunohistochemistry (IHC) and recorded in the <code>er_status_by_ihc</code>. This is one of the variables present in the BCR clinical data.</p>
 <p>To get the data for just <code>ESR1</code> It’s actually more efficient in this case to filter the gene from the <code>SummarizedExperiment</code> object before calling <code>tidybulk</code>. I’m not sure if this is the intended workflow, but our data are so large that calling <code>tidybulk</code> on the entire dataset takes too much RAM in my case.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">==</span> <span class="st">"ESR1"</span>] <span class="sc">|&gt;</span></span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">|&gt;</span></span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> er_status_by_ihc, <span class="at">y =</span> fpkm_uq)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>() <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">==</span> <span class="st">"ESR1"</span>] <span class="sc">|&gt;</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">|&gt;</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> er_status_by_ihc, <span class="at">y =</span> fpkm_uq)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>() <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1256,10 +606,10 @@ colData names(205): barcode patient ... tissue_source_site
 </div>
 <p>Phew! So <code>ESR1</code> expression is indeed higher in ER positive samples. The plot also highlights some discrepancy in the recording of the ER status which should be cleaned prior to analysis. For the sake of the plot we can filter out the offending entries.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">==</span> <span class="st">"ESR1"</span>] <span class="sc">|&gt;</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">|&gt;</span></span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(er_status_by_ihc <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Positive"</span>, <span class="st">"Negative"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> er_status_by_ihc, <span class="at">y =</span> fpkm_uq)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>() <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span> <span class="fu">xlab</span>(<span class="st">"ER Status"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">==</span> <span class="st">"ESR1"</span>] <span class="sc">|&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">|&gt;</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(er_status_by_ihc <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Positive"</span>, <span class="st">"Negative"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> er_status_by_ihc, <span class="at">y =</span> fpkm_uq)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>() <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span> <span class="fu">xlab</span>(<span class="st">"ER Status"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1270,10 +620,10 @@ colData names(205): barcode patient ... tissue_source_site
 </div>
 <p>In a similar vein, the gene <strong>ERBB2</strong> should be higher in patients that are positive for <strong>Her2</strong> staining by IHC.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">==</span> <span class="st">"ERBB2"</span>] <span class="sc">|&gt;</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(her2_status_by_ihc <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Positive"</span>, <span class="st">"Negative"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> her2_status_by_ihc, <span class="at">y =</span> fpkm_uq)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>() <span class="sc">+</span> <span class="fu">geom_jitter</span>() <span class="sc">+</span> <span class="fu">scale_y_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">==</span> <span class="st">"ERBB2"</span>] <span class="sc">|&gt;</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(her2_status_by_ihc <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Positive"</span>, <span class="st">"Negative"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> her2_status_by_ihc, <span class="at">y =</span> fpkm_uq)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>() <span class="sc">+</span> <span class="fu">geom_jitter</span>() <span class="sc">+</span> <span class="fu">scale_y_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1284,15 +634,15 @@ colData names(205): barcode patient ... tissue_source_site
 </div>
 <p>Breast cancer was traditionally classified into five <em>intrinsic</em> subtypes, and microarray studies sought to identify genes that define these subtypes. On such 50 gene panel was derived using a prediction analysis of microarray (PAM) and hence called <strong>PAM50</strong>. The samples in the TCGA dataset have been classified using this method, and we can check the expression level of <strong>ESR1</strong> and <strong>ERBB2</strong> respectively.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ESR1"</span>,<span class="st">"ERBB2"</span>)] <span class="sc">|&gt;</span></span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">|&gt;</span></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(paper_BRCA_Subtype_PAM50)) <span class="sc">%&gt;%</span> </span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> paper_BRCA_Subtype_PAM50, <span class="at">y =</span> fpkm_uq, <span class="at">fill =</span> paper_BRCA_Subtype_PAM50)) <span class="sc">+</span> </span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span> </span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha=</span><span class="fl">0.1</span>) <span class="sc">+</span> </span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>() <span class="sc">+</span> </span>
-<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>gene_name) <span class="sc">+</span> </span>
-<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"red"</span>, <span class="st">"pink"</span>, <span class="st">"darkblue"</span>, <span class="st">"lightblue"</span>, <span class="st">"yellow"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ESR1"</span>,<span class="st">"ERBB2"</span>)] <span class="sc">|&gt;</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">|&gt;</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(paper_BRCA_Subtype_PAM50)) <span class="sc">%&gt;%</span> </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> paper_BRCA_Subtype_PAM50, <span class="at">y =</span> fpkm_uq, <span class="at">fill =</span> paper_BRCA_Subtype_PAM50)) <span class="sc">+</span> </span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span> </span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha=</span><span class="fl">0.1</span>) <span class="sc">+</span> </span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>() <span class="sc">+</span> </span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>gene_name) <span class="sc">+</span> </span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"red"</span>, <span class="st">"pink"</span>, <span class="st">"darkblue"</span>, <span class="st">"lightblue"</span>, <span class="st">"yellow"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1304,11 +654,11 @@ colData names(205): barcode patient ... tissue_source_site
 <p>Again, this all makes perfect sense as <em>Luminal A</em> and <em>Luminal B</em> are <em>ER-positive</em> groups, <em>Basal</em> and <em>Her2</em> are <em>ER-negative</em> and <em>ERBB2</em> should be highly expressed in the <em>Her2</em> subtype.</p>
 <p>So, are the Pam50 subtypes are major source of variation in our data? The <code>tidybulk</code> package allows us to run dimensionality reduction techniques such as PCA to look at this issue. The <code>reduce_dimensions</code> function computes the Principal Components and these can be added to our data ready for visualisation. Normally <code>tidybulk</code> would require a <code>scale_abundance</code> step here to correct for differences in sequencing depth between samples, but since we are using values that are already normalised to some extent this is not needed on this ocassion.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered <span class="sc">|&gt;</span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce_dimensions</span>(<span class="at">method =</span> <span class="st">"PCA"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="do">## not needed here: scale_abundance() |&gt;</span></span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_sample</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(.sample, PC1, PC2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered <span class="sc">|&gt;</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce_dimensions</span>(<span class="at">method =</span> <span class="st">"PCA"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="do">## not needed here: scale_abundance() |&gt;</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_sample</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(.sample, PC1, PC2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 1,111 × 3
    .sample                         PC1    PC2
@@ -1328,13 +678,13 @@ colData names(205): barcode patient ... tissue_source_site
 </div>
 <p>It is now straightforward to plot, and also colour according to the PAM50 subtype of each sample.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered <span class="sc">|&gt;</span></span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce_dimensions</span>(<span class="at">method =</span> <span class="st">"PCA"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_sample</span>() <span class="sc">|&gt;</span></span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(paper_BRCA_Subtype_PAM50)) <span class="sc">%&gt;%</span> </span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> PC1, <span class="at">y =</span> PC2, <span class="at">col =</span> paper_BRCA_Subtype_PAM50 )) <span class="sc">+</span> </span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()  <span class="sc">+</span> </span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"red"</span>, <span class="st">"pink"</span>, <span class="st">"darkblue"</span>, <span class="st">"lightblue"</span>, <span class="st">"yellow"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered <span class="sc">|&gt;</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce_dimensions</span>(<span class="at">method =</span> <span class="st">"PCA"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_sample</span>() <span class="sc">|&gt;</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(paper_BRCA_Subtype_PAM50)) <span class="sc">%&gt;%</span> </span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> PC1, <span class="at">y =</span> PC2, <span class="at">col =</span> paper_BRCA_Subtype_PAM50 )) <span class="sc">+</span> </span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()  <span class="sc">+</span> </span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"red"</span>, <span class="st">"pink"</span>, <span class="st">"darkblue"</span>, <span class="st">"lightblue"</span>, <span class="st">"yellow"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1349,33 +699,33 @@ colData names(205): barcode patient ... tissue_source_site
 <ul>
 <li><a href="https://github.com/stemangiola/tidyHeatmap">tidyHeatmap</a></li>
 </ul>
-<p>This package works quite well with our workflow of using a “tidy” framework. It requires data in a <code>tbl_df</code> or <code>tibble</code> format, which we can create from <code>tidybulk</code> once we are done with pre-processing the data.</p>
+<p>This package works quite well with our workflow of using a “tidy” framework. It requires data in a <code>tbl_df</code> or <code>tibble</code> format, which we can create from <code>tidybulk</code> once we are done with pre-processing the data. Although the data we are working with are normalised, we must apply a log<span class="math inline">\(_2\)</span> transformation for the purposes of visualisation. I’ve also applied some basic data cleaning</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>pam50_genes <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="st">"PAM50_genes.txt"</span>)[,<span class="dv">1</span>]</span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyHeatmap)</span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a> brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">%in%</span> pam50_genes,] <span class="sc">%&gt;%</span> </span>
-<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  <span class="do">## once filtered, make a "tidy" version</span></span>
-<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">logcount =</span> <span class="fu">log2</span>(fpkm_uq <span class="sc">+</span> <span class="dv">1</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>  <span class="do">## get the counts, samples and genes</span></span>
-<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">ER =</span> er_status_by_ihc, <span class="at">PAM50 =</span>paper_BRCA_Subtype_PAM50) <span class="sc">%&gt;%</span></span>
-<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ER =</span> <span class="fu">ifelse</span>(ER <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Positive"</span>, <span class="st">"Negative"</span>), ER, <span class="cn">NA</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(ER), <span class="sc">!</span><span class="fu">is.na</span>(PAM50)) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>  tidyHeatmap<span class="sc">::</span><span class="fu">heatmap</span>(</span>
-<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>        <span class="at">.column =</span> .sample,</span>
-<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>        <span class="at">.row =</span> gene_name,</span>
-<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>        <span class="at">.value =</span> logcount,   </span>
-<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a>        <span class="at">scale =</span> <span class="st">"row"</span>,</span>
-<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a>        <span class="at">palette_value =</span> circlize<span class="sc">::</span><span class="fu">colorRamp2</span>(</span>
-<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>            <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="at">length.out =</span> <span class="dv">11</span>), </span>
-<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a>            RColorBrewer<span class="sc">::</span><span class="fu">brewer.pal</span>(<span class="dv">11</span>, <span class="st">"RdBu"</span>)</span>
-<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a>   <span class="fu">annotation_tile</span>(ER ,<span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"orange"</span>,<span class="st">"purple"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_tile</span>(PAM50,<span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"darkblue"</span>, <span class="st">"pink"</span>, <span class="st">"lightblue"</span>, <span class="st">"yellow"</span>, <span class="st">"red"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>pam50_genes <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="st">"PAM50_genes.txt"</span>)[,<span class="dv">1</span>]</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyHeatmap)</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a> brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">%in%</span> pam50_genes,] <span class="sc">%&gt;%</span> </span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="do">## once filtered, make a "tidy" version</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">logcount =</span> <span class="fu">log2</span>(fpkm_uq <span class="sc">+</span> <span class="dv">1</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>  <span class="do">## get the counts, samples and genes</span></span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">ER =</span> er_status_by_ihc, <span class="at">PAM50 =</span>paper_BRCA_Subtype_PAM50) <span class="sc">%&gt;%</span></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ER =</span> <span class="fu">ifelse</span>(ER <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Positive"</span>, <span class="st">"Negative"</span>), ER, <span class="cn">NA</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(ER), <span class="sc">!</span><span class="fu">is.na</span>(PAM50)) <span class="sc">%&gt;%</span> </span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>  tidyHeatmap<span class="sc">::</span><span class="fu">heatmap</span>(</span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a>        <span class="at">.column =</span> .sample,</span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>        <span class="at">.row =</span> gene_name,</span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>        <span class="at">.value =</span> logcount,   </span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>        <span class="at">scale =</span> <span class="st">"row"</span>,</span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>        <span class="at">palette_value =</span> circlize<span class="sc">::</span><span class="fu">colorRamp2</span>(</span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a>            <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="at">length.out =</span> <span class="dv">11</span>), </span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>            RColorBrewer<span class="sc">::</span><span class="fu">brewer.pal</span>(<span class="dv">11</span>, <span class="st">"RdBu"</span>)</span>
+<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a>   <span class="fu">annotation_tile</span>(ER ,<span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"orange"</span>,<span class="st">"purple"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_tile</span>(PAM50,<span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"darkblue"</span>, <span class="st">"pink"</span>, <span class="st">"lightblue"</span>, <span class="st">"yellow"</span>, <span class="st">"red"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1391,37 +741,37 @@ colData names(205): barcode patient ... tissue_source_site
 <p>Finally, a pertinent question to ask is whether the subtypes are <em>clinically-meaningful</em>. If we know what subtype a patient has, what can this tell us about their survival prospects? A <em>kaplan-meier</em> (KM) curve is a standard way to estimate and visualize the survival probability over a specified period, and can be created by the <code>survival</code> package and visualised using the package<code>survminer</code>. The curve starts at 100% (or probability 1.0) at time zero and steps down each time a patient dies. A tick mark on the curve indicates a patient who was lost to follow-up or was still alive when the data was collected (censored). These patients contribute to the probability calculation up until the time they were last observed.</p>
 <p>The clinical data we have needs modifying slightly to run the analysis. In particular we need to create “Status” and “Time” columns which records if a patient is alive (0) or dead (1) at the end of the study, and the time to either death or total follow-up time. We will also remove any patients where the Time or status is missing or inaccurate. The dataset also includes some metastatic or recurrent tumours, but for the purposes of the curve we will use only “primary” samples.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survminer)</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>clin_data_corrected <span class="ot">&lt;-</span> <span class="fu">colData</span>(brca_gene_filtered) <span class="sc">|&gt;</span></span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">|&gt;</span></span>
-<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(classification_of_tumor <span class="sc">==</span> <span class="st">"primary"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 2. Define Time (Coalesce death date and follow-up date)</span></span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Use days_to_death if available; otherwise, use days_to_last_follow_up</span></span>
-<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">Time =</span> <span class="fu">as.numeric</span>(dplyr<span class="sc">::</span><span class="fu">coalesce</span>(days_to_death, days_to_last_follow_up)),</span>
-<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 3. Define Status (REVERSED AND CORRECTED)</span></span>
-<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Event=1 (Dead), Censored=0 (Alive)</span></span>
-<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">Status =</span> <span class="fu">ifelse</span>(vital_status.x <span class="sc">==</span> <span class="st">"Dead"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
-<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 4. Final Clean-up: Remove rows with NA in Time, Status, or Subtype</span></span>
-<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Time), Time <span class="sc">&gt;</span> <span class="dv">0</span>, Status <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), paper_BRCA_Subtype_PAM50 <span class="sc">!=</span> <span class="st">"NA"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">PAM50 =</span> paper_BRCA_Subtype_PAM50)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survminer)</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>clin_data_corrected <span class="ot">&lt;-</span> <span class="fu">colData</span>(brca_gene_filtered) <span class="sc">|&gt;</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">|&gt;</span></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(classification_of_tumor <span class="sc">==</span> <span class="st">"primary"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 2. Define Time (Coalesce death date and follow-up date)</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Use days_to_death if available; otherwise, use days_to_last_follow_up</span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">Time =</span> <span class="fu">as.numeric</span>(dplyr<span class="sc">::</span><span class="fu">coalesce</span>(days_to_death, days_to_last_follow_up)),</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 3. Define Status (REVERSED AND CORRECTED)</span></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Event=1 (Dead), Censored=0 (Alive)</span></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">Status =</span> <span class="fu">ifelse</span>(vital_status.x <span class="sc">==</span> <span class="st">"Dead"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 4. Final Clean-up: Remove rows with NA in Time, Status, or Subtype</span></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Time), Time <span class="sc">&gt;</span> <span class="dv">0</span>, Status <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), paper_BRCA_Subtype_PAM50 <span class="sc">!=</span> <span class="st">"NA"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">PAM50 =</span> paper_BRCA_Subtype_PAM50)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Running the analysis and plotting can then be achieved using the <code>survfit</code> and <code>ggsurvplot</code> packages respectively. The p-value requested is the p-value for there being <em>any</em> difference in survival between different groups and is calculated using a log-rank test.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Run Survival Analysis ---</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">survfit</span>(<span class="fu">Surv</span>(Time, Status) <span class="sc">~</span> PAM50, <span class="at">data =</span> clin_data_corrected)</span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Plot ---</span></span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsurvplot</span>(</span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  fit, </span>
-<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> clin_data_corrected, </span>
-<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">pval =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add risk table and confidence intervals for a better plot</span></span>
-<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">risk.table =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"red"</span>, <span class="st">"pink"</span>, <span class="st">"darkblue"</span>, <span class="st">"lightblue"</span>, <span class="st">"yellow"</span>)</span>
-<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Run Survival Analysis ---</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">survfit</span>(<span class="fu">Surv</span>(Time, Status) <span class="sc">~</span> PAM50, <span class="at">data =</span> clin_data_corrected)</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Plot ---</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsurvplot</span>(</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  fit, </span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> clin_data_corrected, </span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">pval =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add risk table and confidence intervals for a better plot</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">risk.table =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"red"</span>, <span class="st">"pink"</span>, <span class="st">"darkblue"</span>, <span class="st">"lightblue"</span>, <span class="st">"yellow"</span>)</span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">

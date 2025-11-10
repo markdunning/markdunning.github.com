@@ -60,7 +60,7 @@ all_gdc_projects <- getGDCprojects()
 # The output is typically a data frame or tibble
 all_gdc_projects |>
   dplyr::select(id, name) |>
-  slice_head(n = 5)
+  head(n = 5)
 ```
 
 To see all the data interactively within RStudio you can use the `View` function.
