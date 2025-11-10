@@ -2,6 +2,7 @@
 title: "Posts"
 listing:
   contents: posts  # <-- the sub-directory with blog content
+  sort: "date desc"
   type: grid          # <-- my preferred layout type
   fields: [image, date, title, reading-time, description]  
 ---
