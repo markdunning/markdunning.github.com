@@ -21,9 +21,10 @@ knitr::opts_chunk$set(
 
 ## Pre-amble
 
-This will be the first in a series where I look at machine learning techniques applied to omics data. However, before we get ahead of ourselves we'll need some data. I decided to use breast cancer samples available through The Cancer Genome Atlas. 
+This will be the first in a series where I look at machine learning techniques applied to omics data. However, before we get ahead of ourselves we'll need some data. I decided to use breast cancer samples available through The Cancer Genome Atlas (**TCGA**). 
 
-We need the `TCGAbiolinks` package that will do most of the work of downloading, and `tidybulk` for manipulation.
+We need the `TCGAbiolinks` package that will do most of the work of downloading, and `tidybulk` for manipulation. Some other packages are required for data exploration.
+
 
 ```{r eval=FALSE}
 if(!require(BiocManager)) install.packages("BiocManager")
@@ -93,12 +94,12 @@ query <- GDCquery(project = "TCGA-BRCA",
 ```
 The function we have used only get the download ready and doesn't actually fetch any data. To actually download the data we need `GDCdownload`.
 
-```{r makeClinicalQuery, cache=TRUE, echo=FALSE}
+```{r makeClinicalQuery, cache=TRUE, eval=FALSE}
 GDCdownload(query)
 ```
 
 
-This downloads the raw files to our computer. If we want the data in a usable form in R we have to use a final function `GDCprepare`. In this case it gives a `list` of data frame. Functions such as `head` and `colnames` could be used to inspect the contents of each (I'm using the base `lapply` as I don't want to get into `purrr`in this particular tutorial). I'm looking for something about ER status and it looks like the best bet is `clinical_patient_brca`. We will save this as a data frame for use later.
+This downloads the raw files to our computer. If we want the data in a usable form in R we have to use a final function `GDCprepare`. In this case it gives a `list` of data frames. Functions such as `head` and `colnames` could be used to inspect the contents of each (I'm using the base `lapply` as I don't want to get into `purrr`in this particular tutorial). I'm looking for something about ER status and it looks like the best bet is `clinical_patient_brca`. We will save this as a data frame for use later.
 
 N.B. I'm not showing the output as it's quite lengthy.
 
@@ -116,10 +117,10 @@ readr::write_tsv(tcga_brca.clin, "tcga_brca.clin.tsv")
 
 To get the *transcriptomic* data we are going to follow a similar approach using the `GDCquery`, `GDCdownload` and `GDCprepare` functions. This will take a *lot* longer depending on your network connection. The output of `GDCprepare` in this case is a `SummarizedExperiment` object which is a standard data type for RNA-seq. As a final step in the code I save the `SummarizedExperiment` to disk and check if this file exists before starting. This makes sure I don't repeat the lengthy download.
 
-For my transcriptomic data I am choosing the `STAR - Counts` option and requesting both tumours only (TCGA also holds data for "normal"/healthy tissue). If repeating these steps on a different disease you may need to change these options.
+For my transcriptomic data I am choosing the `STAR - Counts` option and requesting tumours only (TCGA also holds data for "normal"/healthy tissue). If repeating these steps on a different disease you may need to change these options.
 
 
-:::{callout-note}
+:::{.callout-note}
 
 If you are interested in other types of data (Proteome, Methylation, Exome,...) the general procedure is the same as presented here, but the values for `workflow.type` and `data.type` will need to be different. The [TCGAbiolinks webpage](https://bioconductor.org/packages/devel/bioc/vignettes/TCGAbiolinks/inst/doc/download_prepare.html) has many examples of downloading data of different types. 
 
@@ -187,21 +188,25 @@ tcga_brca.clin <- readr::read_tsv("tcga_brca.clin.tsv", show_col_types = FALSE)
 
 fpkm_uq_assay <- assay(brca.data_full, "fpkm_uq_unstrand")
 
-# 2. Get the rowData (gene information) and colData (sample information)
+# get the rowData (gene information) and colData (sample information)
 # These components are used directly from the original object
 gene_info <- rowData(brca.data_full)
 sample_info <- colData(brca.data_full) |>
   data.frame() |>
   dplyr::left_join(tcga_brca.clin, by = c("patient"="bcr_patient_barcode"))
  
-# 3. Create a new SummarizedExperiment object
+# create a new SummarizedExperiment object
 brca_fpkm_uq_unstrand <- SummarizedExperiment(
   assays = SimpleList(fpkm_uq = fpkm_uq_assay),
   rowData = gene_info,
   colData = sample_info
 )
 
+## print the output to check
+
 brca_fpkm_uq_unstrand
+
+# save to disk
 saveRDS(brca_fpkm_uq_unstrand, "brca_fpkm_uq_unstrand.rds")
 rm(fpkm_uq_assay)
 ```
@@ -232,6 +237,8 @@ brca_fpkm_uq_unstrand_expressed <- brca_fpkm_uq_unstrand |>
 )
 
 rm(brca_fpkm_uq_unstrand)
+
+# uncomment to inspect the genes retained
 # rowData(brca_fpkm_uq_unstrand_expressed) |> data.frame() |> View()
 ```
 
@@ -255,7 +262,7 @@ cancer_genes <- read.delim("cancerGeneList.tsv")
 cancer_genes |> head(n=10)
 ```
 
-Now we have a set of gene names that we want to keep in the analysis
+Now we have a set of gene names that we want to keep in the analysis. The filtering this time is more efficient on the `SummarizedExperiment` object.
 
 ```{r final_filter}
 cancer_gene_names <- cancer_genes$Hugo.Symbol
@@ -268,8 +275,6 @@ brca_gene_filtered <- brca_fpkm_uq_unstrand_expressed[to_keep,]
 brca_gene_filtered
 saveRDS(brca_gene_filtered, "brca_gene_filtered_SE.rds")
 ```
-
-
 
 
 ## Some data Exploration
@@ -358,7 +363,10 @@ The PCA looks pretty good, with the main separation being between *basal* and *L
 
 This package works quite well with our workflow of using a "tidy" framework. It requires data in a `tbl_df` or `tibble` format, which we can create from `tidybulk` once we are done with pre-processing the data. Although the data we are working with are normalised, we must apply a log$_2$ transformation for the purposes of visualisation. I've also applied some basic data cleaning 
 
-```{r makePAM50Heatmap, fig.width=12}
+The `tidyHeatmap` function `heatmap` allows us to quickly add sample annotations to the plot, and since our data were using the tidy framework we have plenty of clincial variables at our fingertips. I'm choosing ER status and PAM50 classification, but you could add others such age, grade, or anything else.
+
+
+```{r makePAM50Heatmap, fig.width=12, fig.height=10}
 
 pam50_genes <- read.table("PAM50_genes.txt")[,1]
 
@@ -383,7 +391,8 @@ library(tidyHeatmap)
             RColorBrewer::brewer.pal(11, "RdBu")
         )
     ) %>% 
-   annotation_tile(ER ,palette = c("orange","purple")) %>% 
+  annotation_tile(ER ,palette = c("orange","purple")) %>% 
+  ## I couldn't work out how to assign particular colours, so had to experiment at bit with the correct order to specify the colours in
   annotation_tile(PAM50,palette = c("darkblue", "pink", "lightblue", "yellow", "red"))
  
 ```
@@ -404,15 +413,15 @@ library(survival)
 clin_data_corrected <- colData(brca_gene_filtered) |>
   data.frame() |>
   dplyr::filter(classification_of_tumor == "primary") |>
-  # 2. Define Time (Coalesce death date and follow-up date)
+  #Define Time (Coalesce death date and follow-up date)
   dplyr::mutate(
     # Use days_to_death if available; otherwise, use days_to_last_follow_up
     Time = as.numeric(dplyr::coalesce(days_to_death, days_to_last_follow_up)),
-    # 3. Define Status (REVERSED AND CORRECTED)
+    # Define Status 
     # Event=1 (Dead), Censored=0 (Alive)
     Status = ifelse(vital_status.x == "Dead", 1, 0)
   ) |>
-  # 4. Final Clean-up: Remove rows with NA in Time, Status, or Subtype
+  # Remove rows with NA in Time, Status, or Subtype
   dplyr::filter(!is.na(Time), Time > 0, Status %in% c(0, 1), paper_BRCA_Subtype_PAM50 != "NA") |>
   dplyr::mutate(PAM50 = paper_BRCA_Subtype_PAM50)
 
@@ -421,7 +430,7 @@ clin_data_corrected <- colData(brca_gene_filtered) |>
 
 Running the analysis and plotting can then be achieved using the `survfit` and `ggsurvplot` packages respectively. The p-value requested is the p-value for there being *any* difference in survival between different groups and is calculated using a log-rank test. 
 
-```{r plotKM}
+```{r plotKM, fig.width=10}
 # --- Run Survival Analysis ---
 fit <- survfit(Surv(Time, Status) ~ PAM50, data = clin_data_corrected)
 
@@ -430,12 +439,11 @@ ggsurvplot(
   fit, 
   data = clin_data_corrected, 
   pval = TRUE,
-  # Add risk table and confidence intervals for a better plot
-  risk.table = TRUE,
   palette = c("red", "pink", "darkblue", "lightblue", "yellow")
 )
 ```
 
+There are *plenty* more examples on the [survminer](https://github.com/kassambara/survminer) website on how to customise this further.
 
 # Next time
 

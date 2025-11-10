@@ -1,0 +1,435 @@
+---
+title: "Tidymodels for omics data: Part 2"
+author: Mark Dunning
+date: 2025-11-10
+theme: darkly
+image: preview.png
+description: "Downloading and exploring TCGA (breast cancer) expression data from GEO so we can proceed to use machine learning later. We'll also make some exploratory plots such as survival analysis"
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+
+```
+
+## Pre-amble
+
+This will be the first in a series where I look at machine learning techniques applied to omics data. However, before we get ahead of ourselves we'll need some data. I decided to use breast cancer samples available through The Cancer Genome Atlas (**TCGA**).
+
+We need the `TCGAbiolinks` package that will do most of the work of downloading, and `tidybulk` for manipulation.
+
+```{r eval=FALSE}
+
+## required for heatmap example
+if(!require(tidymodels)) install.packages("tidymodels")
+
+
+```
+
+## Downloading the data
+
+```{r}
+### get the saved RDS
+```
+
+## Pre-processing
+
+Create a data frame for modeling
+
+```{r}
+library(tidybulk)
+library(SummarizedExperiment)
+
+brca_gene_filtered <- readRDS("raw_data/brca_gene_filtered_SE.rds")
+
+er_data <- brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ESR1"] |>
+  tidybulk() |>
+  dplyr::select(ER=er_status_by_ihc, ESR1 = fpkm_uq) |>
+  dplyr::filter(ER %in% c("Positive","Negative")) |> 
+  dplyr::mutate(ER_Numeric = ifelse(ER== "Positive", 1,0)) |>
+  dplyr::mutate(ESR1 = log2(ESR1 + 1))
+
+
+
+
+```
+
+
+Motivation
+
+```{r}
+ggplot(er_data, aes(x = ER, y = ESR1)) + geom_boxplot() + geom_jitter(width = 0.1, alpha= 0.4) + geom_hline(yintercept = 3)
+```
+
+Do initial splits
+
+
+```{r}
+library(tidymodels)
+
+set.seed(42) # For reproducibility
+
+# Assuming 'esr1_final_data' is your data frame with columns: ER (factor), ESR1 (numeric)
+
+# Create the initial split object (75% train / 25% test is common, too)
+data_split <- initial_split(er_data, prop = 0.80, strata = ER)
+
+# Create the training data set
+er_train <- training(data_split)
+
+# Create the testing data set
+er_test <- testing(data_split)
+
+```
+
+
+## Logistic Regression 
+
+```{r}
+# Fit the logistic regression model using the logged ESR1 expression
+# Formula: Outcome ~ Predictor, using the binomial family for logistic regression
+simple_logit_fit <- glm(
+  ER_Numeric ~ ESR1, 
+  data = er_train, 
+  family = "binomial"
+)
+
+# View the model summary (shows coefficients and significance)
+summary(simple_logit_fit)
+```
+
+Predictions
+
+```{r}
+# Predict probabilities (0 to 1) on the test set
+test_probabilities <- predict(
+  simple_logit_fit, 
+  newdata = er_test, 
+  type = "response" # 'response' gives probabilities
+)
+
+# 2. Convert probabilities to a class prediction (0 or 1)
+# We use the standard threshold of 0.5: if P(Y=1) > 0.5, predict 1 (Positive)
+predicted_class_numeric <- ifelse(test_probabilities > 0.5, 1, 0)
+
+# 3. Calculate Accuracy
+# Accuracy is the number of correct predictions divided by the total number of predictions
+actual_class_numeric <- er_test$ER_Numeric
+
+# Calculate the number of correct predictions (where predicted == actual)
+correct_predictions <- sum(predicted_class_numeric == actual_class_numeric)
+
+# Calculate Accuracy
+accuracy <- correct_predictions / length(actual_class_numeric)
+
+cat("Model Accuracy:", round(accuracy, 4), "\n")
+
+```
+What is going on?
+
+```{r}
+library(ggplot2)
+
+bind_cols(er_test, Predicted_prob  = test_probabilities) %>% 
+  ggplot(aes(x = ESR1, y = Predicted_prob, col = as.factor(ER))) + geom_point()
+
+```
+
+## Decision Tree
+
+```{r}
+library(rpart)
+
+
+er_train <- er_train %>% 
+    mutate(ER = factor(ER, levels = c("Negative", "Positive")))
+
+# Fit the tree model
+# Formula: Outcome ~ Predictor, using ER status and logged ESR1 expression
+simple_tree_fit <- rpart(
+  ER ~ ESR1,
+  data = er_train,
+  method = "class" # Specifies a classification tree
+)
+
+# Print the fitted tree structure (shows the split value)
+print(simple_tree_fit)
+```
+
+```{r}
+# Load the visualization package
+library(rpart.plot)
+
+# Plot the tree diagram
+rpart.plot(
+  simple_tree_fit,
+  type = 4,      # Draws the full tree structure
+  extra = 101,   # Displays the class name and prediction accuracy
+  roundint = FALSE, # Keep decimal points on the split value
+  main = "ER Status Classification by Logged ESR1 Expression"
+)
+```
+
+Evaluate Performance
+
+```{r}
+# Ensure the test outcome is a factor
+er_test <- er_test %>% 
+    mutate(ER = factor(ER, levels = c("Negative", "Positive")))
+
+# Make class predictions on the test set
+tree_predictions <- predict(
+    simple_tree_fit, 
+    newdata = er_test, 
+    type = "class"
+)
+
+# Calculate Accuracy
+actual_class <- er_test$ER
+accuracy <- mean(tree_predictions == actual_class)
+
+cat("Decision Tree Model Accuracy (rpart):", round(accuracy, 4), "\n")
+```
+
+```{r}
+bind_cols(er_test, Predicted_prob  = test_probabilities) %>% 
+  ggplot(aes(x = ESR1, y = Predicted_prob, col = as.factor(ER))) + geom_point() + geom_vline(xintercept = 2.4, col="red", lty=2)
+```
+
+
+## Introducting tidymodels
+
+Model Specification
+
+
+```{r}
+# Specify a logistic regression model
+logit_spec <- logistic_reg() %>%
+  set_engine("glm") %>%          # The underlying R function to use
+  set_mode("classification")     # The task: predicting a class
+
+
+
+```
+
+
+Recipe
+
+```{r}
+# We assume the log-transform has already been applied outside the recipe
+er_logit_recipe <- recipe(ER ~ ESR1, data = er_train)
+```
+
+
+Workflow and training
+
+```{r}
+logit_workflow <- workflow() %>%
+  add_model(logit_spec) %>%
+  add_recipe(er_logit_recipe)
+
+# Fit the workflow to the training data (train the model)
+er_logit_fit <- logit_workflow %>%
+  fit(data = er_train)
+```
+
+
+```{r}
+# Extract the underlying glm object
+glm_object <- er_logit_fit %>%
+  extract_fit_engine()
+
+# View the standard summary
+summary(glm_object)
+```
+Making predictions
+
+```{r}
+# Generate CLASS predictions (the model's final decision: Positive or Negative)
+class_pred <- predict(er_logit_fit, 
+                      new_data = er_test, 
+                      type = "class")
+
+# Generate PROBABILITY predictions (P(ER+), used for the sigmoid curve and AUC)
+prob_pred <- predict(er_logit_fit, 
+                     new_data = er_test, 
+                     type = "prob")
+
+# --- 2. Combine and Prepare for Evaluation ---
+
+# Combine the test data, class predictions, and probability predictions
+er_results <- er_test %>%
+  select(ER) %>%       # Keep the true outcome
+  bind_cols(class_pred) %>%  # Add the predicted class (.pred_class)
+  bind_cols(prob_pred)      # Add the probabilities (.pred_Negative, .pred_Positive)
+
+# View the first few rows of the results
+head(er_results)
+```
+
+
+```{r}
+er_results %>%
+  accuracy(truth = ER, estimate = .pred_class)
+```
+
+Can also make a ROC curve
+
+```{r}
+# Calculate the AUC, using the probability of the positive class (.pred_Positive)
+roc_data <- er_results %>%
+  roc_curve(truth = ER, .pred_Positive)
+```
+
+
+
+```{r}
+# Calculate the AUC value to display on the plot
+roc_auc_value <- er_results %>%
+  roc_auc(truth = ER, .pred_Positive) %>%
+  pull(.estimate) # Extracts the numeric AUC value
+
+# Plot the ROC curve
+roc_plot <- roc_data %>%
+  autoplot() +
+  # Add the diagonal reference line for a random classifier (AUC = 0.5)
+  geom_abline(lty = 2, color = "gray50") +
+  
+  # Annotate with the calculated AUC value
+  annotate("text", 
+           x = 0.75, 
+           y = 0.25, 
+           label = paste("AUC =", round(roc_auc_value, 4)), 
+           size = 5) +
+  
+  labs(
+    title = "ROC Curve for ER Status Classification (ESR1 Gene)",
+    subtitle = "True Positive Rate vs. False Positive Rate"
+  ) +
+  theme_minimal()
+
+print(roc_plot)
+```
+
+```{r eval=FALSE}
+#| context: server
+#| output: shiny
+
+plot_data <- bind_cols(er_test, Predicted_prob  = test_probabilities) 
+
+library(shiny)
+
+ui <- fluidPage(
+  titlePanel("ER Status Classifier Threshold Demo"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("threshold", "Classification Threshold (P(ER+))",
+                  min = 0.05, max = 0.99, value = 0.5, step = 0.01),
+# Combined Output for all metrics
+      h4("Accuracy:"),
+      verbatimTextOutput("accuracy_output"),
+      
+      h4("Confusion Matrix Counts:"),
+      # Output for the structured confusion matrix
+      htmlOutput("matrix_output") 
+    ),
+    mainPanel(
+      h4("Confusion Matrix:"),
+      verbatimTextOutput("matrix_output"),
+      plotOutput("sigmoid_plot")
+    )
+  )
+)
+
+server <- function(input, output) {
+  
+  # Reactive Prediction Logic (Remains the same)
+reactive_metrics <- reactive({
+    thresh <- input$threshold
+    
+    # 1. Re-classify based on the new threshold (0 or 1)
+    # The output of ifelse() is numeric, so convert it to a factor with defined levels
+    predicted_class <- factor(
+        ifelse(test_probabilities > thresh, 1, 0),
+        levels = c("0", "1") # IMPORTANT: Defines both levels
+    )
+    
+    # 2. Get the actual class (ensure it's also a factor with defined levels)
+    actual_class <- factor(
+        er_test$ER_Numeric, 
+        levels = c("0", "1") # IMPORTANT: Defines both levels
+    )
+    
+    # 3. Generate the table (now guaranteed to be 2x2)
+    conf_matrix <- table(Predicted = predicted_class, Actual = actual_class)
+    
+    # 4. Extract values by position (safer than name)
+    # The dimensions are guaranteed to be in the order 0, 1 for both axes
+    TN <- conf_matrix[1, 1] # Predicted 0, Actual 0
+    FP <- conf_matrix[2, 1] # Predicted 1, Actual 0
+    FN <- conf_matrix[1, 2] # Predicted 0, Actual 1
+    TP <- conf_matrix[2, 2] # Predicted 1, Actual 1
+    
+    # Calculate accuracy
+    accuracy <- (TP + TN) / sum(conf_matrix)
+
+    return(list(TP=TP, TN=TN, FP=FP, FN=FN, accuracy=accuracy))
+  })
+  
+  # --- Output: Accuracy ---
+  output$accuracy_output <- renderText({
+    metrics <- reactive_metrics()
+    paste0(round(metrics$accuracy, 4), 
+           " (", metrics$TP + metrics$TN, " correct)")
+  })
+  
+  # --- Output: Confusion Matrix (Structured HTML) ---
+output$matrix_output <- renderUI({
+    metrics <- reactive_metrics()
+    
+    # 1. Create a clean character vector for the metrics
+    matrix_lines <- c(
+      paste("<b>True Positives (TP):</b>", metrics$TP),
+      paste("<b>True Negatives (TN):</b>", metrics$TN),
+      paste("<b>False Positives (FP):</b>", metrics$FP),
+      paste("<b>False Negatives (FN):</b>", metrics$FN)
+    )
+    
+    # 2. Collapse the vector into a single string, using <br/> for line breaks
+    final_html_string <- paste(matrix_lines, collapse = "<br/>")
+    
+    # 3. Return the single character string wrapped in HTML()
+    HTML(final_html_string)
+  })
+  
+  # --- Output: Plot (Add the dynamic threshold) ---
+  output$sigmoid_plot <- renderPlot({
+    # Placeholder for your plotting logic
+    
+    # ... (code to generate the sigmoid plot)
+    
+    # Add the dynamic threshold line
+    ggplot(plot_data, aes(x = ESR1_Log, y = Predicted_Prob)) +
+      stat_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE, color = "black") +
+      geom_point(aes(color = factor(Actual_ER)), alpha = 0.6) +
+      geom_hline(yintercept = input$threshold, linetype = "dashed", color = "darkred", linewidth = 1) +
+      labs(title = paste("Threshold =", round(input$threshold, 2))) +
+      theme_minimal()
+  })
+}
+
+# shinyApp(ui = ui, server = server)
+
+# --- 4. Run the App ---
+shinyApp(ui = ui, server = server)
+
+```
+
