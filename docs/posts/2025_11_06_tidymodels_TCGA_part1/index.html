@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Mark Dunning">
-<meta name="dcterms.date" content="2025-11-10">
+<meta name="dcterms.date" content="2025-11-11">
 <meta name="description" content="Downloading and exploring TCGA (breast cancer) expression data from GEO so we can proceed to use machine learning later. We’ll also make some exploratory plots such as survival analysis">
 
 <title>Tidymodels for omics data: Part 1 – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
@@ -236,7 +236,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 10, 2025</p>
+      <p class="date">November 11, 2025</p>
     </div>
   </div>
   
@@ -514,8 +514,9 @@ colData names(205): barcode patient ... tissue_source_site
 </div>
 <p>I’d like my data to be somewhat informed by biology, so will also use a set of Cancer genes. I got the set of genes following from <a href="https://www.oncokb.org/cancer-genes">OncoKB</a></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>cancer_genes <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(<span class="st">"cancerGeneList.tsv"</span>)</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>cancer_genes <span class="sc">|&gt;</span> <span class="fu">head</span>(<span class="at">n=</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"cancerGeneList.tsv"</span>)) <span class="fu">download.file</span>(<span class="st">"https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/cancerGeneList.tsv"</span>, <span class="at">destfile =</span> <span class="st">"cancerGeneList.tsv"</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>cancer_genes <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(<span class="st">"cancerGeneList.tsv"</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>cancer_genes <span class="sc">|&gt;</span> <span class="fu">head</span>(<span class="at">n=</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   Hugo.Symbol Entrez.Gene.ID  GRCh37.Isoform  GRCh37.RefSeq  GRCh38.Isoform
 1         ABL1             25 ENST00000318560    NM_005157.4 ENST00000318560
@@ -718,34 +719,36 @@ colData names(205): barcode patient ... tissue_source_site
 <li><a href="https://github.com/stemangiola/tidyHeatmap">tidyHeatmap</a></li>
 </ul>
 <p>This package works quite well with our workflow of using a “tidy” framework. It requires data in a <code>tbl_df</code> or <code>tibble</code> format, which we can create from <code>tidybulk</code> once we are done with pre-processing the data. Although the data we are working with are normalised, we must apply a log<span class="math inline">\(_2\)</span> transformation for the purposes of visualisation. I’ve also applied some basic data cleaning</p>
-<p>The <code>tidyHeatmap</code> function <code>heatmap</code> allows us to quickly add sample annotations to the plot, and since our data were using the tidy framework we have plenty of clincial variables at our fingertips. I’m choosing ER status and PAM50 classification, but you could add others such age, grade, or anything else.</p>
+<p>The <code>tidyHeatmap</code> function <code>heatmap</code> allows us to quickly add sample annotations to the plot, and since our data were using the tidy framework we have plenty of clinical variables at our fingertips. I’m choosing ER status and PAM50 classification, but you could add others such age, grade, or anything else.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>pam50_genes <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="st">"PAM50_genes.txt"</span>)[,<span class="dv">1</span>]</span>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"PAM50_genes.txt"</span>)) <span class="fu">download.file</span>(<span class="st">"https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/PAM50_genes.txt"</span>, <span class="at">destfile =</span> <span class="st">"PAM50_genes.txt"</span>)</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyHeatmap)</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>pam50_genes <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="st">"PAM50_genes.txt"</span>)[,<span class="dv">1</span>]</span>
 <span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a> brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">%in%</span> pam50_genes,] <span class="sc">%&gt;%</span> </span>
-<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="do">## once filtered, make a "tidy" version</span></span>
-<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">logcount =</span> <span class="fu">log2</span>(fpkm_uq <span class="sc">+</span> <span class="dv">1</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>  <span class="do">## get the counts, samples and genes</span></span>
-<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">ER =</span> er_status_by_ihc, <span class="at">PAM50 =</span>paper_BRCA_Subtype_PAM50) <span class="sc">%&gt;%</span></span>
-<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ER =</span> <span class="fu">ifelse</span>(ER <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Positive"</span>, <span class="st">"Negative"</span>), ER, <span class="cn">NA</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(ER), <span class="sc">!</span><span class="fu">is.na</span>(PAM50)) <span class="sc">%&gt;%</span> </span>
-<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>  tidyHeatmap<span class="sc">::</span><span class="fu">heatmap</span>(</span>
-<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>        <span class="at">.column =</span> .sample,</span>
-<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>        <span class="at">.row =</span> gene_name,</span>
-<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>        <span class="at">.value =</span> logcount,   </span>
-<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>        <span class="at">scale =</span> <span class="st">"row"</span>,</span>
-<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>        <span class="at">palette_value =</span> circlize<span class="sc">::</span><span class="fu">colorRamp2</span>(</span>
-<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a>            <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="at">length.out =</span> <span class="dv">11</span>), </span>
-<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>            RColorBrewer<span class="sc">::</span><span class="fu">brewer.pal</span>(<span class="dv">11</span>, <span class="st">"RdBu"</span>)</span>
-<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
-<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_tile</span>(ER ,<span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"orange"</span>,<span class="st">"purple"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb35-25"><a href="#cb35-25" aria-hidden="true" tabindex="-1"></a>  <span class="do">## I couldn't work out how to assign particular colours, so had to experiment at bit with the correct order to specify the colours in</span></span>
-<span id="cb35-26"><a href="#cb35-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_tile</span>(PAM50,<span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"darkblue"</span>, <span class="st">"pink"</span>, <span class="st">"lightblue"</span>, <span class="st">"yellow"</span>, <span class="st">"red"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyHeatmap)</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a> brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">%in%</span> pam50_genes,] <span class="sc">%&gt;%</span> </span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  <span class="do">## once filtered, make a "tidy" version</span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">logcount =</span> <span class="fu">log2</span>(fpkm_uq <span class="sc">+</span> <span class="dv">1</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>  <span class="do">## get the counts, samples and genes</span></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">ER =</span> er_status_by_ihc, <span class="at">PAM50 =</span>paper_BRCA_Subtype_PAM50) <span class="sc">%&gt;%</span></span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ER =</span> <span class="fu">ifelse</span>(ER <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Positive"</span>, <span class="st">"Negative"</span>), ER, <span class="cn">NA</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(ER), <span class="sc">!</span><span class="fu">is.na</span>(PAM50)) <span class="sc">%&gt;%</span> </span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>  tidyHeatmap<span class="sc">::</span><span class="fu">heatmap</span>(</span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>        <span class="at">.column =</span> .sample,</span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>        <span class="at">.row =</span> gene_name,</span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>        <span class="at">.value =</span> logcount,   </span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a>        <span class="at">scale =</span> <span class="st">"row"</span>,</span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>        <span class="at">palette_value =</span> circlize<span class="sc">::</span><span class="fu">colorRamp2</span>(</span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a>            <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="at">length.out =</span> <span class="dv">11</span>), </span>
+<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a>            RColorBrewer<span class="sc">::</span><span class="fu">brewer.pal</span>(<span class="dv">11</span>, <span class="st">"RdBu"</span>)</span>
+<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb35-25"><a href="#cb35-25" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span> </span>
+<span id="cb35-26"><a href="#cb35-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_tile</span>(ER ,<span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"orange"</span>,<span class="st">"purple"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb35-27"><a href="#cb35-27" aria-hidden="true" tabindex="-1"></a>  <span class="do">## I couldn't work out how to assign particular colours, so had to experiment at bit with the correct order to specify the colours in</span></span>
+<span id="cb35-28"><a href="#cb35-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_tile</span>(PAM50,<span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"darkblue"</span>, <span class="st">"pink"</span>, <span class="st">"lightblue"</span>, <span class="st">"yellow"</span>, <span class="st">"red"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -758,7 +761,7 @@ colData names(205): barcode patient ... tissue_source_site
 </section>
 <section id="survival-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="survival-analysis">Survival Analysis</h3>
-<p>Finally, a pertinent question to ask is whether the subtypes are <em>clinically-meaningful</em>. If we know what subtype a patient has, what can this tell us about their survival prospects? A <em>kaplan-meier</em> (KM) curve is a standard way to estimate and visualize the survival probability over a specified period, and can be created by the <code>survival</code> package and visualised using the package<code>survminer</code>. The curve starts at 100% (or probability 1.0) at time zero and steps down each time a patient dies. A tick mark on the curve indicates a patient who was lost to follow-up or was still alive when the data was collected (censored). These patients contribute to the probability calculation up until the time they were last observed.</p>
+<p>Finally, a pertinent question to ask is whether the subtypes are <em>clinically-meaningful</em>. If we know what subtype a patient has, what can this tell us about their survival prospects? A <em>kaplan-meier</em> (KM) curve is a standard way to estimate and visualize the survival probability over a specified period, and can be created by the <code>survival</code> package and visualised using the package <code>survminer</code>. The curve starts at 100% (or probability 1.0) at time zero and steps down each time a patient dies. A tick mark on the curve indicates a patient who was lost to follow-up or was still alive when the data was collected (censored). These patients contribute to the probability calculation up until the time they were last observed.</p>
 <p>The clinical data we have needs modifying slightly to run the analysis. In particular we need to create “Status” and “Time” columns which records if a patient is alive (0) or dead (1) at the end of the study, and the time to either death or total follow-up time. We will also remove any patients where the Time or status is missing or inaccurate. The dataset also includes some metastatic or recurrent tumours, but for the purposes of the curve we will use only “primary” samples.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survminer)</span>
