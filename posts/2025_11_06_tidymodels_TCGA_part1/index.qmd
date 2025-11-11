@@ -120,7 +120,7 @@ To get the *transcriptomic* data we are going to follow a similar approach using
 For my transcriptomic data I am choosing the `STAR - Counts` option and requesting tumours only (TCGA also holds data for "normal"/healthy tissue). If repeating these steps on a different disease you may need to change these options.
 
 
-:::{.callout-note}
+::: {.callout-note}
 
 If you are interested in other types of data (Proteome, Methylation, Exome,...) the general procedure is the same as presented here, but the values for `workflow.type` and `data.type` will need to be different. The [TCGAbiolinks webpage](https://bioconductor.org/packages/devel/bioc/vignettes/TCGAbiolinks/inst/doc/download_prepare.html) has many examples of downloading data of different types. 
 
