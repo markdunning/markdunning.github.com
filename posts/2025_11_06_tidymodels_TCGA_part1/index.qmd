@@ -254,6 +254,20 @@ cancer_genes <- read.delim("cancerGeneList.tsv")
 cancer_genes |> head(n=10)
 ```
 
+::: {.callout-note}
+
+If you would prefer a purely data-driven approach that doesn't use any prior knowledge you could instead use the result of `keep_variable` as your filtered object.
+
+```{r eval=FALSE}
+brca_gene_filtered <- brca_fpkm_uq_unstrand_expressed |>
+  keep_variable(top = 2000) 
+```
+
+
+
+:::
+
+
 Now we have a set of gene names that we want to keep in the analysis. The filtering this time is more efficient on the `SummarizedExperiment` object.
 
 ```{r final_filter}
@@ -276,7 +290,7 @@ When working on breast cancer, and coming from a purely computational background
 
 To get the data for just `ESR1` It's actually more efficient in this case to filter the gene from the `SummarizedExperiment` object before calling `tidybulk`. I'm not sure if this is the intended workflow, but our data are so large that calling `tidybulk` on the entire dataset takes too much RAM in my case.
 
-```{r esr1_allcats}
+```{r esr1_allcats, cache=TRUE}
 library(ggplot2)
 library(dplyr)
 
