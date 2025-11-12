@@ -4,7 +4,7 @@ author: Mark Dunning
 date: 2025-11-10
 theme: darkly
 image: preview.png
-description: "Downloading and exploring TCGA (breast cancer) expression data from GEO so we can proceed to use machine learning later. We'll also make some exploratory plots such as survival analysis"
+description: "A proof of concept machine learning tasks to classify Estrogen Receptor status of TCGA breast cancers using logistic regression and decision trees"
 ---
 
 ```{r}
@@ -19,31 +19,47 @@ knitr::opts_chunk$set(
 
 ```
 
-## Pre-amble
+# Pre-amble
 
-This will be the first in a series where I look at machine learning techniques applied to omics data. However, before we get ahead of ourselves we'll need some data. I decided to use breast cancer samples available through The Cancer Genome Atlas (**TCGA**).
+In the previous section we described how to download TCGA data for breast cancers and manipulated them using a combination of `tidybulk` and `dplyr` to retain a set of expressed, variable genes plus a set of known cancer genes. 
 
-We need the `TCGAbiolinks` package that will do most of the work of downloading, and `tidybulk` for manipulation.
+There is a *very extensive* set of clinical information recorded for each sample / patient, but to keep things simple we will start with a task for being able to predict **Estrogen Receptor status** from the expression data. This is clearly not going to get us a Nature paper or a Nobel prize, but it should work well and introduce some of the key concepts of machine learning. There are a set of packages that we will need:-
 
 ```{r eval=FALSE}
-
-## required for heatmap example
 if(!require(tidymodels)) install.packages("tidymodels")
 
+## install BiocManager to install Bioconductor packages
+if(!require(BiocManager)) install.packages("BiocManager")
+
+if(!require(tidybulk)) BiocManager::install("tidybulk")
+if(!require(SummarizedExperiment)) BiocManager::install("SummarizedExperiment")
+
+if(!require(dplyr)) install.packages("dplyr")
+if(!require(ggplot2)) install.packages("ggplot2")
+if(!require(forcats)) install.packages("forcats")
 
 ```
 
-## Downloading the data
+You also need the processed data from the [previous section](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/) and the code to download this is:-
 
-```{r}
+```{r eval=FALSE}
 ### get the saved RDS
+dir.create("raw_data", showWarnings = FALSE)
+if(!file.exists("raw_data/brca_gene_filtered_SE.rds")) download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_gene_filtered_SE.rds", destfile = "raw_data/brca_gene_filtered_SE.rds")
+
 ```
 
 ## Pre-processing
 
-Create a data frame for modeling
+The object `brca_gene_filtered_SE.rds` is a `SummarizedExperiment`, which is a specialised object type used for RNA-seq and other omics type data. The `tidybulk` package can be used to convert this into a "tidy" format for easy manipulation with the `tidyverse` set of package. A tidy format is also ameanable to fitting models in R, as the general format of a model is in the form `y ~ x` with `y` and `x` being columns some data frame. `y` is often referred to as the *response* variable and `x` as the *predictor* variable. 
 
-```{r}
+In reality we will often have more than one predictor and our analysis will try and work out the best combination of variables to predict the outcome. However, in this example we will just use the expression of the `ESR1` gene to predict the response of ER status (`er_status_by_ihc`). Hence we create a data frame with ESR1 expression and ER status as columns. For this reasons that will become apparent shortly we also create a binary (0 or 1) representation of ER status with 1 being equivalent to `Positive`. We'll also change the order of the `ER` factor so that `Positive` is before `Negative`.
+
+::: {.callout-note}
+Since we are only using one gene this is simplified as filtering by `ESR1` means the values in `fpkm_uq` (our normalised counts) are already the expression of ESR1. If we wanted to include multiple genes we would need a column for each gene.
+:::
+
+```{r makeDFforModels}
 library(tidybulk)
 library(SummarizedExperiment)
 
@@ -54,32 +70,60 @@ er_data <- brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ESR1"] |
   dplyr::select(ER=er_status_by_ihc, ESR1 = fpkm_uq) |>
   dplyr::filter(ER %in% c("Positive","Negative")) |> 
   dplyr::mutate(ER_Numeric = ifelse(ER== "Positive", 1,0)) |>
-  dplyr::mutate(ESR1 = log2(ESR1 + 1))
-
-
-
+  dplyr::mutate(ESR1 = log2(ESR1 + 1)) |>
+  dplyr::mutate(ER  = forcats::fct_rev(ER))
 
 ```
 
+We have already seen the relationship between the ER status and the expression level of ESR1 in the form of a boxplot. The relationship is striking, but doesn't always hold true that higher `ESR1` means `Positive`. There are clearly some `Negative` samples with `ESR1` expression over 6, and some `Positive` samples with `ESR1` around 0.
 
-Motivation
-
-```{r}
-ggplot(er_data, aes(x = ER, y = ESR1)) + geom_boxplot() + geom_jitter(width = 0.1, alpha= 0.4) + geom_hline(yintercept = 3)
+```{r, esr1-initial, cache=TRUE}
+library(ggplot2)
+ggplot(er_data, aes(x = ER, y = ESR1)) + geom_boxplot() + geom_jitter(width = 0.1, alpha= 0.4) 
 ```
 
-Do initial splits
+We can attempt to draw a horizontal line on the boxplot at sensible point and use this to infer the ER status and add this information to the data. Congratulations! We have just done our first classification 🎉
+
+```{r inferER}
+er_data |>
+  mutate(ER_inferred = ifelse(ESR1 > 3, "Positive","Negative")) |>
+  head()
+```
+
+On the same boxplot as before we can colour points according to which ER Status they are assigned under our new rule. This emphasises that the grouping is not perfect, but perhaps it is good enough for our purposes. 
+
+```{r, esr1-withCutoff, cache=TRUE}
+er_data |>
+  mutate(ER_inferred = ifelse(ESR1 > 3, "Positive","Negative")) |>
+  ggplot(aes(x = ER, y = ESR1)) + geom_boxplot() + geom_jitter(aes(col = ER_inferred),width = 0.1, alpha= 0.4) + geom_hline(yintercept = 3, col="red", lty=2, size=2)
+```
+
+We can count up how many times samples get allocated to the wrong group, and this will actually serves as a metric later on for evaluating how well we are doing
+
+```{r twoByTwo}
+er_data |>
+  dplyr::mutate(ER_inferred = ifelse(ESR1 > 3, "Positive","Negative")) |>
+  dplyr::count(ER, ER_inferred) |>  # Count combinations
+  tidyr::pivot_wider(
+    names_from = ER,
+    values_from = n,
+    values_fill = 0
+  )
+```
+
+Of course, although informed by the plot, we have just picked an arbitrary value of `ESR1`. Is this the best possible value we could have picked? Can we prove that the rule will work for other datasets too? These are questions we can answer using machine learning approaches. The first task is to split partition our data into distinct training and testing sets. The overall aim is to *learn* about the data by modeling and refine our choice of parameters using the training, and then see how this performs in a test set. The crucial part is that **the training and testing datasets are kept completely separate**.
+
+It is possible to use the `sample` function from R to pick rows from our dataset, or even the `slice_sample` from `dplyr`, but the most straightforward way of splitting the data into training and testing is using the `tidymodels` package. We will learn *lots* about this package in due course. The same way that `tidyverse` is a collection of packages with a common philosophy for data manipulation and visualisaton, `tidymodels` is a ecosystem of packages for all steps of machine learning. The first task is often to split data into traiing and testing sets, which is performed by the `initial_split` function after loading `tidymodels`. During the split it is common to use the majority (say 80%) of the data for training. You can also make sure that the your outcome of interest has roughly the same proportion in training and testing. Once a split is created with `initial_split` you can extract the `training` and `testing` data.
 
 
-```{r}
+```{r doInitialSplit}
 library(tidymodels)
 
-set.seed(42) # For reproducibility
-
-# Assuming 'esr1_final_data' is your data frame with columns: ER (factor), ESR1 (numeric)
-
-# Create the initial split object (75% train / 25% test is common, too)
-data_split <- initial_split(er_data, prop = 0.80, strata = ER)
+## Setting a 'seed' makes sure the results are reproducible
+set.seed(42) 
+data_split <- initial_split(er_data, 
+                            prop = 0.80, 
+                            strata = ER)
 
 # Create the training data set
 er_train <- training(data_split)
@@ -90,67 +134,291 @@ er_test <- testing(data_split)
 ```
 
 
-## Logistic Regression 
+This is not usually required, but we can inspect the first few rows of the training
 
-```{r}
-# Fit the logistic regression model using the logged ESR1 expression
-# Formula: Outcome ~ Predictor, using the binomial family for logistic regression
+```{r lookAtTrain}
+er_train |> 
+  head()
+```
+
+and test data
+
+```{r lookAtTest}
+er_test |>
+  head()
+```
+
+and check that indeed the training data has around 80% of our original data
+
+```{r checkTrainPerc}
+nrow(er_train) / nrow(er_data)
+```
+
+and our testing data should be around 20%
+
+```{r checkTestPerc}
+nrow(er_test) / nrow(er_data)
+```
+
+We can also check the ER Positive / Negative balance in our original dataset.
+
+```{r checkERSplit}
+dplyr::count(er_data, ER) |>
+  mutate(prop = n / nrow(er_data))
+```
+
+and check that it is preserved in the training:-
+
+```{r checkERSplitTrain}
+dplyr::count(er_train, ER) |>
+  mutate(prop = n / nrow(er_train))
+```
+
+
+and testing data. We don't need to do this in practice, it's just to reassure us that `tidymodels` is splitting the data as we expect.
+
+```{r checkERSplitTest}
+dplyr::count(er_test, ER) |>
+  mutate(prop = n / nrow(er_test))
+```
+
+We should be good to go with the machine learning task, but first we will have to go through a few definitions.
+
+# Regression in general, and Logistic Regression
+
+Regression, in simple terms, is a statistical method used to understand the relationship between input (or predictor) features and a response (or outcome) value that varies across a continuous numeric range. It's much simpler to visualise this in two-dimensional space as two variables `x` and `y`
+
+
+```{r exampleLM, echo=FALSE}
+set.seed(123)  # For reproducibility
+x <- 1:50
+y <- 2.5 * x + rnorm(50, mean = 0, sd = 10)  # Linear trend + noise
+
+data <- data.frame(x = x, y = y)
+
+# Plot with ggplot2
+ggplot(data, aes(x = x, y = y)) +
+  geom_point(color = "blue", size = 2) +  # Scatter points
+  labs(
+    x = "X Variable",
+    y = "Y Variable"
+  ) +
+  theme_minimal()
+```
+
+With regression, we can determine the line that "best fits" the relationship. This is shown here in red for these example data.
+
+```{r exampleLMWithLine, echo=FALSE}
+set.seed(123)  # For reproducibility
+x <- 1:50
+y <- 2.5 * x + rnorm(50, mean = 0, sd = 10)  # Linear trend + noise
+
+data <- data.frame(x = x, y = y)
+
+# Plot with ggplot2
+ggplot(data, aes(x = x, y = y)) +
+  geom_point(color = "blue", size = 2) +  # Scatter points
+  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Linear regression line
+  labs(
+    x = "X Variable",
+    y = "Y Variable"
+  ) +
+  theme_minimal()
+```
+
+
+The straight line shown here is defined by an intercept (where it hits the y-axis) and a slope and can be written as:- $y = mx +b$ where:-
+
+- `y` is the response
+- `x` is the predictor
+- `m` is the slope
+- `b` is the intercept
+
+Once we have all these values we can calculate (or predict) what value of `y` would be given any value of `x` **even for values of x we haven't observed yet**. The function `lm` will fit the model to the data we plotted above
+
+```{r exampleLMFit}
+set.seed(123)  # For reproducibility
+x <- 1:50
+y <- 2.5 * x + rnorm(50, mean = 0, sd = 10)  # Linear trend + noise
+
+data <- data.frame(x = x, y = y)
+
+
+fit <- lm(y ~ x, data = data)
+fit
+```
+The `summary` of the `fit` object, or just printing the object itself shows that the intercept is `r coef(fit)[1]` and the slope is `r coef(fit)[2]`. 
+
+```{r fitSummary}
+fit
+summary(fit)
+```
+This is all good so far, but how can we apply such techniques to our data? We can start by re-plotting our data but instead of a boxplot making a scatter plot with ESR1 expression on the x-axis and the ER status converted to 0 or 1 on the y-axis. It quickly becomes apparent that a straight-line (or "linear") model isn't going to work.
+
+
+```{r ERLMFit}
+
+ggplot(er_data, aes(x = ESR1, y  = ER_Numeric)) + 
+  geom_point(aes(color = ER),position = position_jitter(height = 0.05)) + 
+  geom_smooth(method = "lm", se = FALSE)
+
+```
+
+However, we needn't despair because R provides options for modelling other relations and shapes of curve. The particular one we want is an S-shaped curve (called a *sigmnoid* curve), which looks more like this:-
+
+(code not shown as we will go through this in the next steps)
+
+
+```{r ERLogFit, echo=FALSE}
+
+# Assuming 'data' contains your X and y (0/1) columns, and 'model' is your fitted glm object.
+
+ggplot(er_data, aes(x = ESR1, y = ER_Numeric)) +
+  
+  # 1. Add the binary data points
+  # Use position_jitter() to prevent all 0s and 1s from stacking into thick lines
+  geom_point(aes(color = factor(ER_Numeric)), 
+             size = 2, 
+             alpha = 0.6, 
+             position = position_jitter(height = 0.05)) +
+  
+  # 2. Add the Sigmoid Curve
+  # Use geom_smooth with method="glm" and family="binomial" to draw the curve
+  geom_smooth(method = "glm", 
+              method.args = list(family = "binomial"), 
+              se = FALSE, 
+              linewidth = 1) +
+  theme_minimal()
+```
+
+## Fitting a Logistic Regression
+
+The curves actually represents a series of probabilities between 0 and 1 which can be used to assign to a particular point to either `Positive` or `Negative` group. If the probability is closer to 1 for a given observation then it is more likely to belong to the `Positive` class, and if the probability is close to 0 then it is more likely to be `Negative`. The definition of "close" typically means > 0.5 belong to `Positive` but we can change this.
+
+So let's look at the code to fit such a curve using a technique called *logistic regression* within R. We will use the `glm` function that has a similar interface to the `lm` function we saw briefly. Setting `family = binomial` as it tells `glm` to fit the S-shaped curve that we need.
+
+Note that we use the *training* portion of our data, `er_train` to fit the model. 
+
+```{r fitGLM}
+
+# Formula: Outcome ~ Predictor,
 simple_logit_fit <- glm(
   ER_Numeric ~ ESR1, 
   data = er_train, 
+  #set the "family" to binomial for logistic regression
   family = "binomial"
 )
 
-# View the model summary (shows coefficients and significance)
+# View the model summary
 summary(simple_logit_fit)
 ```
 
-Predictions
+The interpretation is a bit trickier because we don't have a slope and intercept with this kind of model. Instead the coefficient for `ESR1` signifies how the *log-odds* of being `Positive` increases as the level of `ESR1` increase by *one unit*. The *odds* are more intuitive and these can be calculated with:-
 
-```{r}
-# Predict probabilities (0 to 1) on the test set
+```{r calcLogOdds}
+log_odds <- coef(simple_logit_fit)[2]
+odds_ratio <- exp(log_odds)
+odds_ratio
+```
+
+
+The *odds ratio* is `r odds_ratio` meaning the increasing `ESR1` expression means you are around `r round(odds_ratio)` more likely to be ER positive than negative. Now that we have built the model we can use it to make predictions given a set of `ESR1`. If we want to make sure our model has not been biased by any specific patterns only observed in our training data we should predict using a set of data the model has not "seen" before. This is why we split our data into training and testing sets. If we set `type = response` the result will be probability for each observation in the testing set.
+
+
+```{r getProbs}
 test_probabilities <- predict(
   simple_logit_fit, 
   newdata = er_test, 
   type = "response" # 'response' gives probabilities
 )
-
-# 2. Convert probabilities to a class prediction (0 or 1)
-# We use the standard threshold of 0.5: if P(Y=1) > 0.5, predict 1 (Positive)
-predicted_class_numeric <- ifelse(test_probabilities > 0.5, 1, 0)
-
-# 3. Calculate Accuracy
-# Accuracy is the number of correct predictions divided by the total number of predictions
-actual_class_numeric <- er_test$ER_Numeric
-
-# Calculate the number of correct predictions (where predicted == actual)
-correct_predictions <- sum(predicted_class_numeric == actual_class_numeric)
-
-# Calculate Accuracy
-accuracy <- correct_predictions / length(actual_class_numeric)
-
-cat("Model Accuracy:", round(accuracy, 4), "\n")
-
+test_probabilities[1:10]
 ```
-What is going on?
+We can now plot the probabilities against the respective `ESR1` value, which hopefully gives the S-shaped curve we are trying to fit. To convert the probabilities to a `Positive` or `Negative` label we set a threshold such as 0.5. In the below plot we also mark the predictions that are incorrect.
+
+```{r showLogisticResults}
+er_test |>
+  mutate(Prob = test_probabilities, `Actual Label` = ER) |>
+  mutate(`Predicted Label` = ifelse(test_probabilities > 0.5, "Positive", "Negative")) |>
+  mutate(`Correct Prediction` = as.factor(ER == `Predicted Label`)) |>
+  ggplot(aes(x = ESR1, y = Prob, col = `Actual Label`, shape = `Correct Prediction`, size = `Correct Prediction`, alpha=`Correct Prediction`)) + 
+  geom_point() + 
+  geom_hline(yintercept = 0.5, lty = 2) + 
+  scale_shape_manual(values = c(4, 16)) +
+  scale_size_manual(values = c(5,2)) + 
+  scale_alpha_manual(values = c(1,0.4))
+```
+
+## Evaluating the fit
+
+On inspection, it looks there are fewer cases that should be `Negative` that have been labeled as `Positive`, than `Positive` cases labeled as `Negative`. Overall though, most of the predictions look correct. To formalise this and attach some metrics we can create what is called a *confusion matrix*. To create this we can use the `yardstick` package that is included as part of `tidymodels`.
+
+```{r makeLogFitConfMat}
+library(yardstick)
+er_test %>% 
+  mutate(Predicted_ER = factor(ifelse(test_probabilities > 0.5, "Positive", "Negative"), levels = c("Positive","Negative"))) %>% 
+  conf_mat(ER, Predicted_ER)
+```
+The numbers in the table have names and meanings associated with them:-
+
+- True Negatives (TN) 46 Correctly predicted `Negative`
+- True Positives (TP) 154 Correctly predicted `Positive`
+- False Positives (FP) 3 Incorrectly predicted `Positive` when the tumor was actually `Negative`. Also known as **Type I Error**
+- False Negatives (FN) 10 Incorrectly predicted `Negative` when the tumor was actually `Positive`. Also known as **Type II Error**
+
+Three common metrics for *classification* problems such as this are:-
+
+- **Accuracy** = Accuracy is the total number of correct predictions divided by the total samples.
+  + $ TP  +TN / (Total)$ = $ 154 + 46 / 213$ $\approx$93.3%
+- **Sensitivity** (True Positive Rate) = how well the model finds all the actual Positive cases.
+  + $TP  / (TP + FN)$ = $ 154 / (154  + 10)$ $\approx$93.3%
+- **Specificity** (True Negative Rate) = how well the model avoids incorrectly classifying actual Negative cases.
+  + $TN  / (TN + FP)$ = $ 46 / (46  + 3)$ $\approx$93.3%
+  
+Fortunately we don't need to type all those equations by hand as `yardstick` will allow us to define a set of metrics and use these to evaluate our predictions
+
+```{r logFitMetrics} 
+class_metrics <- metric_set(accuracy, sensitivity, specificity)
+
+er_test %>% 
+  mutate(Predicted_ER = factor(ifelse(test_probabilities > 0.5, "Positive", "Negative"), levels = c("Positive","Negative"))) %>% 
+  class_metrics(truth=ER, estimate = Predicted_ER) 
+```
+
+The metrics have all been calculated on the basis of using a probability of 0.5 to classify samples as `Positive` or `Negative`. This was a fairly arbitrary choice and we could experiment with other values. To save us time, the `roc_curve` function will calculate the specificity and sensitivity for a range of thresholds.
+
+```{r makeKLogFitROC}
+er_test %>% 
+  mutate(Prob = test_probabilities) %>% 
+  roc_curve(ER, Prob) %>% 
+  slice_head(n = 10)
+```
+
+We can see for example setting a threshold close to 0 means that all `Positive` cases are identified, but the specificity is miserable as there are too many false positives. Plotting sensitivity against 1 - specificity (the False Positive rates) gives a very famous curve called the **ROC curve** ("Receiver Operating Characteristics"). We can create this using the `autoplot` function after `roc_curve`.
 
 ```{r}
-library(ggplot2)
-
-bind_cols(er_test, Predicted_prob  = test_probabilities) %>% 
-  ggplot(aes(x = ESR1, y = Predicted_prob, col = as.factor(ER))) + geom_point()
-
+er_test %>% 
+  mutate(Prob = test_probabilities) %>% 
+  roc_curve(ER, Prob) %>% 
+  autoplot()
 ```
+A curve near the top-left corner indicates a model with high discriminatory power. i.e. the model can achieve high Sensitivity (finding true positives) without incurring a significant cost in Specificity (avoiding false positives). If the curve is close to the diagonal line then it is not much better than guessing.
+
+::: {.callout-important}
+
+When deciding the threshold to use there is usually a trade-off between specificity and sensitivity. Do you want to make sure that you capture all your positive cases at the expense of a few false positives>? In which case you would lower the threshold
+
+Or do you want to be absolutely sure about the cases you identify, at the expense of missing a few positives? If so then increase the threshold.
+
+If a treatment following a positive diagnosis is invasive, expensive, or has severe side effects, you want to be highly certain before proceeding. Here, the cost of a False Positive (treating a healthy person) might be much higher than the cost of a False Negative.
+
+:::
 
 ## Decision Tree
 
+
+
 ```{r}
 library(rpart)
-
-
-er_train <- er_train %>% 
-    mutate(ER = factor(ER, levels = c("Negative", "Positive")))
-
 # Fit the tree model
 # Formula: Outcome ~ Predictor, using ER status and logged ESR1 expression
 simple_tree_fit <- rpart(
@@ -160,8 +428,13 @@ simple_tree_fit <- rpart(
 )
 
 # Print the fitted tree structure (shows the split value)
-print(simple_tree_fit)
+
 ```
+
+```{r}
+simple_tree_fit
+```
+
 
 ```{r}
 # Load the visualization package
@@ -203,11 +476,9 @@ bind_cols(er_test, Predicted_prob  = test_probabilities) %>%
   ggplot(aes(x = ESR1, y = Predicted_prob, col = as.factor(ER))) + geom_point() + geom_vline(xintercept = 2.4, col="red", lty=2)
 ```
 
-
 ## Introducting tidymodels
 
 Model Specification
-
 
 ```{r}
 # Specify a logistic regression model
@@ -219,14 +490,12 @@ logit_spec <- logistic_reg() %>%
 
 ```
 
-
 Recipe
 
 ```{r}
 # We assume the log-transform has already been applied outside the recipe
 er_logit_recipe <- recipe(ER ~ ESR1, data = er_train)
 ```
-
 
 Workflow and training
 
@@ -240,7 +509,6 @@ er_logit_fit <- logit_workflow %>%
   fit(data = er_train)
 ```
 
-
 ```{r}
 # Extract the underlying glm object
 glm_object <- er_logit_fit %>%
@@ -249,6 +517,7 @@ glm_object <- er_logit_fit %>%
 # View the standard summary
 summary(glm_object)
 ```
+
 Making predictions
 
 ```{r}
@@ -274,7 +543,6 @@ er_results <- er_test %>%
 head(er_results)
 ```
 
-
 ```{r}
 er_results %>%
   accuracy(truth = ER, estimate = .pred_class)
@@ -287,8 +555,6 @@ Can also make a ROC curve
 roc_data <- er_results %>%
   roc_curve(truth = ER, .pred_Positive)
 ```
-
-
 
 ```{r}
 # Calculate the AUC value to display on the plot
@@ -432,4 +698,3 @@ output$matrix_output <- renderUI({
 shinyApp(ui = ui, server = server)
 
 ```
-
