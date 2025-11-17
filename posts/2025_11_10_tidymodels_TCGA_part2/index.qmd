@@ -51,12 +51,12 @@ if(!file.exists("raw_data/brca_gene_filtered_SE.rds")) download.file("https://gi
 
 ## Pre-processing
 
-The object `brca_gene_filtered_SE.rds` is a `SummarizedExperiment`, which is a specialised object type used for RNA-seq and other omics type data. The `tidybulk` package can be used to convert this into a "tidy" format for easy manipulation with the `tidyverse` set of package. A tidy format is also ameanable to fitting models in R, as the general format of a model is in the form `y ~ x` with `y` and `x` being columns some data frame. `y` is often referred to as the *response* variable and `x` as the *predictor* variable. 
+The object `brca_gene_filtered_SE.rds` is a `SummarizedExperiment`, which is a specialised object type used for RNA-seq and other omics type data. The `tidybulk` package can be used to convert this into a "tidy" format for easy manipulation with the `tidyverse` set of package. A tidy format is also amenable to fitting models in R, as the general format of a model is in the form `y ~ x` with `y` and `x` being columns some data frame. `y` is often referred to as the *response* variable and `x` as the *predictor* variable. 
 
 In reality we will often have more than one predictor and our analysis will try and work out the best combination of variables to predict the outcome. However, in this example we will just use the expression of the `ESR1` gene to predict the response of ER status (`er_status_by_ihc`). Hence we create a data frame with ESR1 expression and ER status as columns. For this reasons that will become apparent shortly we also create a binary (0 or 1) representation of ER status with 1 being equivalent to `Positive`. We'll also change the order of the `ER` factor so that `Positive` is before `Negative`.
 
 ::: {.callout-note}
-Since we are only using one gene this is simplified as filtering by `ESR1` means the values in `fpkm_uq` (our normalised counts) are already the expression of ESR1. If we wanted to include multiple genes we would need a column for each gene.
+Since we are only using one gene the processing is simplified, as filtering by `ESR1` means the values in `fpkm_uq` (our normalised counts) are already the expression of `ESR1`. If we wanted to include multiple genes we would need a column for each gene.
 :::
 
 ```{r makeDFforModels}

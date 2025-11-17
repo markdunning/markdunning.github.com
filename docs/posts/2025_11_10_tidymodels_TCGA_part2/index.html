@@ -282,7 +282,7 @@ window.Quarto = {
 </div>
 <section id="pre-processing" class="level2">
 <h2 class="anchored" data-anchor-id="pre-processing">Pre-processing</h2>
-<p>The object <code>brca_gene_filtered_SE.rds</code> is a <code>SummarizedExperiment</code>, which is a specialised object type used for RNA-seq and other omics type data. The <code>tidybulk</code> package can be used to convert this into a “tidy” format for easy manipulation with the <code>tidyverse</code> set of package. A tidy format is also ameanable to fitting models in R, as the general format of a model is in the form <code>y ~ x</code> with <code>y</code> and <code>x</code> being columns some data frame. <code>y</code> is often referred to as the <em>response</em> variable and <code>x</code> as the <em>predictor</em> variable.</p>
+<p>The object <code>brca_gene_filtered_SE.rds</code> is a <code>SummarizedExperiment</code>, which is a specialised object type used for RNA-seq and other omics type data. The <code>tidybulk</code> package can be used to convert this into a “tidy” format for easy manipulation with the <code>tidyverse</code> set of package. A tidy format is also amenable to fitting models in R, as the general format of a model is in the form <code>y ~ x</code> with <code>y</code> and <code>x</code> being columns some data frame. <code>y</code> is often referred to as the <em>response</em> variable and <code>x</code> as the <em>predictor</em> variable.</p>
 <p>In reality we will often have more than one predictor and our analysis will try and work out the best combination of variables to predict the outcome. However, in this example we will just use the expression of the <code>ESR1</code> gene to predict the response of ER status (<code>er_status_by_ihc</code>). Hence we create a data frame with ESR1 expression and ER status as columns. For this reasons that will become apparent shortly we also create a binary (0 or 1) representation of ER status with 1 being equivalent to <code>Positive</code>. We’ll also change the order of the <code>ER</code> factor so that <code>Positive</code> is before <code>Negative</code>.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -294,7 +294,7 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Since we are only using one gene this is simplified as filtering by <code>ESR1</code> means the values in <code>fpkm_uq</code> (our normalised counts) are already the expression of ESR1. If we wanted to include multiple genes we would need a column for each gene.</p>
+<p>Since we are only using one gene the processing is simplified, as filtering by <code>ESR1</code> means the values in <code>fpkm_uq</code> (our normalised counts) are already the expression of <code>ESR1</code>. If we wanted to include multiple genes we would need a column for each gene.</p>
 </div>
 </div>
 <div class="cell">
