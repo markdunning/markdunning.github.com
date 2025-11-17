@@ -612,7 +612,7 @@ Thankfully we reach the same results as before, but using a coding framework tha
 
 To use a decision tree rather than a logistic regression we first have to create a new model specification. To keep things consistent we'll use `rpart` to fit the model, but note that we're not fitting the model at this point but just saying that `rpart` will be used.
 
-```{r tidyModels_DT_spec}
+```{r tidyModels_DT_spec_2}
 tree_spec <- decision_tree() %>%
   set_engine("rpart") %>%       # We will use the 'rpart' package to actually fit the model
   set_mode("classification")    # Specify the task type

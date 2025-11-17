@@ -803,7 +803,7 @@ Important
 </section>
 <section id="fitting-a-decision-tree" class="level1">
 <h1>Fitting a decision tree</h1>
-<p>It is common practice to try various statistical methods on the same dataset and compare how they perform using the metrics described above. The next method we will try is that of a <em>decision tree</em>, which actually follows quite nicely for the example we used at the start of this section where we picked a threshold on the <code>ESR1</code> expression and used that to classify. As it’s name implies, the decision tree is a way of forming rules based on threshold in the form of “if X is &gt; … then Y belongs to class A”. If is often visualised in the form of a tree. As we only have only variable (<code>ESR1</code>) the tree will look a bit boring, but cangrow more much more complex.</p>
+<p>It is common practice to try various statistical methods on the same dataset and compare how they perform using the metrics described above. The next method we will try is that of a <em>decision tree</em>, which actually follows quite nicely for the example we used at the start of this section where we picked a threshold on the <code>ESR1</code> expression and used that to classify. As it’s name implies, the decision tree is a way of forming rules based on threshold in the form of “if X is &gt; … then Y belongs to class A”. If is often visualised in the form of a tree. As we only have only variable (<code>ESR1</code>) the tree will look a bit boring, but can grow more much more complex.</p>
 <p>We use the <code>rpart</code> package for this, which we should already have from installing <code>tidymodels</code>. The code looks pretty similar to the <code>glm</code> from before. Briefly, the function will try different possibilities of <code>ESR1</code> as potential values for the cut-off. For each cut-off, it splits the data into two classes. It then assess the “purity” of each class; in other words the % of <code>Positive</code> and <code>Negative</code> in each class. The split resulting in the most “pure” classes is chosen.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rpart)</span>
@@ -860,7 +860,7 @@ Important
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/simpleDecisionTree_plot-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
