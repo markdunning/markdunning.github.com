@@ -1,7 +1,7 @@
 ---
 title: "Tidymodels for omics data: Part 2"
 author: Mark Dunning
-date: 2025-11-10
+date: 2025-11-17
 theme: darkly
 image: preview.png
 description: "A proof of concept machine learning tasks to classify Estrogen Receptor status of TCGA breast cancers using logistic regression and decision trees"
@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 
 In the previous section we described how to download TCGA data for breast cancers and manipulated them using a combination of `tidybulk` and `dplyr` to retain a set of expressed, variable genes plus a set of known cancer genes. 
 
-There is a *very extensive* set of clinical information recorded for each sample / patient, but to keep things simple we will start with a task for being able to predict **Estrogen Receptor status** from the expression data. This is clearly not going to get us a Nature paper or a Nobel prize, but it should work well and introduce some of the key concepts of machine learning. There are a set of packages that we will need:-
+There is a *very extensive* set of clinical information recorded for each sample / patient, but to keep things simple we will start with a task for being able to predict **Estrogen Receptor status** from the expression data, which can be used as an indicator of whether a patient will respond to certain treatments. This is clearly not going to get us a Nature paper or a Nobel prize, but it should work well and introduce some of the key concepts of machine learning. There are a set of packages that we will need:-
 
 ```{r eval=FALSE}
 if(!require(tidymodels)) install.packages("tidymodels")
@@ -247,13 +247,13 @@ data <- data.frame(x = x, y = y)
 fit <- lm(y ~ x, data = data)
 fit
 ```
-The `summary` of the `fit` object, or just printing the object itself shows that the intercept is `r coef(fit)[1]` and the slope is `r coef(fit)[2]`. 
+The `summary` of the `fit` object, or just printing the object itself shows that the intercept is `r round(coef(fit)[1],3)` and the slope is `r round(coef(fit)[2],3)`. 
 
 ```{r fitSummary}
 fit
 summary(fit)
 ```
-This is all good so far, but how can we apply such techniques to our data? We can start by re-plotting our data but instead of a boxplot making a scatter plot with ESR1 expression on the x-axis and the ER status converted to 0 or 1 on the y-axis. It quickly becomes apparent that a straight-line (or "linear") model isn't going to work.
+This is all good so far, but how can we apply such techniques to our data? We can start by re-plotting our data but instead of a boxplot, we make a scatter plot with ESR1 expression on the x-axis and the ER status converted to 0 or 1 on the y-axis. It quickly becomes apparent that a straight-line (or "linear") model isn't going to work. For one thing, the values on the y-axis are going to be beyond the range of 0 and 1.
 
 
 ```{r ERLMFit}
@@ -277,7 +277,7 @@ ggplot(er_data, aes(x = ESR1, y = ER_Numeric)) +
   
   # 1. Add the binary data points
   # Use position_jitter() to prevent all 0s and 1s from stacking into thick lines
-  geom_point(aes(color = factor(ER_Numeric)), 
+  geom_point(aes(color = ER), 
              size = 2, 
              alpha = 0.6, 
              position = position_jitter(height = 0.05)) +
@@ -293,16 +293,17 @@ ggplot(er_data, aes(x = ESR1, y = ER_Numeric)) +
 
 ## Fitting a Logistic Regression
 
-The curves actually represents a series of probabilities between 0 and 1 which can be used to assign to a particular point to either `Positive` or `Negative` group. If the probability is closer to 1 for a given observation then it is more likely to belong to the `Positive` class, and if the probability is close to 0 then it is more likely to be `Negative`. The definition of "close" typically means > 0.5 belong to `Positive` but we can change this.
+The curve actually represents a series of probabilities between 0 and 1 which can be used to assign to a particular point to either `Positive` or `Negative` group. If the probability is closer to 1 for a given observation then it is more likely to belong to the `Positive` class, and if the probability is close to 0 then it is more likely to be `Negative`. The definition of "close" typically means > 0.5 belong to `Positive` but we can change this.
 
-So let's look at the code to fit such a curve using a technique called *logistic regression* within R. We will use the `glm` function that has a similar interface to the `lm` function we saw briefly. Setting `family = binomial` as it tells `glm` to fit the S-shaped curve that we need.
+So let's look at the code to fit such a curve using a technique called *logistic regression* within R. We will use the `glm` function that has a similar interface to the `lm` function we saw briefly. Setting `family = binomial` is required as it tells `glm` to fit the S-shaped curve that we need.
 
 Note that we use the *training* portion of our data, `er_train` to fit the model. 
 
 ```{r fitGLM}
 
-# Formula: Outcome ~ Predictor,
+
 simple_logit_fit <- glm(
+  # Formula: Outcome ~ Predictor,
   ER_Numeric ~ ESR1, 
   data = er_train, 
   #set the "family" to binomial for logistic regression
@@ -322,7 +323,7 @@ odds_ratio
 ```
 
 
-The *odds ratio* is `r odds_ratio` meaning the increasing `ESR1` expression means you are around `r round(odds_ratio)` more likely to be ER positive than negative. Now that we have built the model we can use it to make predictions given a set of `ESR1`. If we want to make sure our model has not been biased by any specific patterns only observed in our training data we should predict using a set of data the model has not "seen" before. This is why we split our data into training and testing sets. If we set `type = response` the result will be probability for each observation in the testing set.
+The *odds ratio* is `r round(odds_ratio,5)` meaning the increasing `ESR1` expression means you are around `r round(odds_ratio)` times more likely to be ER positive than negative. Now that we have built the model we can use it to make predictions given a set of `ESR1`. If we want to make sure our model has not been biased by any specific patterns only observed in our training data we should predict using a set of data the model has not "seen" before. This is why we split our data into training and testing sets. If we set `type = response` the result will be probability for each observation in the testing set.
 
 
 ```{r getProbs}
@@ -368,13 +369,13 @@ The numbers in the table have names and meanings associated with them:-
 Three common metrics for *classification* problems such as this are:-
 
 - **Accuracy** = Accuracy is the total number of correct predictions divided by the total samples.
-  + $ TP  +TN / (Total)$ = $ 154 + 46 / 213$ $\approx$93.3%
+  + $TP  +TN / (Total)$ = $154 + 46 / 213$ $\approx$93.3%
 - **Sensitivity** (True Positive Rate) = how well the model finds all the actual Positive cases.
-  + $TP  / (TP + FN)$ = $ 154 / (154  + 10)$ $\approx$93.3%
+  + $TP  / (TP + FN)$ = $154 / (154  + 10)$ $\approx$93.3%
 - **Specificity** (True Negative Rate) = how well the model avoids incorrectly classifying actual Negative cases.
-  + $TN  / (TN + FP)$ = $ 46 / (46  + 3)$ $\approx$93.3%
+  + $TN  / (TN + FP)$ = $46 / (46  + 3)$ $\approx$93.3%
   
-Fortunately we don't need to type all those equations by hand as `yardstick` will allow us to define a set of metrics and use these to evaluate our predictions
+Fortunately we don't need to type all those equations by hand as the `yardstick` package will allow us to define a set of metrics and use these to evaluate our predictions. This pacakge is just one of the many that comprise the `tidymodels` ecosystem.
 
 ```{r logFitMetrics} 
 class_metrics <- metric_set(accuracy, sensitivity, specificity)
@@ -393,9 +394,17 @@ er_test %>%
   slice_head(n = 10)
 ```
 
-We can see for example setting a threshold close to 0 means that all `Positive` cases are identified, but the specificity is miserable as there are too many false positives. Plotting sensitivity against 1 - specificity (the False Positive rates) gives a very famous curve called the **ROC curve** ("Receiver Operating Characteristics"). We can create this using the `autoplot` function after `roc_curve`.
+We can see for example setting a threshold close to 0 means that all `Positive` cases are identified, but the specificity is miserable as there are too many false positives. Plotting sensitivity against 1 - specificity (the False Positive rates) gives a very famous curve called the **ROC curve** ("Receiver Operating Characteristics"). We can create this plot using the `autoplot` function after using the `roc_curve` function.
 
-```{r}
+::: {.callout-note}
+
+In case you were wondering where this name originates:- From wikipedia
+
+> The ROC curve was first developed by electrical engineers and radar engineers during World War II for detecting enemy objects in battlefields, starting in 1941, which led to its name ("receiver operating characteristic").
+
+:::
+
+```{r makeROC}
 er_test %>% 
   mutate(Prob = test_probabilities) %>% 
   roc_curve(ER, Prob) %>% 
@@ -405,35 +414,65 @@ A curve near the top-left corner indicates a model with high discriminatory powe
 
 ::: {.callout-important}
 
-When deciding the threshold to use there is usually a trade-off between specificity and sensitivity. Do you want to make sure that you capture all your positive cases at the expense of a few false positives>? In which case you would lower the threshold
+When deciding the threshold there is usually a trade-off between specificity and sensitivity. Do you want to make sure that you capture all your positive cases at the expense of a few false positives? In which case you would lower the threshold.
 
-Or do you want to be absolutely sure about the cases you identify, at the expense of missing a few positives? If so then increase the threshold.
+Or do you want to be absolutely sure about the cases you identify, at the expense of missing a few positives? If so, then increase the threshold.
 
 If a treatment following a positive diagnosis is invasive, expensive, or has severe side effects, you want to be highly certain before proceeding. Here, the cost of a False Positive (treating a healthy person) might be much higher than the cost of a False Negative.
 
+On the other hand you are developing a cancer screening test, which if positive would lead to further investigations, you might want to lower threshold so you don't ignore any potential true cases at an early stage. In this scenario, the cost of a few unnecessary follow-up procedures (False Positive) is deemed acceptable compared to the devastating cost of missing an early-stage cancer (False Negative).
+
 :::
 
-## Decision Tree
+The ROC curve also leads to another diagnostic metric that can be used to assess how effective our model is at predicting. Given that we want the curve to be in the top-left, that *area under the curve* or **AUC** is an important measure. Since both axes are limited between 0 and 1 the maximum possible area is 1, and the closer to 1 we are means a better model. 
+
+```{r calculcateAUC}
+er_test %>% 
+  mutate(Prob = test_probabilities) %>% 
+  roc_auc(ER, Prob)
+```
+
+We've now seen several metrics; accuracy, sensitivity, specificity and AUC. Some or all of these can be used to assess our model. Furthermore they can be used to compare different types of model as they can be calculated on the results of applying other statistical methods to classify our data. 
+
+# Fitting a decision tree
+
+It is common practice to try various statistical methods on the same dataset and compare how they perform using the metrics described above. The next method we will try is that of a *decision tree*, which actually follows quite nicely for the example we used at the start of this section where we picked a threshold on the `ESR1` expression and used that to classify. As it's name implies, the decision tree is a way of forming rules based on threshold in the form of "if X is > ... then Y belongs to class A". If is often visualised in the form of a tree. As we only have only variable (`ESR1`) the tree will look a bit boring, but cangrow more much more complex.
+
+We use the `rpart` package for this, which we should already have from installing `tidymodels`. The code looks pretty similar to the `glm` from before. Briefly, the function will try different possibilities of `ESR1` as potential values for the cut-off. For each cut-off, it splits the data into two classes. It then assess the "purity" of each class; in other words the % of 
+`Positive` and `Negative` in each class. The split resulting in the most "pure" classes is chosen.
 
 
 
 ```{r}
 library(rpart)
+set.seed(42)
 # Fit the tree model
-# Formula: Outcome ~ Predictor, using ER status and logged ESR1 expression
 simple_tree_fit <- rpart(
   ER ~ ESR1,
   data = er_train,
   method = "class" # Specifies a classification tree
 )
-
-# Print the fitted tree structure (shows the split value)
-
 ```
+
+Printing the output gives some information about the cutoffs it has determined
 
 ```{r}
 simple_tree_fit
 ```
+It has chosen 2.36 as it's cutoff value, with an `ESR1` value > 2.36 putting a sample into the `Positive` class. In total 646 samples were placed in the `Positive` class with **19** samples being incorrectly classified. This gives a purity measure of 97%. The `Negative` class is defined by `ESR1` being less than 2.36 and comprises 201 samples. 
+
+
+::: {.callout-important}
+
+Remember that the number of miss-classifications above are reported on the **training** data. These are intended for use in tweaking and refining our model. For true assessment of how the model performs on *unseen* data we need to make some predictions. 
+
+This is especially true for decision tree that are prone to "overfitting". In other words they can memorize the unique quirks and noise of the training data. The $97.1\%$ purity simply means the tree found the best rule for the specific 847 samples in the training data. The goal of machine learning is generalization; to make correct predictions on data the model has never seen before. The only way to know if the rule `ESR1` >-= 2.366` is truly robust is to test it on the completely separate testing data .
+
+:::
+
+
+
+To see the tree-like nature of the model we can use the `rpart.plot` package.
 
 
 ```{r}
@@ -446,17 +485,13 @@ rpart.plot(
   type = 4,      # Draws the full tree structure
   extra = 101,   # Displays the class name and prediction accuracy
   roundint = FALSE, # Keep decimal points on the split value
-  main = "ER Status Classification by Logged ESR1 Expression"
+  main = "ER Status Classification by ESR1 Expression"
 )
 ```
 
-Evaluate Performance
+As with the logistic regression method, we can use the `predict` method to make predictions from our testing data. Unlike the logistic regression though we don't get probabilities for individual samples, only classifications.
 
 ```{r}
-# Ensure the test outcome is a factor
-er_test <- er_test %>% 
-    mutate(ER = factor(ER, levels = c("Negative", "Positive")))
-
 # Make class predictions on the test set
 tree_predictions <- predict(
     simple_tree_fit, 
@@ -464,21 +499,33 @@ tree_predictions <- predict(
     type = "class"
 )
 
-# Calculate Accuracy
-actual_class <- er_test$ER
-accuracy <- mean(tree_predictions == actual_class)
-
-cat("Decision Tree Model Accuracy (rpart):", round(accuracy, 4), "\n")
+tree_predictions[1:10]
 ```
+
+We can make the *confusion matrix* from these predictions using the `conf_mat` as before.
 
 ```{r}
-bind_cols(er_test, Predicted_prob  = test_probabilities) %>% 
-  ggplot(aes(x = ESR1, y = Predicted_prob, col = as.factor(ER))) + geom_point() + geom_vline(xintercept = 2.4, col="red", lty=2)
+bind_cols(er_test, Predicted_class  = tree_predictions) %>% 
+  conf_mat(ER, Predicted_class)
 ```
 
-## Introducting tidymodels
+By adopting the `tidymodels` framework we are able to reuse a lot of code. We can compute the accuracy, sensitivity and specificity using the `class_metrics` function that we already defined:-
 
-Model Specification
+```{r}
+bind_cols(er_test, Predicted_class  = tree_predictions) %>% 
+  class_metrics(truth=ER, estimate = Predicted_class)
+```
+
+
+The decision tree seems to offer *very slight* improvements over the logistic regression. The elephant in the room is of course that we haven't set a very challenging task for us to accomplish. Things will get more complex as the start to add other genes as variables, or use other outcome variables (e.g. the PAM50 classes).
+
+# Introducting `tidymodels`
+
+Even for this simple task, there is a large range of possible statistical models that could be applied. When trying to decide the best performing model our time would be better spent evaluating and understanding the model behaviour rather than having to write lots of code to actually run the models, and cope with the nuances of how different packages use different parameter and function names. This is where `tidymodels` comes in and we have already seen a benefit in being able to use the same code to evaluate metrics. 
+
+## Model Specification
+
+`tidymodels` recommends that models are specified in a particular manner. This defines the particular statistical modeling approach to be used (Logistic regression or decision tree, or others), the particular package to be used (the `engine`) and type of modeling task to be performed (`classication` or `regression`). The specifications for the models we have used above for logistic regression:- 
 
 ```{r}
 # Specify a logistic regression model
@@ -486,215 +533,124 @@ logit_spec <- logistic_reg() %>%
   set_engine("glm") %>%          # The underlying R function to use
   set_mode("classification")     # The task: predicting a class
 
-
-
 ```
 
-Recipe
+and the decision tree:-
+
+```{r}
+decision_tree_spec <- decision_tree() %>% 
+  set_engine("rpart") %>% 
+  set_mode("classification")
+```
+
+## Recipes and workflows
+
+"Recipes" typically cover the pre-processing steps such as transforming variables onto a suitable scale (e.g. log$_2$ transformation) and removing variables with low variability. However, we have already done this using `tidybulk` so our recipe is very short. For other projects I suggest looking at the official documentation
+
+- [https://www.tidymodels.org/start/recipes/#recipe](Recipes from the tidymodels website)
+
+Previously when using `glm` for logistic regression we had to use a numeric form of the variable we are trying to predict (i.e. `0` or `1` for `Negative` and `Positive` respectively). However, `tidymodels` prefers a factor and will perform any conversions internally if needs be.
 
 ```{r}
 # We assume the log-transform has already been applied outside the recipe
-er_logit_recipe <- recipe(ER ~ ESR1, data = er_train)
+er_recipe <- recipe(ER ~ ESR1, data = er_train) # %>% 
+  # step_normalize() - scale the data
+  # step_nzv - remove features with low variance.
 ```
 
-Workflow and training
+*"Workflows"* in `tidymodels` are a good idea because they are the centralised container that brings together the essential parts of the modeling process: the model definition and the data processing recipe. They ensure your work is consistent, easy to manage, and scalable. The workflow itself doesn't contain the code to *fit* the model, but it contains all the instructions and objects needed for the `fit()` function to execute the model fitting.
+
+## Fitting the model and predicting
+
+Here is the code for making a workflow to define and fit the logistic regression:- 
 
 ```{r}
+## Create the workflow
 logit_workflow <- workflow() %>%
   add_model(logit_spec) %>%
-  add_recipe(er_logit_recipe)
+  add_recipe(er_recipe)
 
-# Fit the workflow to the training data (train the model)
+# Fit the workflow to the training data (i.e. train the model)
 er_logit_fit <- logit_workflow %>%
   fit(data = er_train)
 ```
 
-```{r}
-# Extract the underlying glm object
-glm_object <- er_logit_fit %>%
-  extract_fit_engine()
+Printing the fitted model itself shows some of the output that we have seen previously.
 
-# View the standard summary
-summary(glm_object)
+```{r}
+er_logit_fit
 ```
+::: {.callout-note}
 
-Making predictions
+The eagle-eyed of you might have noticed that the coefficients calculated using the `tidymodels` form of the model have an opposite sign to the original fit. This arises because `tidymodels` did some internal conversion of our numeric `ER` values to a factor. In our original logistic model fit we set the "levels" of the factor so that `Positive` came before `Negative`. This was to help with the interpretation of the model. However, `tidymodels` has represented the levels in the opposite way so that "0" is the baseline. This shouldn't actually affect our predictions as we shall see.
+
+:::
+
+Make predictions from our *testing* data can now be done by "piping" the model we have just created into the `predict` function and then binding the results back to the test data.
 
 ```{r}
-# Generate CLASS predictions (the model's final decision: Positive or Negative)
-class_pred <- predict(er_logit_fit, 
-                      new_data = er_test, 
-                      type = "class")
 
-# Generate PROBABILITY predictions (P(ER+), used for the sigmoid curve and AUC)
-prob_pred <- predict(er_logit_fit, 
-                     new_data = er_test, 
-                     type = "prob")
-
-# --- 2. Combine and Prepare for Evaluation ---
-
-# Combine the test data, class predictions, and probability predictions
-er_results <- er_test %>%
-  select(ER) %>%       # Keep the true outcome
-  bind_cols(class_pred) %>%  # Add the predicted class (.pred_class)
-  bind_cols(prob_pred)      # Add the probabilities (.pred_Negative, .pred_Positive)
+er_results <- er_logit_fit %>% 
+  predict(new_data = er_test, type = "class") %>% ## make predictions from the test data
+  bind_cols(er_test) # Add the predicted class
 
 # View the first few rows of the results
 head(er_results)
 ```
 
+The result can then be evaluated using the metrics we defined previously.
+
 ```{r}
 er_results %>%
-  accuracy(truth = ER, estimate = .pred_class)
+  class_metrics(truth = ER, estimate = .pred_class)
 ```
 
-Can also make a ROC curve
+
+Thankfully we reach the same results as before, but using a coding framework that is a bit more flexible and in line with other styles of R programming we may be familiar with from packages such as `dplyr` and `ggplot2`. 
+
+## Decision tree using tidymodels
+
+To use a decision tree rather than a logistic regression we first have to create a new model specification. To keep things consistent we'll use `rpart` to fit the model, but note that we're not fitting the model at this point but just saying that `rpart` will be used.
 
 ```{r}
-# Calculate the AUC, using the probability of the positive class (.pred_Positive)
-roc_data <- er_results %>%
-  roc_curve(truth = ER, .pred_Positive)
+tree_spec <- decision_tree() %>%
+  set_engine("rpart") %>%       # We will use the 'rpart' package to actually fit the model
+  set_mode("classification")    # Specify the task type
+
 ```
+
+
+
+Creating a workflow and fitting is pretty similar to above, but just using our new specification of a decision tree instead. This makes our code more re-usable and easier to maintain.
 
 ```{r}
-# Calculate the AUC value to display on the plot
-roc_auc_value <- er_results %>%
-  roc_auc(truth = ER, .pred_Positive) %>%
-  pull(.estimate) # Extracts the numeric AUC value
+tree_workflow <- workflow() %>%
+  add_model(tree_spec) %>% 
+  add_recipe(er_recipe) # Re-use the same recipe as above
 
-# Plot the ROC curve
-roc_plot <- roc_data %>%
-  autoplot() +
-  # Add the diagonal reference line for a random classifier (AUC = 0.5)
-  geom_abline(lty = 2, color = "gray50") +
-  
-  # Annotate with the calculated AUC value
-  annotate("text", 
-           x = 0.75, 
-           y = 0.25, 
-           label = paste("AUC =", round(roc_auc_value, 4)), 
-           size = 5) +
-  
-  labs(
-    title = "ROC Curve for ER Status Classification (ESR1 Gene)",
-    subtitle = "True Positive Rate vs. False Positive Rate"
-  ) +
-  theme_minimal()
 
-print(roc_plot)
+tidymodels_tree_fit <- tree_workflow %>%
+  fit(data = er_train)
 ```
 
-```{r eval=FALSE}
-#| context: server
-#| output: shiny
 
-plot_data <- bind_cols(er_test, Predicted_prob  = test_probabilities) 
+Taking a look at the result show that we get the same output as when we used `rpart` manually.
 
-library(shiny)
+```{r}
+tidymodels_tree_fit
+```
 
-ui <- fluidPage(
-  titlePanel("ER Status Classifier Threshold Demo"),
-  
-  sidebarLayout(
-    sidebarPanel(
-      sliderInput("threshold", "Classification Threshold (P(ER+))",
-                  min = 0.05, max = 0.99, value = 0.5, step = 0.01),
-# Combined Output for all metrics
-      h4("Accuracy:"),
-      verbatimTextOutput("accuracy_output"),
-      
-      h4("Confusion Matrix Counts:"),
-      # Output for the structured confusion matrix
-      htmlOutput("matrix_output") 
-    ),
-    mainPanel(
-      h4("Confusion Matrix:"),
-      verbatimTextOutput("matrix_output"),
-      plotOutput("sigmoid_plot")
-    )
-  )
-)
+And the prediction code is the same, but using the model we have just created.
 
-server <- function(input, output) {
-  
-  # Reactive Prediction Logic (Remains the same)
-reactive_metrics <- reactive({
-    thresh <- input$threshold
-    
-    # 1. Re-classify based on the new threshold (0 or 1)
-    # The output of ifelse() is numeric, so convert it to a factor with defined levels
-    predicted_class <- factor(
-        ifelse(test_probabilities > thresh, 1, 0),
-        levels = c("0", "1") # IMPORTANT: Defines both levels
-    )
-    
-    # 2. Get the actual class (ensure it's also a factor with defined levels)
-    actual_class <- factor(
-        er_test$ER_Numeric, 
-        levels = c("0", "1") # IMPORTANT: Defines both levels
-    )
-    
-    # 3. Generate the table (now guaranteed to be 2x2)
-    conf_matrix <- table(Predicted = predicted_class, Actual = actual_class)
-    
-    # 4. Extract values by position (safer than name)
-    # The dimensions are guaranteed to be in the order 0, 1 for both axes
-    TN <- conf_matrix[1, 1] # Predicted 0, Actual 0
-    FP <- conf_matrix[2, 1] # Predicted 1, Actual 0
-    FN <- conf_matrix[1, 2] # Predicted 0, Actual 1
-    TP <- conf_matrix[2, 2] # Predicted 1, Actual 1
-    
-    # Calculate accuracy
-    accuracy <- (TP + TN) / sum(conf_matrix)
-
-    return(list(TP=TP, TN=TN, FP=FP, FN=FN, accuracy=accuracy))
-  })
-  
-  # --- Output: Accuracy ---
-  output$accuracy_output <- renderText({
-    metrics <- reactive_metrics()
-    paste0(round(metrics$accuracy, 4), 
-           " (", metrics$TP + metrics$TN, " correct)")
-  })
-  
-  # --- Output: Confusion Matrix (Structured HTML) ---
-output$matrix_output <- renderUI({
-    metrics <- reactive_metrics()
-    
-    # 1. Create a clean character vector for the metrics
-    matrix_lines <- c(
-      paste("<b>True Positives (TP):</b>", metrics$TP),
-      paste("<b>True Negatives (TN):</b>", metrics$TN),
-      paste("<b>False Positives (FP):</b>", metrics$FP),
-      paste("<b>False Negatives (FN):</b>", metrics$FN)
-    )
-    
-    # 2. Collapse the vector into a single string, using <br/> for line breaks
-    final_html_string <- paste(matrix_lines, collapse = "<br/>")
-    
-    # 3. Return the single character string wrapped in HTML()
-    HTML(final_html_string)
-  })
-  
-  # --- Output: Plot (Add the dynamic threshold) ---
-  output$sigmoid_plot <- renderPlot({
-    # Placeholder for your plotting logic
-    
-    # ... (code to generate the sigmoid plot)
-    
-    # Add the dynamic threshold line
-    ggplot(plot_data, aes(x = ESR1_Log, y = Predicted_Prob)) +
-      stat_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE, color = "black") +
-      geom_point(aes(color = factor(Actual_ER)), alpha = 0.6) +
-      geom_hline(yintercept = input$threshold, linetype = "dashed", color = "darkred", linewidth = 1) +
-      labs(title = paste("Threshold =", round(input$threshold, 2))) +
-      theme_minimal()
-  })
-}
-
-# shinyApp(ui = ui, server = server)
-
-# --- 4. Run the App ---
-shinyApp(ui = ui, server = server)
+```{r}
+tidymodels_tree_fit %>% 
+  predict(new_data = er_test, type = "class") %>% ## make predictions from the test data
+  bind_cols(er_test) # Add the predicted class
 
 ```
+
+# Summary
+
+After some discussion of the key concepts of splitting the data into training / testing sets, prediction and metrics for measuring model performance (accuracy, specificity and sensitivity), we have seen a couple of examples of machine learning on a fairly trivial task. Moreover, we have used the `tidymodels` framework that introduces "tidy" data concepts to the fitting and evaluation of statistical models.
+
+Unfortunately we are not done yet and once we start looking into more challenging tasks (e.g. involving more variables or harder classification problems) these basic models will soon fall apart.

@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Mark Dunning">
+<meta name="dcterms.date" content="2025-11-17">
+<meta name="description" content="A proof of concept machine learning tasks to classify Estrogen Receptor status of TCGA breast cancers using logistic regression and decision trees">
+
+<title>Tidymodels for omics data: Part 2 – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-2fef5ea3f8957b3e4ecc936fc74692ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-1688d9e1630bd0bcb1ec498477fd8fb7.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-96TB60ETKS"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-96TB60ETKS', { 'anonymize_ip': true});
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../cv.html"> 
+<span class="menu-text">CV</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../training.html"> 
+<span class="menu-text">Training Materials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#pre-amble" id="toc-pre-amble" class="nav-link active" data-scroll-target="#pre-amble">Pre-amble</a>
+  <ul class="collapse">
+  <li><a href="#pre-processing" id="toc-pre-processing" class="nav-link" data-scroll-target="#pre-processing">Pre-processing</a></li>
+  </ul></li>
+  <li><a href="#regression-in-general-and-logistic-regression" id="toc-regression-in-general-and-logistic-regression" class="nav-link" data-scroll-target="#regression-in-general-and-logistic-regression">Regression in general, and Logistic Regression</a>
+  <ul class="collapse">
+  <li><a href="#fitting-a-logistic-regression" id="toc-fitting-a-logistic-regression" class="nav-link" data-scroll-target="#fitting-a-logistic-regression">Fitting a Logistic Regression</a></li>
+  <li><a href="#evaluating-the-fit" id="toc-evaluating-the-fit" class="nav-link" data-scroll-target="#evaluating-the-fit">Evaluating the fit</a></li>
+  </ul></li>
+  <li><a href="#fitting-a-decision-tree" id="toc-fitting-a-decision-tree" class="nav-link" data-scroll-target="#fitting-a-decision-tree">Fitting a decision tree</a></li>
+  <li><a href="#introducting-tidymodels" id="toc-introducting-tidymodels" class="nav-link" data-scroll-target="#introducting-tidymodels">Introducting <code>tidymodels</code></a>
+  <ul class="collapse">
+  <li><a href="#model-specification" id="toc-model-specification" class="nav-link" data-scroll-target="#model-specification">Model Specification</a></li>
+  <li><a href="#recipes-and-workflows" id="toc-recipes-and-workflows" class="nav-link" data-scroll-target="#recipes-and-workflows">Recipes and workflows</a></li>
+  <li><a href="#fitting-the-model-and-predicting" id="toc-fitting-the-model-and-predicting" class="nav-link" data-scroll-target="#fitting-the-model-and-predicting">Fitting the model and predicting</a></li>
+  <li><a href="#decision-tree-using-tidymodels" id="toc-decision-tree-using-tidymodels" class="nav-link" data-scroll-target="#decision-tree-using-tidymodels">Decision tree using tidymodels</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Tidymodels for omics data: Part 2</h1>
+</div>
+
+<div>
+  <div class="description">
+    A proof of concept machine learning tasks to classify Estrogen Receptor status of TCGA breast cancers using logistic regression and decision trees
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Mark Dunning </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 17, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="pre-amble" class="level1">
+<h1>Pre-amble</h1>
+<p>In the previous section we described how to download TCGA data for breast cancers and manipulated them using a combination of <code>tidybulk</code> and <code>dplyr</code> to retain a set of expressed, variable genes plus a set of known cancer genes.</p>
+<p>There is a <em>very extensive</em> set of clinical information recorded for each sample / patient, but to keep things simple we will start with a task for being able to predict <strong>Estrogen Receptor status</strong> from the expression data, which can be used as an indicator of whether a patient will respond to certain treatments. This is clearly not going to get us a Nature paper or a Nobel prize, but it should work well and introduce some of the key concepts of machine learning. There are a set of packages that we will need:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(tidymodels)) <span class="fu">install.packages</span>(<span class="st">"tidymodels"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="do">## install BiocManager to install Bioconductor packages</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(BiocManager)) <span class="fu">install.packages</span>(<span class="st">"BiocManager"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(tidybulk)) BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"tidybulk"</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(SummarizedExperiment)) BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"SummarizedExperiment"</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(dplyr)) <span class="fu">install.packages</span>(<span class="st">"dplyr"</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(ggplot2)) <span class="fu">install.packages</span>(<span class="st">"ggplot2"</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(forcats)) <span class="fu">install.packages</span>(<span class="st">"forcats"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You also need the processed data from the <a href="https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/">previous section</a> and the code to download this is:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="do">### get the saved RDS</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"raw_data"</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"raw_data/brca_gene_filtered_SE.rds"</span>)) <span class="fu">download.file</span>(<span class="st">"https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_gene_filtered_SE.rds"</span>, <span class="at">destfile =</span> <span class="st">"raw_data/brca_gene_filtered_SE.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="pre-processing" class="level2">
+<h2 class="anchored" data-anchor-id="pre-processing">Pre-processing</h2>
+<p>The object <code>brca_gene_filtered_SE.rds</code> is a <code>SummarizedExperiment</code>, which is a specialised object type used for RNA-seq and other omics type data. The <code>tidybulk</code> package can be used to convert this into a “tidy” format for easy manipulation with the <code>tidyverse</code> set of package. A tidy format is also ameanable to fitting models in R, as the general format of a model is in the form <code>y ~ x</code> with <code>y</code> and <code>x</code> being columns some data frame. <code>y</code> is often referred to as the <em>response</em> variable and <code>x</code> as the <em>predictor</em> variable.</p>
+<p>In reality we will often have more than one predictor and our analysis will try and work out the best combination of variables to predict the outcome. However, in this example we will just use the expression of the <code>ESR1</code> gene to predict the response of ER status (<code>er_status_by_ihc</code>). Hence we create a data frame with ESR1 expression and ER status as columns. For this reasons that will become apparent shortly we also create a binary (0 or 1) representation of ER status with 1 being equivalent to <code>Positive</code>. We’ll also change the order of the <code>ER</code> factor so that <code>Positive</code> is before <code>Negative</code>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Since we are only using one gene this is simplified as filtering by <code>ESR1</code> means the values in <code>fpkm_uq</code> (our normalised counts) are already the expression of ESR1. If we wanted to include multiple genes we would need a column for each gene.</p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidybulk)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SummarizedExperiment)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>brca_gene_filtered <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"raw_data/brca_gene_filtered_SE.rds"</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>er_data <span class="ot">&lt;-</span> brca_gene_filtered[<span class="fu">rowData</span>(brca_gene_filtered)<span class="sc">$</span>gene_name <span class="sc">==</span> <span class="st">"ESR1"</span>] <span class="sc">|&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidybulk</span>() <span class="sc">|&gt;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="at">ER=</span>er_status_by_ihc, <span class="at">ESR1 =</span> fpkm_uq) <span class="sc">|&gt;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(ER <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Positive"</span>,<span class="st">"Negative"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">ER_Numeric =</span> <span class="fu">ifelse</span>(ER<span class="sc">==</span> <span class="st">"Positive"</span>, <span class="dv">1</span>,<span class="dv">0</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">ESR1 =</span> <span class="fu">log2</span>(ESR1 <span class="sc">+</span> <span class="dv">1</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">ER  =</span> forcats<span class="sc">::</span><span class="fu">fct_rev</span>(ER))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We have already seen the relationship between the ER status and the expression level of ESR1 in the form of a boxplot. The relationship is striking, but doesn’t always hold true that higher <code>ESR1</code> means <code>Positive</code>. There are clearly some <code>Negative</code> samples with <code>ESR1</code> expression over 6, and some <code>Positive</code> samples with <code>ESR1</code> around 0.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(er_data, <span class="fu">aes</span>(<span class="at">x =</span> ER, <span class="at">y =</span> ESR1)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>() <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">alpha=</span> <span class="fl">0.4</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/esr1-initial-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can attempt to draw a horizontal line on the boxplot at sensible point and use this to infer the ER status and add this information to the data. Congratulations! We have just done our first classification 🎉</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>er_data <span class="sc">|&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ER_inferred =</span> <span class="fu">ifelse</span>(ESR1 <span class="sc">&gt;</span> <span class="dv">3</span>, <span class="st">"Positive"</span>,<span class="st">"Negative"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 4
+  ER        ESR1 ER_Numeric ER_inferred
+  &lt;fct&gt;    &lt;dbl&gt;      &lt;dbl&gt; &lt;chr&gt;      
+1 Positive 5.40           1 Positive   
+2 Positive 4.37           1 Positive   
+3 Positive 3.38           1 Positive   
+4 Negative 0.222          0 Negative   
+5 Positive 4.57           1 Positive   
+6 Negative 5.03           0 Positive   </code></pre>
+</div>
+</div>
+<p>On the same boxplot as before we can colour points according to which ER Status they are assigned under our new rule. This emphasises that the grouping is not perfect, but perhaps it is good enough for our purposes.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>er_data <span class="sc">|&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ER_inferred =</span> <span class="fu">ifelse</span>(ESR1 <span class="sc">&gt;</span> <span class="dv">3</span>, <span class="st">"Positive"</span>,<span class="st">"Negative"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> ER, <span class="at">y =</span> ESR1)) <span class="sc">+</span> <span class="fu">geom_boxplot</span>() <span class="sc">+</span> <span class="fu">geom_jitter</span>(<span class="fu">aes</span>(<span class="at">col =</span> ER_inferred),<span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">alpha=</span> <span class="fl">0.4</span>) <span class="sc">+</span> <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">3</span>, <span class="at">col=</span><span class="st">"red"</span>, <span class="at">lty=</span><span class="dv">2</span>, <span class="at">size=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/esr1-withCutoff-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can count up how many times samples get allocated to the wrong group, and this will actually serves as a metric later on for evaluating how well we are doing</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>er_data <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">ER_inferred =</span> <span class="fu">ifelse</span>(ESR1 <span class="sc">&gt;</span> <span class="dv">3</span>, <span class="st">"Positive"</span>,<span class="st">"Negative"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">count</span>(ER, ER_inferred) <span class="sc">|&gt;</span>  <span class="co"># Count combinations</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_wider</span>(</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> ER,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> n,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_fill =</span> <span class="dv">0</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 3
+  ER_inferred Positive Negative
+  &lt;chr&gt;          &lt;int&gt;    &lt;int&gt;
+1 Negative          62      227
+2 Positive         756       15</code></pre>
+</div>
+</div>
+<p>Of course, although informed by the plot, we have just picked an arbitrary value of <code>ESR1</code>. Is this the best possible value we could have picked? Can we prove that the rule will work for other datasets too? These are questions we can answer using machine learning approaches. The first task is to split partition our data into distinct training and testing sets. The overall aim is to <em>learn</em> about the data by modeling and refine our choice of parameters using the training, and then see how this performs in a test set. The crucial part is that <strong>the training and testing datasets are kept completely separate</strong>.</p>
+<p>It is possible to use the <code>sample</code> function from R to pick rows from our dataset, or even the <code>slice_sample</code> from <code>dplyr</code>, but the most straightforward way of splitting the data into training and testing is using the <code>tidymodels</code> package. We will learn <em>lots</em> about this package in due course. The same way that <code>tidyverse</code> is a collection of packages with a common philosophy for data manipulation and visualisaton, <code>tidymodels</code> is a ecosystem of packages for all steps of machine learning. The first task is often to split data into traiing and testing sets, which is performed by the <code>initial_split</code> function after loading <code>tidymodels</code>. During the split it is common to use the majority (say 80%) of the data for training. You can also make sure that the your outcome of interest has roughly the same proportion in training and testing. Once a split is created with <code>initial_split</code> you can extract the <code>training</code> and <code>testing</code> data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidymodels)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Setting a 'seed' makes sure the results are reproducible</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>) </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>data_split <span class="ot">&lt;-</span> <span class="fu">initial_split</span>(er_data, </span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                            <span class="at">prop =</span> <span class="fl">0.80</span>, </span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                            <span class="at">strata =</span> ER)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the training data set</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>er_train <span class="ot">&lt;-</span> <span class="fu">training</span>(data_split)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the testing data set</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>er_test <span class="ot">&lt;-</span> <span class="fu">testing</span>(data_split)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This is not usually required, but we can inspect the first few rows of the training</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>er_train <span class="sc">|&gt;</span> </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+  ER        ESR1 ER_Numeric
+  &lt;fct&gt;    &lt;dbl&gt;      &lt;dbl&gt;
+1 Negative 0.222          0
+2 Negative 5.03           0
+3 Negative 0.528          0
+4 Negative 5.62           0
+5 Negative 0.475          0
+6 Negative 0.221          0</code></pre>
+</div>
+</div>
+<p>and test data</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>er_test <span class="sc">|&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+  ER        ESR1 ER_Numeric
+  &lt;fct&gt;    &lt;dbl&gt;      &lt;dbl&gt;
+1 Positive 3.21           1
+2 Positive 3.82           1
+3 Negative 0.831          0
+4 Negative 1.14           0
+5 Positive 4.84           1
+6 Positive 4.31           1</code></pre>
+</div>
+</div>
+<p>and check that indeed the training data has around 80% of our original data</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(er_train) <span class="sc">/</span> <span class="fu">nrow</span>(er_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.7990566</code></pre>
+</div>
+</div>
+<p>and our testing data should be around 20%</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(er_test) <span class="sc">/</span> <span class="fu">nrow</span>(er_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.2009434</code></pre>
+</div>
+</div>
+<p>We can also check the ER Positive / Negative balance in our original dataset.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">count</span>(er_data, ER) <span class="sc">|&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">prop =</span> n <span class="sc">/</span> <span class="fu">nrow</span>(er_data))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 3
+  ER           n  prop
+  &lt;fct&gt;    &lt;int&gt; &lt;dbl&gt;
+1 Positive   818 0.772
+2 Negative   242 0.228</code></pre>
+</div>
+</div>
+<p>and check that it is preserved in the training:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">count</span>(er_train, ER) <span class="sc">|&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">prop =</span> n <span class="sc">/</span> <span class="fu">nrow</span>(er_train))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 3
+  ER           n  prop
+  &lt;fct&gt;    &lt;int&gt; &lt;dbl&gt;
+1 Positive   654 0.772
+2 Negative   193 0.228</code></pre>
+</div>
+</div>
+<p>and testing data. We don’t need to do this in practice, it’s just to reassure us that <code>tidymodels</code> is splitting the data as we expect.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">count</span>(er_test, ER) <span class="sc">|&gt;</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">prop =</span> n <span class="sc">/</span> <span class="fu">nrow</span>(er_test))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 3
+  ER           n  prop
+  &lt;fct&gt;    &lt;int&gt; &lt;dbl&gt;
+1 Positive   164 0.770
+2 Negative    49 0.230</code></pre>
+</div>
+</div>
+<p>We should be good to go with the machine learning task, but first we will have to go through a few definitions.</p>
+</section>
+</section>
+<section id="regression-in-general-and-logistic-regression" class="level1">
+<h1>Regression in general, and Logistic Regression</h1>
+<p>Regression, in simple terms, is a statistical method used to understand the relationship between input (or predictor) features and a response (or outcome) value that varies across a continuous numeric range. It’s much simpler to visualise this in two-dimensional space as two variables <code>x</code> and <code>y</code></p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/exampleLM-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>With regression, we can determine the line that “best fits” the relationship. This is shown here in red for these example data.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/exampleLMWithLine-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The straight line shown here is defined by an intercept (where it hits the y-axis) and a slope and can be written as:- <span class="math inline">\(y = mx +b\)</span> where:-</p>
+<ul>
+<li><code>y</code> is the response</li>
+<li><code>x</code> is the predictor</li>
+<li><code>m</code> is the slope</li>
+<li><code>b</code> is the intercept</li>
+</ul>
+<p>Once we have all these values we can calculate (or predict) what value of <code>y</code> would be given any value of <code>x</code> <strong>even for values of x we haven’t observed yet</strong>. The function <code>lm</code> will fit the model to the data we plotted above</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)  <span class="co"># For reproducibility</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">50</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fl">2.5</span> <span class="sc">*</span> x <span class="sc">+</span> <span class="fu">rnorm</span>(<span class="dv">50</span>, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">10</span>)  <span class="co"># Linear trend + noise</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x, <span class="at">y =</span> y)</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> data)</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = y ~ x, data = data)
+
+Coefficients:
+(Intercept)            x  
+     0.6902       2.4864  </code></pre>
+</div>
+</div>
+<p>The <code>summary</code> of the <code>fit</code> object, or just printing the object itself shows that the intercept is 0.69 and the slope is 2.486.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = y ~ x, data = data)
+
+Coefficients:
+(Intercept)            x  
+     0.6902       2.4864  </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = y ~ x, data = data)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-20.1120  -6.2223  -0.8193   6.6590  21.5966 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  0.69016    2.68547   0.257    0.798    
+x            2.48643    0.09165  27.128   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 9.353 on 48 degrees of freedom
+Multiple R-squared:  0.9388,    Adjusted R-squared:  0.9375 
+F-statistic:   736 on 1 and 48 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>This is all good so far, but how can we apply such techniques to our data? We can start by re-plotting our data but instead of a boxplot, we make a scatter plot with ESR1 expression on the x-axis and the ER status converted to 0 or 1 on the y-axis. It quickly becomes apparent that a straight-line (or “linear”) model isn’t going to work. For one thing, the values on the y-axis are going to be beyond the range of 0 and 1.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(er_data, <span class="fu">aes</span>(<span class="at">x =</span> ESR1, <span class="at">y  =</span> ER_Numeric)) <span class="sc">+</span> </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">color =</span> ER),<span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">height =</span> <span class="fl">0.05</span>)) <span class="sc">+</span> </span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/ERLMFit-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>However, we needn’t despair because R provides options for modelling other relations and shapes of curve. The particular one we want is an S-shaped curve (called a <em>sigmnoid</em> curve), which looks more like this:-</p>
+<p>(code not shown as we will go through this in the next steps)</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/ERLogFit-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<section id="fitting-a-logistic-regression" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-a-logistic-regression">Fitting a Logistic Regression</h2>
+<p>The curve actually represents a series of probabilities between 0 and 1 which can be used to assign to a particular point to either <code>Positive</code> or <code>Negative</code> group. If the probability is closer to 1 for a given observation then it is more likely to belong to the <code>Positive</code> class, and if the probability is close to 0 then it is more likely to be <code>Negative</code>. The definition of “close” typically means &gt; 0.5 belong to <code>Positive</code> but we can change this.</p>
+<p>So let’s look at the code to fit such a curve using a technique called <em>logistic regression</em> within R. We will use the <code>glm</code> function that has a similar interface to the <code>lm</code> function we saw briefly. Setting <code>family = binomial</code> is required as it tells <code>glm</code> to fit the S-shaped curve that we need.</p>
+<p>Note that we use the <em>training</em> portion of our data, <code>er_train</code> to fit the model.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>simple_logit_fit <span class="ot">&lt;-</span> <span class="fu">glm</span>(</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Formula: Outcome ~ Predictor,</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  ER_Numeric <span class="sc">~</span> ESR1, </span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> er_train, </span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">#set the "family" to binomial for logistic regression</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">"binomial"</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a><span class="co"># View the model summary</span></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(simple_logit_fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = ER_Numeric ~ ESR1, family = "binomial", data = er_train)
+
+Coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -2.85399    0.26155  -10.91   &lt;2e-16 ***
+ESR1         1.35386    0.09254   14.63   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 909.14  on 846  degrees of freedom
+Residual deviance: 312.88  on 845  degrees of freedom
+AIC: 316.88
+
+Number of Fisher Scoring iterations: 7</code></pre>
+</div>
+</div>
+<p>The interpretation is a bit trickier because we don’t have a slope and intercept with this kind of model. Instead the coefficient for <code>ESR1</code> signifies how the <em>log-odds</em> of being <code>Positive</code> increases as the level of <code>ESR1</code> increase by <em>one unit</em>. The <em>odds</em> are more intuitive and these can be calculated with:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>log_odds <span class="ot">&lt;-</span> <span class="fu">coef</span>(simple_logit_fit)[<span class="dv">2</span>]</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>odds_ratio <span class="ot">&lt;-</span> <span class="fu">exp</span>(log_odds)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>odds_ratio</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   ESR1 
+3.87236 </code></pre>
+</div>
+</div>
+<p>The <em>odds ratio</em> is 3.87236 meaning the increasing <code>ESR1</code> expression means you are around 4 times more likely to be ER positive than negative. Now that we have built the model we can use it to make predictions given a set of <code>ESR1</code>. If we want to make sure our model has not been biased by any specific patterns only observed in our training data we should predict using a set of data the model has not “seen” before. This is why we split our data into training and testing sets. If we set <code>type = response</code> the result will be probability for each observation in the testing set.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>test_probabilities <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  simple_logit_fit, </span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">newdata =</span> er_test, </span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"response"</span> <span class="co"># 'response' gives probabilities</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>test_probabilities[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        1         2         3         4         5         6         7         8 
+0.8156191 0.9108220 0.1506655 0.2125649 0.9757988 0.9515301 0.8307946 0.9932624 
+        9        10 
+0.9862456 0.9904669 </code></pre>
+</div>
+</div>
+<p>We can now plot the probabilities against the respective <code>ESR1</code> value, which hopefully gives the S-shaped curve we are trying to fit. To convert the probabilities to a <code>Positive</code> or <code>Negative</code> label we set a threshold such as 0.5. In the below plot we also mark the predictions that are incorrect.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>er_test <span class="sc">|&gt;</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Prob =</span> test_probabilities, <span class="st">`</span><span class="at">Actual Label</span><span class="st">`</span> <span class="ot">=</span> ER) <span class="sc">|&gt;</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Predicted Label</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">ifelse</span>(test_probabilities <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="st">"Positive"</span>, <span class="st">"Negative"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Correct Prediction</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">as.factor</span>(ER <span class="sc">==</span> <span class="st">`</span><span class="at">Predicted Label</span><span class="st">`</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> ESR1, <span class="at">y =</span> Prob, <span class="at">col =</span> <span class="st">`</span><span class="at">Actual Label</span><span class="st">`</span>, <span class="at">shape =</span> <span class="st">`</span><span class="at">Correct Prediction</span><span class="st">`</span>, <span class="at">size =</span> <span class="st">`</span><span class="at">Correct Prediction</span><span class="st">`</span>, <span class="at">alpha=</span><span class="st">`</span><span class="at">Correct Prediction</span><span class="st">`</span>)) <span class="sc">+</span> </span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">lty =</span> <span class="dv">2</span>) <span class="sc">+</span> </span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_shape_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">16</span>)) <span class="sc">+</span></span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_size_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="dv">5</span>,<span class="dv">2</span>)) <span class="sc">+</span> </span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_alpha_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="fl">0.4</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/showLogisticResults-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="evaluating-the-fit" class="level2">
+<h2 class="anchored" data-anchor-id="evaluating-the-fit">Evaluating the fit</h2>
+<p>On inspection, it looks there are fewer cases that should be <code>Negative</code> that have been labeled as <code>Positive</code>, than <code>Positive</code> cases labeled as <code>Negative</code>. Overall though, most of the predictions look correct. To formalise this and attach some metrics we can create what is called a <em>confusion matrix</em>. To create this we can use the <code>yardstick</code> package that is included as part of <code>tidymodels</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(yardstick)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>er_test <span class="sc">%&gt;%</span> </span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Predicted_ER =</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(test_probabilities <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="st">"Positive"</span>, <span class="st">"Negative"</span>), <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Positive"</span>,<span class="st">"Negative"</span>))) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">conf_mat</span>(ER, Predicted_ER)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Truth
+Prediction Positive Negative
+  Positive      154        3
+  Negative       10       46</code></pre>
+</div>
+</div>
+<p>The numbers in the table have names and meanings associated with them:-</p>
+<ul>
+<li>True Negatives (TN) 46 Correctly predicted <code>Negative</code></li>
+<li>True Positives (TP) 154 Correctly predicted <code>Positive</code></li>
+<li>False Positives (FP) 3 Incorrectly predicted <code>Positive</code> when the tumor was actually <code>Negative</code>. Also known as <strong>Type I Error</strong></li>
+<li>False Negatives (FN) 10 Incorrectly predicted <code>Negative</code> when the tumor was actually <code>Positive</code>. Also known as <strong>Type II Error</strong></li>
+</ul>
+<p>Three common metrics for <em>classification</em> problems such as this are:-</p>
+<ul>
+<li><strong>Accuracy</strong> = Accuracy is the total number of correct predictions divided by the total samples.
+<ul>
+<li><span class="math inline">\(TP  +TN / (Total)\)</span> = <span class="math inline">\(154 + 46 / 213\)</span> $$93.3%</li>
+</ul></li>
+<li><strong>Sensitivity</strong> (True Positive Rate) = how well the model finds all the actual Positive cases.
+<ul>
+<li><span class="math inline">\(TP  / (TP + FN)\)</span> = <span class="math inline">\(154 / (154  + 10)\)</span> $$93.3%</li>
+</ul></li>
+<li><strong>Specificity</strong> (True Negative Rate) = how well the model avoids incorrectly classifying actual Negative cases.
+<ul>
+<li><span class="math inline">\(TN  / (TN + FP)\)</span> = <span class="math inline">\(46 / (46  + 3)\)</span> $$93.3%</li>
+</ul></li>
+</ul>
+<p>Fortunately we don’t need to type all those equations by hand as the <code>yardstick</code> package will allow us to define a set of metrics and use these to evaluate our predictions. This pacakge is just one of the many that comprise the <code>tidymodels</code> ecosystem.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>class_metrics <span class="ot">&lt;-</span> <span class="fu">metric_set</span>(accuracy, sensitivity, specificity)</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>er_test <span class="sc">%&gt;%</span> </span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Predicted_ER =</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(test_probabilities <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="st">"Positive"</span>, <span class="st">"Negative"</span>), <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Positive"</span>,<span class="st">"Negative"</span>))) <span class="sc">%&gt;%</span> </span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">class_metrics</span>(<span class="at">truth=</span>ER, <span class="at">estimate =</span> Predicted_ER) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 3
+  .metric     .estimator .estimate
+  &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt;
+1 accuracy    binary         0.939
+2 sensitivity binary         0.939
+3 specificity binary         0.939</code></pre>
+</div>
+</div>
+<p>The metrics have all been calculated on the basis of using a probability of 0.5 to classify samples as <code>Positive</code> or <code>Negative</code>. This was a fairly arbitrary choice and we could experiment with other values. To save us time, the <code>roc_curve</code> function will calculate the specificity and sensitivity for a range of thresholds.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>er_test <span class="sc">%&gt;%</span> </span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Prob =</span> test_probabilities) <span class="sc">%&gt;%</span> </span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">roc_curve</span>(ER, Prob) <span class="sc">%&gt;%</span> </span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 3
+   .threshold specificity sensitivity
+        &lt;dbl&gt;       &lt;dbl&gt;       &lt;dbl&gt;
+ 1  -Inf           0            1    
+ 2     0.0569      0            1    
+ 3     0.0590      0            0.994
+ 4     0.0592      0.0204       0.994
+ 5     0.0616      0.0408       0.994
+ 6     0.0630      0.0612       0.994
+ 7     0.0633      0.0816       0.994
+ 8     0.0646      0.0816       0.988
+ 9     0.0649      0.102        0.988
+10     0.0664      0.122        0.988</code></pre>
+</div>
+</div>
+<p>We can see for example setting a threshold close to 0 means that all <code>Positive</code> cases are identified, but the specificity is miserable as there are too many false positives. Plotting sensitivity against 1 - specificity (the False Positive rates) gives a very famous curve called the <strong>ROC curve</strong> (“Receiver Operating Characteristics”). We can create this plot using the <code>autoplot</code> function after using the <code>roc_curve</code> function.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In case you were wondering where this name originates:- From wikipedia</p>
+<blockquote class="blockquote">
+<p>The ROC curve was first developed by electrical engineers and radar engineers during World War II for detecting enemy objects in battlefields, starting in 1941, which led to its name (“receiver operating characteristic”).</p>
+</blockquote>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>er_test <span class="sc">%&gt;%</span> </span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Prob =</span> test_probabilities) <span class="sc">%&gt;%</span> </span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">roc_curve</span>(ER, Prob) <span class="sc">%&gt;%</span> </span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">autoplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/makeROC-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>A curve near the top-left corner indicates a model with high discriminatory power. i.e.&nbsp;the model can achieve high Sensitivity (finding true positives) without incurring a significant cost in Specificity (avoiding false positives). If the curve is close to the diagonal line then it is not much better than guessing.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When deciding the threshold there is usually a trade-off between specificity and sensitivity. Do you want to make sure that you capture all your positive cases at the expense of a few false positives? In which case you would lower the threshold.</p>
+<p>Or do you want to be absolutely sure about the cases you identify, at the expense of missing a few positives? If so, then increase the threshold.</p>
+<p>If a treatment following a positive diagnosis is invasive, expensive, or has severe side effects, you want to be highly certain before proceeding. Here, the cost of a False Positive (treating a healthy person) might be much higher than the cost of a False Negative.</p>
+<p>On the other hand you are developing a cancer screening test, which if positive would lead to further investigations, you might want to lower threshold so you don’t ignore any potential true cases at an early stage. In this scenario, the cost of a few unnecessary follow-up procedures (False Positive) is deemed acceptable compared to the devastating cost of missing an early-stage cancer (False Negative).</p>
+</div>
+</div>
+<p>The ROC curve also leads to another diagnostic metric that can be used to assess how effective our model is at predicting. Given that we want the curve to be in the top-left, that <em>area under the curve</em> or <strong>AUC</strong> is an important measure. Since both axes are limited between 0 and 1 the maximum possible area is 1, and the closer to 1 we are means a better model.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>er_test <span class="sc">%&gt;%</span> </span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Prob =</span> test_probabilities) <span class="sc">%&gt;%</span> </span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">roc_auc</span>(ER, Prob)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 3
+  .metric .estimator .estimate
+  &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+1 roc_auc binary         0.964</code></pre>
+</div>
+</div>
+<p>We’ve now seen several metrics; accuracy, sensitivity, specificity and AUC. Some or all of these can be used to assess our model. Furthermore they can be used to compare different types of model as they can be calculated on the results of applying other statistical methods to classify our data.</p>
+</section>
+</section>
+<section id="fitting-a-decision-tree" class="level1">
+<h1>Fitting a decision tree</h1>
+<p>It is common practice to try various statistical methods on the same dataset and compare how they perform using the metrics described above. The next method we will try is that of a <em>decision tree</em>, which actually follows quite nicely for the example we used at the start of this section where we picked a threshold on the <code>ESR1</code> expression and used that to classify. As it’s name implies, the decision tree is a way of forming rules based on threshold in the form of “if X is &gt; … then Y belongs to class A”. If is often visualised in the form of a tree. As we only have only variable (<code>ESR1</code>) the tree will look a bit boring, but cangrow more much more complex.</p>
+<p>We use the <code>rpart</code> package for this, which we should already have from installing <code>tidymodels</code>. The code looks pretty similar to the <code>glm</code> from before. Briefly, the function will try different possibilities of <code>ESR1</code> as potential values for the cut-off. For each cut-off, it splits the data into two classes. It then assess the “purity” of each class; in other words the % of <code>Positive</code> and <code>Negative</code> in each class. The split resulting in the most “pure” classes is chosen.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rpart)</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the tree model</span></span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>simple_tree_fit <span class="ot">&lt;-</span> <span class="fu">rpart</span>(</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>  ER <span class="sc">~</span> ESR1,</span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> er_train,</span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">"class"</span> <span class="co"># Specifies a classification tree</span></span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Printing the output gives some information about the cutoffs it has determined</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>simple_tree_fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>n= 847 
+
+node), split, n, loss, yval, (yprob)
+      * denotes terminal node
+
+1) root 847 193 Positive (0.77213695 0.22786305)  
+  2) ESR1&gt;=2.365644 646  19 Positive (0.97058824 0.02941176) *
+  3) ESR1&lt; 2.365644 201  27 Negative (0.13432836 0.86567164) *</code></pre>
+</div>
+</div>
+<p>It has chosen 2.36 as it’s cutoff value, with an <code>ESR1</code> value &gt; 2.36 putting a sample into the <code>Positive</code> class. In total 646 samples were placed in the <code>Positive</code> class with <strong>19</strong> samples being incorrectly classified. This gives a purity measure of 97%. The <code>Negative</code> class is defined by <code>ESR1</code> being less than 2.36 and comprises 201 samples.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Remember that the number of miss-classifications above are reported on the <strong>training</strong> data. These are intended for use in tweaking and refining our model. For true assessment of how the model performs on <em>unseen</em> data we need to make some predictions.</p>
+<p>This is especially true for decision tree that are prone to “overfitting”. In other words they can memorize the unique quirks and noise of the training data. The <span class="math inline">\(97.1\%\)</span> purity simply means the tree found the best rule for the specific 847 samples in the training data. The goal of machine learning is generalization; to make correct predictions on data the model has never seen before. The only way to know if the rule <code>ESR1</code> &gt;-= 2.366` is truly robust is to test it on the completely separate testing data .</p>
+</div>
+</div>
+<p>To see the tree-like nature of the model we can use the <code>rpart.plot</code> package.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the visualization package</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rpart.plot)</span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the tree diagram</span></span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a><span class="fu">rpart.plot</span>(</span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>  simple_tree_fit,</span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="dv">4</span>,      <span class="co"># Draws the full tree structure</span></span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">extra =</span> <span class="dv">101</span>,   <span class="co"># Displays the class name and prediction accuracy</span></span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">roundint =</span> <span class="cn">FALSE</span>, <span class="co"># Keep decimal points on the split value</span></span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">"ER Status Classification by ESR1 Expression"</span></span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As with the logistic regression method, we can use the <code>predict</code> method to make predictions from our testing data. Unlike the logistic regression though we don’t get probabilities for individual samples, only classifications.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Make class predictions on the test set</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>tree_predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    simple_tree_fit, </span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">newdata =</span> er_test, </span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">type =</span> <span class="st">"class"</span></span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a>tree_predictions[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       1        2        3        4        5        6        7        8 
+Positive Positive Negative Negative Positive Positive Positive Positive 
+       9       10 
+Positive Positive 
+Levels: Positive Negative</code></pre>
+</div>
+</div>
+<p>We can make the <em>confusion matrix</em> from these predictions using the <code>conf_mat</code> as before.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_cols</span>(er_test, <span class="at">Predicted_class  =</span> tree_predictions) <span class="sc">%&gt;%</span> </span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">conf_mat</span>(ER, Predicted_class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Truth
+Prediction Positive Negative
+  Positive      154        2
+  Negative       10       47</code></pre>
+</div>
+</div>
+<p>By adopting the <code>tidymodels</code> framework we are able to reuse a lot of code. We can compute the accuracy, sensitivity and specificity using the <code>class_metrics</code> function that we already defined:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_cols</span>(er_test, <span class="at">Predicted_class  =</span> tree_predictions) <span class="sc">%&gt;%</span> </span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">class_metrics</span>(<span class="at">truth=</span>ER, <span class="at">estimate =</span> Predicted_class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 3
+  .metric     .estimator .estimate
+  &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt;
+1 accuracy    binary         0.944
+2 sensitivity binary         0.939
+3 specificity binary         0.959</code></pre>
+</div>
+</div>
+<p>The decision tree seems to offer <em>very slight</em> improvements over the logistic regression. The elephant in the room is of course that we haven’t set a very challenging task for us to accomplish. Things will get more complex as the start to add other genes as variables, or use other outcome variables (e.g.&nbsp;the PAM50 classes).</p>
+</section>
+<section id="introducting-tidymodels" class="level1">
+<h1>Introducting <code>tidymodels</code></h1>
+<p>Even for this simple task, there is a large range of possible statistical models that could be applied. When trying to decide the best performing model our time would be better spent evaluating and understanding the model behaviour rather than having to write lots of code to actually run the models, and cope with the nuances of how different packages use different parameter and function names. This is where <code>tidymodels</code> comes in and we have already seen a benefit in being able to use the same code to evaluate metrics.</p>
+<section id="model-specification" class="level2">
+<h2 class="anchored" data-anchor-id="model-specification">Model Specification</h2>
+<p><code>tidymodels</code> recommends that models are specified in a particular manner. This defines the particular statistical modeling approach to be used (Logistic regression or decision tree, or others), the particular package to be used (the <code>engine</code>) and type of modeling task to be performed (<code>classication</code> or <code>regression</code>). The specifications for the models we have used above for logistic regression:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify a logistic regression model</span></span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>logit_spec <span class="ot">&lt;-</span> <span class="fu">logistic_reg</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"glm"</span>) <span class="sc">%&gt;%</span>          <span class="co"># The underlying R function to use</span></span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)     <span class="co"># The task: predicting a class</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>and the decision tree:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>decision_tree_spec <span class="ot">&lt;-</span> <span class="fu">decision_tree</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"rpart"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="recipes-and-workflows" class="level2">
+<h2 class="anchored" data-anchor-id="recipes-and-workflows">Recipes and workflows</h2>
+<p>“Recipes” typically cover the pre-processing steps such as transforming variables onto a suitable scale (e.g.&nbsp;log<span class="math inline">\(_2\)</span> transformation) and removing variables with low variability. However, we have already done this using <code>tidybulk</code> so our recipe is very short. For other projects I suggest looking at the official documentation</p>
+<ul>
+<li><a href="Recipes from the tidymodels website">https://www.tidymodels.org/start/recipes/#recipe</a></li>
+</ul>
+<p>Previously when using <code>glm</code> for logistic regression we had to use a numeric form of the variable we are trying to predict (i.e.&nbsp;<code>0</code> or <code>1</code> for <code>Negative</code> and <code>Positive</code> respectively). However, <code>tidymodels</code> prefers a factor and will perform any conversions internally if needs be.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="co"># We assume the log-transform has already been applied outside the recipe</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>er_recipe <span class="ot">&lt;-</span> <span class="fu">recipe</span>(ER <span class="sc">~</span> ESR1, <span class="at">data =</span> er_train) <span class="co"># %&gt;% </span></span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># step_normalize() - scale the data</span></span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># step_nzv - remove features with low variance.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><em>“Workflows”</em> in <code>tidymodels</code> are a good idea because they are the centralised container that brings together the essential parts of the modeling process: the model definition and the data processing recipe. They ensure your work is consistent, easy to manage, and scalable. The workflow itself doesn’t contain the code to <em>fit</em> the model, but it contains all the instructions and objects needed for the <code>fit()</code> function to execute the model fitting.</p>
+</section>
+<section id="fitting-the-model-and-predicting" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-the-model-and-predicting">Fitting the model and predicting</h2>
+<p>Here is the code for making a workflow to define and fit the logistic regression:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Create the workflow</span></span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>logit_workflow <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(logit_spec) <span class="sc">%&gt;%</span></span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(er_recipe)</span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the workflow to the training data (i.e. train the model)</span></span>
+<span id="cb61-7"><a href="#cb61-7" aria-hidden="true" tabindex="-1"></a>er_logit_fit <span class="ot">&lt;-</span> logit_workflow <span class="sc">%&gt;%</span></span>
+<span id="cb61-8"><a href="#cb61-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(<span class="at">data =</span> er_train)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Printing the fitted model itself shows some of the output that we have seen previously.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>er_logit_fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow [trained] ══════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: logistic_reg()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+0 Recipe Steps
+
+── Model ───────────────────────────────────────────────────────────────────────
+
+Call:  stats::glm(formula = ..y ~ ., family = stats::binomial, data = data)
+
+Coefficients:
+(Intercept)         ESR1  
+      2.854       -1.354  
+
+Degrees of Freedom: 846 Total (i.e. Null);  845 Residual
+Null Deviance:      909.1 
+Residual Deviance: 312.9    AIC: 316.9</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The eagle-eyed of you might have noticed that the coefficients calculated using the <code>tidymodels</code> form of the model have an opposite sign to the original fit. This arises because <code>tidymodels</code> did some internal conversion of our numeric <code>ER</code> values to a factor. In our original logistic model fit we set the “levels” of the factor so that <code>Positive</code> came before <code>Negative</code>. This was to help with the interpretation of the model. However, <code>tidymodels</code> has represented the levels in the opposite way so that “0” is the baseline. This shouldn’t actually affect our predictions as we shall see.</p>
+</div>
+</div>
+<p>Make predictions from our <em>testing</em> data can now be done by “piping” the model we have just created into the <code>predict</code> function and then binding the results back to the test data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>er_results <span class="ot">&lt;-</span> er_logit_fit <span class="sc">%&gt;%</span> </span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(<span class="at">new_data =</span> er_test, <span class="at">type =</span> <span class="st">"class"</span>) <span class="sc">%&gt;%</span> <span class="do">## make predictions from the test data</span></span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(er_test) <span class="co"># Add the predicted class</span></span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a><span class="co"># View the first few rows of the results</span></span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(er_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 4
+  .pred_class ER        ESR1 ER_Numeric
+  &lt;fct&gt;       &lt;fct&gt;    &lt;dbl&gt;      &lt;dbl&gt;
+1 Positive    Positive 3.21           1
+2 Positive    Positive 3.82           1
+3 Negative    Negative 0.831          0
+4 Negative    Negative 1.14           0
+5 Positive    Positive 4.84           1
+6 Positive    Positive 4.31           1</code></pre>
+</div>
+</div>
+<p>The result can then be evaluated using the metrics we defined previously.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>er_results <span class="sc">%&gt;%</span></span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">class_metrics</span>(<span class="at">truth =</span> ER, <span class="at">estimate =</span> .pred_class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 3
+  .metric     .estimator .estimate
+  &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt;
+1 accuracy    binary         0.939
+2 sensitivity binary         0.939
+3 specificity binary         0.939</code></pre>
+</div>
+</div>
+<p>Thankfully we reach the same results as before, but using a coding framework that is a bit more flexible and in line with other styles of R programming we may be familiar with from packages such as <code>dplyr</code> and <code>ggplot2</code>.</p>
+</section>
+<section id="decision-tree-using-tidymodels" class="level2">
+<h2 class="anchored" data-anchor-id="decision-tree-using-tidymodels">Decision tree using tidymodels</h2>
+<p>To use a decision tree rather than a logistic regression we first have to create a new model specification. To keep things consistent we’ll use <code>rpart</code> to fit the model, but note that we’re not fitting the model at this point but just saying that <code>rpart</code> will be used.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>tree_spec <span class="ot">&lt;-</span> <span class="fu">decision_tree</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"rpart"</span>) <span class="sc">%&gt;%</span>       <span class="co"># We will use the 'rpart' package to actually fit the model</span></span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)    <span class="co"># Specify the task type</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Creating a workflow and fitting is pretty similar to above, but just using our new specification of a decision tree instead. This makes our code more re-usable and easier to maintain.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>tree_workflow <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(tree_spec) <span class="sc">%&gt;%</span> </span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(er_recipe) <span class="co"># Re-use the same recipe as above</span></span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>tidymodels_tree_fit <span class="ot">&lt;-</span> tree_workflow <span class="sc">%&gt;%</span></span>
+<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(<span class="at">data =</span> er_train)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Taking a look at the result show that we get the same output as when we used <code>rpart</code> manually.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>tidymodels_tree_fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow [trained] ══════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: decision_tree()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+0 Recipe Steps
+
+── Model ───────────────────────────────────────────────────────────────────────
+n= 847 
+
+node), split, n, loss, yval, (yprob)
+      * denotes terminal node
+
+1) root 847 193 Positive (0.77213695 0.22786305)  
+  2) ESR1&gt;=2.365644 646  19 Positive (0.97058824 0.02941176) *
+  3) ESR1&lt; 2.365644 201  27 Negative (0.13432836 0.86567164) *</code></pre>
+</div>
+</div>
+<p>And the prediction code is the same, but using the model we have just created.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>tidymodels_tree_fit <span class="sc">%&gt;%</span> </span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(<span class="at">new_data =</span> er_test, <span class="at">type =</span> <span class="st">"class"</span>) <span class="sc">%&gt;%</span> <span class="do">## make predictions from the test data</span></span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(er_test) <span class="co"># Add the predicted class</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 213 × 4
+   .pred_class ER        ESR1 ER_Numeric
+   &lt;fct&gt;       &lt;fct&gt;    &lt;dbl&gt;      &lt;dbl&gt;
+ 1 Positive    Positive 3.21           1
+ 2 Positive    Positive 3.82           1
+ 3 Negative    Negative 0.831          0
+ 4 Negative    Negative 1.14           0
+ 5 Positive    Positive 4.84           1
+ 6 Positive    Positive 4.31           1
+ 7 Positive    Positive 3.28           1
+ 8 Positive    Positive 5.80           1
+ 9 Positive    Positive 5.26           1
+10 Positive    Positive 5.54           1
+# ℹ 203 more rows</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="summary" class="level1">
+<h1>Summary</h1>
+<p>After some discussion of the key concepts of splitting the data into training / testing sets, prediction and metrics for measuring model performance (accuracy, specificity and sensitivity), we have seen a couple of examples of machine learning on a fairly trivial task. Moreover, we have used the <code>tidymodels</code> framework that introduces “tidy” data concepts to the fitting and evaluation of statistical models.</p>
+<p>Unfortunately we are not done yet and once we start looking into more challenging tasks (e.g.&nbsp;involving more variables or harder classification problems) these basic models will soon fall apart.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

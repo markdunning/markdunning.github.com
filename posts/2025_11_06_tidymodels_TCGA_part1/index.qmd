@@ -40,7 +40,7 @@ if(!require(tidyr)) install.packages("tidyr")
 if(!require(survminer)) install.packages("survminer")
 
 ## required for heatmap example
-if(!require(pheatmap)) install.packages("pheatmap")
+if(!require(tidyHeatmap)) install.packages("tidyHeatmap")
 
 
 ```
@@ -254,19 +254,14 @@ cancer_genes <- read.delim("cancerGeneList.tsv")
 cancer_genes |> head(n=10)
 ```
 
-::: {.callout-note}
-
+::: callout-note
 If you would prefer a purely data-driven approach that doesn't use any prior knowledge you could instead use the result of `keep_variable` as your filtered object.
 
 ```{r eval=FALSE}
 brca_gene_filtered <- brca_fpkm_uq_unstrand_expressed |>
   keep_variable(top = 2000) 
 ```
-
-
-
 :::
-
 
 Now we have a set of gene names that we want to keep in the analysis. The filtering this time is more efficient on the `SummarizedExperiment` object.
 
