@@ -436,14 +436,14 @@ We've now seen several metrics; accuracy, sensitivity, specificity and AUC. Some
 
 # Fitting a decision tree
 
-It is common practice to try various statistical methods on the same dataset and compare how they perform using the metrics described above. The next method we will try is that of a *decision tree*, which actually follows quite nicely for the example we used at the start of this section where we picked a threshold on the `ESR1` expression and used that to classify. As it's name implies, the decision tree is a way of forming rules based on threshold in the form of "if X is > ... then Y belongs to class A". If is often visualised in the form of a tree. As we only have only variable (`ESR1`) the tree will look a bit boring, but cangrow more much more complex.
+It is common practice to try various statistical methods on the same dataset and compare how they perform using the metrics described above. The next method we will try is that of a *decision tree*, which actually follows quite nicely for the example we used at the start of this section where we picked a threshold on the `ESR1` expression and used that to classify. As it's name implies, the decision tree is a way of forming rules based on threshold in the form of "if X is > ... then Y belongs to class A". If is often visualised in the form of a tree. As we only have only variable (`ESR1`) the tree will look a bit boring, but can grow more much more complex.
 
 We use the `rpart` package for this, which we should already have from installing `tidymodels`. The code looks pretty similar to the `glm` from before. Briefly, the function will try different possibilities of `ESR1` as potential values for the cut-off. For each cut-off, it splits the data into two classes. It then assess the "purity" of each class; in other words the % of 
 `Positive` and `Negative` in each class. The split resulting in the most "pure" classes is chosen.
 
 
 
-```{r}
+```{r simpleDecisionTree_fit}
 library(rpart)
 set.seed(42)
 # Fit the tree model
@@ -456,7 +456,7 @@ simple_tree_fit <- rpart(
 
 Printing the output gives some information about the cutoffs it has determined
 
-```{r}
+```{r simpleDecisionTree_show}
 simple_tree_fit
 ```
 It has chosen 2.36 as it's cutoff value, with an `ESR1` value > 2.36 putting a sample into the `Positive` class. In total 646 samples were placed in the `Positive` class with **19** samples being incorrectly classified. This gives a purity measure of 97%. The `Negative` class is defined by `ESR1` being less than 2.36 and comprises 201 samples. 
@@ -475,7 +475,7 @@ This is especially true for decision tree that are prone to "overfitting". In ot
 To see the tree-like nature of the model we can use the `rpart.plot` package.
 
 
-```{r}
+```{r simpleDecisionTree_plot}
 # Load the visualization package
 library(rpart.plot)
 
@@ -491,7 +491,7 @@ rpart.plot(
 
 As with the logistic regression method, we can use the `predict` method to make predictions from our testing data. Unlike the logistic regression though we don't get probabilities for individual samples, only classifications.
 
-```{r}
+```{r simpleDecisionTree_predict}
 # Make class predictions on the test set
 tree_predictions <- predict(
     simple_tree_fit, 
@@ -504,14 +504,14 @@ tree_predictions[1:10]
 
 We can make the *confusion matrix* from these predictions using the `conf_mat` as before.
 
-```{r}
+```{r simpleDecisionTree_confMat}
 bind_cols(er_test, Predicted_class  = tree_predictions) %>% 
   conf_mat(ER, Predicted_class)
 ```
 
 By adopting the `tidymodels` framework we are able to reuse a lot of code. We can compute the accuracy, sensitivity and specificity using the `class_metrics` function that we already defined:-
 
-```{r}
+```{r simpleDecisionTree_Metrics}
 bind_cols(er_test, Predicted_class  = tree_predictions) %>% 
   class_metrics(truth=ER, estimate = Predicted_class)
 ```
@@ -527,7 +527,7 @@ Even for this simple task, there is a large range of possible statistical models
 
 `tidymodels` recommends that models are specified in a particular manner. This defines the particular statistical modeling approach to be used (Logistic regression or decision tree, or others), the particular package to be used (the `engine`) and type of modeling task to be performed (`classication` or `regression`). The specifications for the models we have used above for logistic regression:- 
 
-```{r}
+```{r tidyModels_logReg_spec}
 # Specify a logistic regression model
 logit_spec <- logistic_reg() %>%
   set_engine("glm") %>%          # The underlying R function to use
@@ -537,7 +537,7 @@ logit_spec <- logistic_reg() %>%
 
 and the decision tree:-
 
-```{r}
+```{r tidyModels_DT_spec}
 decision_tree_spec <- decision_tree() %>% 
   set_engine("rpart") %>% 
   set_mode("classification")
@@ -551,7 +551,7 @@ decision_tree_spec <- decision_tree() %>%
 
 Previously when using `glm` for logistic regression we had to use a numeric form of the variable we are trying to predict (i.e. `0` or `1` for `Negative` and `Positive` respectively). However, `tidymodels` prefers a factor and will perform any conversions internally if needs be.
 
-```{r}
+```{r tidyModels_recipe}
 # We assume the log-transform has already been applied outside the recipe
 er_recipe <- recipe(ER ~ ESR1, data = er_train) # %>% 
   # step_normalize() - scale the data
@@ -564,7 +564,7 @@ er_recipe <- recipe(ER ~ ESR1, data = er_train) # %>%
 
 Here is the code for making a workflow to define and fit the logistic regression:- 
 
-```{r}
+```{r tidyModels_logReg_fit}
 ## Create the workflow
 logit_workflow <- workflow() %>%
   add_model(logit_spec) %>%
@@ -577,7 +577,7 @@ er_logit_fit <- logit_workflow %>%
 
 Printing the fitted model itself shows some of the output that we have seen previously.
 
-```{r}
+```{r tidyModels_logReg_show}
 er_logit_fit
 ```
 ::: {.callout-note}
@@ -588,7 +588,7 @@ The eagle-eyed of you might have noticed that the coefficients calculated using 
 
 Make predictions from our *testing* data can now be done by "piping" the model we have just created into the `predict` function and then binding the results back to the test data.
 
-```{r}
+```{r tidyModels_logReg_predict}
 
 er_results <- er_logit_fit %>% 
   predict(new_data = er_test, type = "class") %>% ## make predictions from the test data
@@ -600,7 +600,7 @@ head(er_results)
 
 The result can then be evaluated using the metrics we defined previously.
 
-```{r}
+```{r tidyModels_logReg_metrics}
 er_results %>%
   class_metrics(truth = ER, estimate = .pred_class)
 ```
@@ -612,7 +612,7 @@ Thankfully we reach the same results as before, but using a coding framework tha
 
 To use a decision tree rather than a logistic regression we first have to create a new model specification. To keep things consistent we'll use `rpart` to fit the model, but note that we're not fitting the model at this point but just saying that `rpart` will be used.
 
-```{r}
+```{r tidyModels_DT_spec}
 tree_spec <- decision_tree() %>%
   set_engine("rpart") %>%       # We will use the 'rpart' package to actually fit the model
   set_mode("classification")    # Specify the task type
@@ -623,7 +623,7 @@ tree_spec <- decision_tree() %>%
 
 Creating a workflow and fitting is pretty similar to above, but just using our new specification of a decision tree instead. This makes our code more re-usable and easier to maintain.
 
-```{r}
+```{r tidyModels_DT_fit}
 tree_workflow <- workflow() %>%
   add_model(tree_spec) %>% 
   add_recipe(er_recipe) # Re-use the same recipe as above
@@ -636,13 +636,13 @@ tidymodels_tree_fit <- tree_workflow %>%
 
 Taking a look at the result show that we get the same output as when we used `rpart` manually.
 
-```{r}
+```{r tidyModels_DT_show}
 tidymodels_tree_fit
 ```
 
 And the prediction code is the same, but using the model we have just created.
 
-```{r}
+```{r tidyModels_DT_predict}
 tidymodels_tree_fit %>% 
   predict(new_data = er_test, type = "class") %>% ## make predictions from the test data
   bind_cols(er_test) # Add the predicted class
