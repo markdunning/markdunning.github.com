@@ -7,7 +7,7 @@ image: preview.png
 description: "A proof of concept machine learning tasks to classify Estrogen Receptor status of TCGA breast cancers using logistic regression and decision trees"
 ---
 
-```{r}
+```{r silentLoad}
 #| echo: false
 #| message: false
 #| warning: false
@@ -17,6 +17,9 @@ knitr::opts_chunk$set(
   message = FALSE
 )
 
+library(dplyr)
+library(ggplot2)
+library(tidymodels)
 ```
 
 # Pre-amble
@@ -25,7 +28,7 @@ In the previous section we described how to download TCGA data for breast cancer
 
 There is a *very extensive* set of clinical information recorded for each sample / patient, but to keep things simple we will start with a task for being able to predict **Estrogen Receptor status** from the expression data, which can be used as an indicator of whether a patient will respond to certain treatments. This is clearly not going to get us a Nature paper or a Nobel prize, but it should work well and introduce some of the key concepts of machine learning. There are a set of packages that we will need:-
 
-```{r eval=FALSE}
+```{r installIfNeeded, eval=FALSE}
 if(!require(tidymodels)) install.packages("tidymodels")
 
 ## install BiocManager to install Bioconductor packages
@@ -42,18 +45,20 @@ if(!require(forcats)) install.packages("forcats")
 
 You also need the processed data from the [previous section](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/) and the code to download this is:-
 
-```{r eval=FALSE}
+```{r downloadIfNeeded, eval=FALSE}
 ### get the saved RDS
 dir.create("raw_data", showWarnings = FALSE)
-if(!file.exists("raw_data/brca_train_tidy.rds")) download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_gene_filtered_SE.rds", destfile = "raw_data/brca_train_tidy.rds")
-if(!file.exists("raw_data/brca_train_tidy.rds")) download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_gene_filtered_SE.rds", destfile = "raw_data/brca_test_tidy.rds")
+if(!file.exists("raw_data/brca_train_tidy.rds")) download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_train_tidy.rds", destfile = "raw_data/brca_train_tidy.rds")
+if(!file.exists("raw_data/brca_test_tidy.rds")) download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_test_tidy.rds", destfile = "raw_data/brca_test_tidy.rds")
 
 ```
 
-```{r}
-brca_test_tidy <- readRDS("raw_data/brca_test_tidy.rds")
+```{r loadTidy}
 brca_train_tidy <- readRDS("raw_data/brca_train_tidy.rds")
+brca_test_tidy <- readRDS("raw_data/brca_test_tidy.rds")
 ```
+
+To keep things simple we will create a data frame of just ER status and ESR1 expression level. For reasons that will become apparent shortly we also create a binary (0 or 1) representation of ER status with 1 being equivalent to Positive. We’ll also change the order of the ER factor so that Positive is before Negative.
 
 ```{r}
 er_train <- dplyr::select(brca_train_tidy, ER  = er_status_by_ihc, ESR1) |> 
@@ -68,7 +73,7 @@ er_test <- dplyr::select(brca_test_tidy, ER  = er_status_by_ihc, ESR1) |>
 
 
 
-We have already seen the relationship between the ER status and the expression level of ESR1 in the form of a boxplot. The relationship is striking, but doesn't always hold true that higher `ESR1` means `Positive`. There are clearly some `Negative` samples with `ESR1` expression over 6, and some `Positive` samples with `ESR1` around 0.
+We have already seen the relationship between the ER status and the expression level of ESR1 in the form of a boxplot. The relationship is striking, but doesn't always hold true that higher `ESR1` means `Positive`. There are clearly some `Negative` samples with `ESR1` expression over 10, and some `Positive` samples with `ESR1` around 8.
 
 ```{r, esr1-initial, cache=TRUE}
 library(ggplot2)
@@ -88,7 +93,7 @@ On the same boxplot as before we can colour points according to which ER Status 
 ```{r, esr1-withCutoff, cache=TRUE}
 er_train |>
   mutate(ER_inferred = ifelse(ESR1 > 10, "Positive","Negative")) |>
-  ggplot(aes(x = ER, y = ESR1)) + geom_boxplot() + geom_jitter(aes(col = ER_inferred),width = 0.1, alpha= 0.4) + geom_hline(yintercept = 3, col="red", lty=2, size=2)
+  ggplot(aes(x = ER, y = ESR1)) + geom_boxplot() + geom_jitter(aes(col = ER_inferred),width = 0.1, alpha= 0.4) + geom_hline(yintercept = 10, col="red", lty=2, size=2)
 ```
 
 We can count up how many times samples get allocated to the wrong group, and this will actually serves as a metric later on for evaluating how well we are doing
@@ -281,21 +286,21 @@ er_test %>%
 
 The numbers in the table have names and meanings associated with them:-
 
--   True Negatives (TN) 46 Correctly predicted `Negative`
--   True Positives (TP) 154 Correctly predicted `Positive`
--   False Positives (FP) 3 Incorrectly predicted `Positive` when the tumor was actually `Negative`. Also known as **Type I Error**
--   False Negatives (FN) 10 Incorrectly predicted `Negative` when the tumor was actually `Positive`. Also known as **Type II Error**
+-   True Negatives (TN) 44 Correctly predicted `Negative`
+-   True Positives (TP) 155 Correctly predicted `Positive`
+-   False Positives (FP) 5 Incorrectly predicted `Positive` when the tumor was actually `Negative`. Also known as **Type I Error**
+-   False Negatives (FN) 9 Incorrectly predicted `Negative` when the tumor was actually `Positive`. Also known as **Type II Error**
 
 Three common metrics for *classification* problems such as this are:-
 
 -   **Accuracy** = Accuracy is the total number of correct predictions divided by the total samples.
-    -   $TP  +TN / (Total)$ = $154 + 46 / 213$ \$\approx\$93.3%
+    -   $TP  +TN / (Total)$ = $155 + 44 / 213$ $\approx$ 93.4%
 -   **Sensitivity** (True Positive Rate) = how well the model finds all the actual Positive cases.
-    -   $TP  / (TP + FN)$ = $154 / (154  + 10)$ \$\approx\$93.3%
+    -   $TP  / (TP + FN)$ = $155 / (155  + 9)$ $\approx$ 94.5%
 -   **Specificity** (True Negative Rate) = how well the model avoids incorrectly classifying actual Negative cases.
-    -   $TN  / (TN + FP)$ = $46 / (46  + 3)$ \$\approx\$93.3%
+    -   $TN  / (TN + FP)$ = $44 / (44  + 5)$ $\approx$ 89.83%
 
-Fortunately we don't need to type all those equations by hand as the `yardstick` package will allow us to define a set of metrics and use these to evaluate our predictions. This pacakge is just one of the many that comprise the `tidymodels` ecosystem.
+Fortunately we don't need to type all those equations by hand as the `yardstick` package will allow us to define a set of metrics and use these to evaluate our predictions. This package is just one of the many that comprise the `tidymodels` ecosystem.
 
 ```{r logFitMetrics}
 class_metrics <- metric_set(accuracy, sensitivity, specificity)
@@ -311,7 +316,7 @@ The metrics have all been calculated on the basis of using a probability of 0.5 
 er_test %>% 
   mutate(Prob = test_probabilities) %>% 
   roc_curve(ER, Prob) %>% 
-  slice_head(n = 10)
+  head(n = 10)
 ```
 
 We can see for example setting a threshold close to 0 means that all `Positive` cases are identified, but the specificity is miserable as there are too many false positives. Plotting sensitivity against 1 - specificity (the False Positive rates) gives a very famous curve called the **ROC curve** ("Receiver Operating Characteristics"). We can create this plot using the `autoplot` function after using the `roc_curve` function.
@@ -374,12 +379,12 @@ Printing the output gives some information about the cutoffs it has determined
 simple_tree_fit
 ```
 
-It has chosen 11.47 as it's cutoff value, with an `ESR1` value \> 11.47 putting a sample into the `Positive` class. In total 646 samples were placed in the `Positive` class with **19** samples being incorrectly classified. This gives a purity measure of 97%. The `Negative` class is defined by `ESR1` being less than 2.36 and comprises 201 samples.
+It has chosen 11.47 as it's cutoff value, with an `ESR1` value \> 11.47 putting a sample into the `Positive` class. In total 648 samples were placed in the `Positive` class with **20** samples being incorrectly classified. This gives a purity measure of 97%. The `Negative` class is defined by `ESR1` being less than 11.57 and comprises 199 samples.
 
 ::: callout-important
 Remember that the number of miss-classifications above are reported on the **training** data. These are intended for use in tweaking and refining our model. For true assessment of how the model performs on *unseen* data we need to make some predictions.
 
-This is especially true for decision tree that are prone to "overfitting". In other words they can memorize the unique quirks and noise of the training data. The $97.1\%$ purity simply means the tree found the best rule for the specific 847 samples in the training data. The goal of machine learning is generalization; to make correct predictions on data the model has never seen before. The only way to know if the rule `ESR1` \>-= 2.366\` is truly robust is to test it on the completely separate testing data .
+This is especially true for decision tree that are prone to "overfitting". In other words they can memorize the unique quirks and noise of the training data. The $97\%$ purity simply means the tree found the best rule for the specific 847 samples in the training data. The goal of machine learning is generalization; to make correct predictions on data the model has never seen before. The only way to know if the rule `ESR1` \>-= 11.47 is truly robust is to test it on the completely separate testing data .
 :::
 
 To see the tree-like nature of the model we can use the `rpart.plot` package.
@@ -436,6 +441,7 @@ Even for this simple task, there is a large range of possible statistical models
 `tidymodels` recommends that models are specified in a particular manner. This defines the particular statistical modeling approach to be used (Logistic regression or decision tree, or others), the particular package to be used (the `engine`) and type of modeling task to be performed (`classication` or `regression`). The specifications for the models we have used above for logistic regression:-
 
 ```{r tidyModels_logReg_spec}
+library(tidymodels)
 # Specify a logistic regression model
 logit_spec <- logistic_reg() %>%
   set_engine("glm") %>%          # The underlying R function to use

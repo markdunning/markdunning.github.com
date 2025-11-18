@@ -267,9 +267,9 @@ So, are the Pam50 subtypes are major source of variation in our data? The `tidyb
 
 ```{r pca_dryrun, cache=TRUE}
 brca_fpkm_uq_unstrand |>
-  reduce_dimensions(method = "PCA") %>% 
+  reduce_dimensions(method = "PCA")  |> 
   ## not needed here: scale_abundance() |>
-  pivot_sample() %>% 
+  pivot_sample()  |>
   select(.sample, PC1, PC2)
 ```
 
@@ -277,10 +277,10 @@ It is now straightforward to plot, and also colour according to the PAM50 subtyp
 
 ```{r PAM50PCA}
 
-brca_fpkm_uq_unstrand %>% 
-  reduce_dimensions(method = "PCA") %>% 
-  pivot_sample() %>% 
-  filter(!is.na(paper_BRCA_Subtype_PAM50)) %>% 
+brca_fpkm_uq_unstrand |> 
+  reduce_dimensions(method = "PCA")  |>
+  pivot_sample()  |>
+  filter(!is.na(paper_BRCA_Subtype_PAM50))  |>
   ggplot(aes(x = PC1, y = PC2, col = paper_BRCA_Subtype_PAM50 )) + 
   geom_point()  + 
   scale_color_manual(values = c("red", "pink", "darkblue", "lightblue", "yellow"))
@@ -379,7 +379,7 @@ There are *plenty* more examples on the [survminer](https://github.com/kassambar
 The machine learning tasks we have planned require a slightly different strategy for processing. Firstly, whist FPKM are an easy way to compare expression across different gene lengths and library sizes for visualization, it's not a statistically robust input for advanced modeling tasks. For the most reliable and highest-performing model(s), particularly when using linear methods the input data must adhere to statistical assumptions (such as a stable variance across the whole range of counts). Furthermore, FPKM incorporates cohort-level information during calibration. A central tenent of Machine Learning is that data are dividing into training and testing sets that crucially are processed completely independently such that no information from the testing set is used during training. The cohort-level nature of FPKM violates this assumption and potentially leads to an issue called "**data leakage**" which could compromise the validity of our models and lead to overly-optimistic predictions.
 
 
-We will therefore take the raw counts from TCGA as our stating point. Our approach will be to first split the data into independent training and testing sets, and then process the training data. Our training data will be transformed using parameters learnt from the training data. Finally, we will state our intentions of modeling the Estrogen Receptor (ER) status and therefore include only samples where we have a `Positive` or `Negative` observations for this variable.
+We will therefore take the raw counts from TCGA as our stating point. Our approach will be to first split the data into independent training and testing sets, and then process the training data. Our testing data will be transformed using parameters learnt from the training data. Finally, we will state our intentions of modeling the Estrogen Receptor (ER) status and therefore include only samples where we have a `Positive` or `Negative` observations for this variable.
 
 First we will create a matrix of raw counts of all available samples.
 
