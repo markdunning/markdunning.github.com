@@ -170,7 +170,7 @@ Firstly, this object contains many types of "count", and normalised versions the
 assayNames(brca.data_full)
 ```
 
-The `unstranded` assay column contains the integer count of reads mapped to each gene, summed across both the forward and reverse strands. This is the closest representation of the true number of RNA fragments sequenced for that gene. If our main priority was for differential expression (DE), we would choose these values. However, our plan to use `tidybulk` and `tidymodels` for a classification exercise (not formal DE analysis), so we will prefer the `fpkm_uq_unstrand` as these are better suited for regression-based machine learning models and visualisation. The data have already undergone some normalisation make values comparable across samples. The "FPKM" stands for the standard normalisation of sequencing depth (per millions reaads) and gene length, whereas UQ means "Upper-Quartile" scaling to reduce the influence of extreme outliers.
+The `unstranded` assay column contains the integer count of reads mapped to each gene, summed across both the forward and reverse strands. This is the closest representation of the true number of RNA fragments sequenced for that gene. If our main priority was for differential expression (DE), we would choose these values. However,  we will prefer the `fpkm_uq_unstrand` as these are better suited for cohort-level visualisation. The data have already undergone some normalisation make values comparable across samples. The "FPKM" stands for the standard normalisation of sequencing depth (per millions reaads) and gene length, whereas UQ means "Upper-Quartile" scaling to reduce the influence of extreme outliers.
 
 We'll create a new `SummarizedExperiment` object from scratch that will hold just these data. We can also take the opportunity to join the sample information included with the `SummarizedExperiment` as standard, with the data we queried.
 
@@ -209,73 +209,7 @@ Since we don't need the object we originally created we can delete it from memor
 rm(brca.data_full)
 ```
 
-## Reducing the amount of data
 
-We are **not** going to be running any machine learning methods or visualisation on the data we have now. More than anything else, it would take far too long to run and require huge amounts of compute resource. The data consists of `r nrow(brca_fpkm_uq_unstrand)` "genes" and `r ncol(brca_fpkm_uq_unstrand)` samples. Considering the genes first of all, not all of them are going to be informative and will only contribute noise to our data making any machine learning more complicated. In [a previous post](https://mdbioinformatics.com/posts/2025_10_30_tidybulk/) I introduced the `tidybulk` package for dealing with RNA-seq in a manner consistent with the `tidyverse` framework in R.
-
-```{r loadtidybulk}
-library(tidybulk)
-```
-
-The package I will be eventually using (SPOILER ALERT:`tidymodels`) has some pre-processing steps for removing uninformative features that are usually recommended. However, I am going to revert to some domain knowledge and use some functionality from `tidybulk` which are specifically developed for RNA-seq. First of all, we can remove genes that are lowly-expressed using the `keep_abundant` function. I played around with the settings for `keep_abundant` here as the defaults were a bit too aggressive. On inspecting the names of the genes retained (see commented code below) I found that `PTEN` and `ESR1` were no longer in my data using the default, and from my knowledge of breast cancer I figure these are important.
-
-```{r getabundant}
-##NB using the base pipe |> here as we haven't loaded tidyverse yet
-
-brca_fpkm_uq_unstrand_expressed <- brca_fpkm_uq_unstrand |>
-  keep_abundant(minimum_counts = 0.5,           # Lower the expression threshold
-    minimum_proportion = 0.025     # Lower the proportion of samples required)
-)
-
-rm(brca_fpkm_uq_unstrand)
-
-# uncomment to inspect the genes retained
-# rowData(brca_fpkm_uq_unstrand_expressed) |> data.frame() |> View()
-```
-
-The reduction in the number of genes is quite dramatic - but this is a good thing for our purposes as it will make things run quicker. The next step is to remove genes that do not have enough *variability* in the data. Variability is important as genes whose expression level stays the same across samples are not going to be very informative for distinguishing different subtypes. However, in the following code I will keep the names of the variable genes, but not actually do the filtering yet. Conveniently, `tidybulk` allows the usage of the pipe (`|>` or `%>%`) so we don't have to create any new variables. Explicitly creating a `tidybulk` object means we can use `dplyr` operations such as `pull`ing the `gene_name` name.
-
-```{r getvargenes}
-var_genes <- brca_fpkm_uq_unstrand_expressed |>
-  keep_variable(top = 2000) |>
-  tidybulk() |>
-  filter(!duplicated(gene_name)) |>
-  dplyr::pull(gene_name)
-
-var_genes[1:10]
-
-```
-
-I'd like my data to be somewhat informed by biology, so will also use a set of Cancer genes. I got the set of genes following from [OncoKB](https://www.oncokb.org/cancer-genes)
-
-```{r getcancergenes}
-if(!file.exists("cancerGeneList.tsv")) download.file("https://raw.githubusercontent.com/markdunning/markdunning.github.com/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/cancerGeneList.tsv", destfile = "cancerGeneList.tsv")
-cancer_genes <- read.delim("cancerGeneList.tsv")
-cancer_genes |> head(n=10)
-```
-
-::: callout-note
-If you would prefer a purely data-driven approach that doesn't use any prior knowledge you could instead use the result of `keep_variable` as your filtered object.
-
-```{r eval=FALSE}
-brca_gene_filtered <- brca_fpkm_uq_unstrand_expressed |>
-  keep_variable(top = 2000) 
-```
-:::
-
-Now we have a set of gene names that we want to keep in the analysis. The filtering this time is more efficient on the `SummarizedExperiment` object.
-
-```{r final_filter}
-cancer_gene_names <- cancer_genes$Hugo.Symbol
-
-
-to_keep <- rowData(brca_fpkm_uq_unstrand_expressed)$gene_name %in% c(cancer_gene_names, var_genes)
-
-brca_gene_filtered <- brca_fpkm_uq_unstrand_expressed[to_keep,]
-
-brca_gene_filtered
-saveRDS(brca_gene_filtered, "brca_gene_filtered_SE.rds")
-```
 
 ## Some data Exploration
 
@@ -288,9 +222,9 @@ To get the data for just `ESR1` It's actually more efficient in this case to fil
 ```{r esr1_allcats, cache=TRUE}
 library(ggplot2)
 library(dplyr)
+library(tidybulk)
 
-
-brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ESR1"] |>
+brca_fpkm_uq_unstrand[rowData(brca_fpkm_uq_unstrand)$gene_name == "ESR1"] |>
   tidybulk() |>
   ggplot(aes(x = er_status_by_ihc, y = fpkm_uq)) + geom_boxplot() + geom_jitter(width = 0.1)
 ```
@@ -298,7 +232,7 @@ brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ESR1"] |>
 Phew! So `ESR1` expression is indeed higher in ER positive samples. The plot also highlights some discrepancy in the recording of the ER status which should be cleaned prior to analysis. For the sake of the plot we can filter out the offending entries.
 
 ```{r esr1, cache=TRUE}
-brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ESR1"] %>% 
+brca_fpkm_uq_unstrand[rowData(brca_fpkm_uq_unstrand)$gene_name == "ESR1"] %>% 
   tidybulk() %>% 
   filter(er_status_by_ihc %in% c("Positive", "Negative")) %>% 
   ggplot(aes(x = er_status_by_ihc, y = fpkm_uq)) + geom_boxplot() + geom_jitter(width = 0.1) + xlab("ER Status")
@@ -307,7 +241,7 @@ brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ESR1"] %>%
 In a similar vein, the gene **ERBB2** should be higher in patients that are positive for **Her2** staining by IHC.
 
 ```{r erbb2, cache=TRUE}
-brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ERBB2"] %>% 
+brca_fpkm_uq_unstrand[rowData(brca_fpkm_uq_unstrand)$gene_name == "ERBB2"] %>% 
   tidybulk() %>% 
   filter(her2_status_by_ihc %in% c("Positive", "Negative")) %>% 
   ggplot(aes(x = her2_status_by_ihc, y = fpkm_uq)) + geom_boxplot() + geom_jitter() + scale_y_log10()
@@ -316,7 +250,7 @@ brca_gene_filtered[rowData(brca_gene_filtered)$gene_name == "ERBB2"] %>%
 Breast cancer was traditionally classified into five *intrinsic* subtypes, and microarray studies sought to identify genes that define these subtypes. On such 50 gene panel was derived using a prediction analysis of microarray (PAM) and hence called **PAM50**. The samples in the TCGA dataset have been classified using this method, and we can check the expression level of **ESR1** and **ERBB2** respectively.
 
 ```{r esr1_erbb2_plots, cache=TRUE}
-brca_gene_filtered[rowData(brca_gene_filtered)$gene_name %in% c("ESR1","ERBB2")] %>% 
+brca_fpkm_uq_unstrand[rowData(brca_fpkm_uq_unstrand)$gene_name %in% c("ESR1","ERBB2")] %>% 
   tidybulk() %>% 
   filter(!is.na(paper_BRCA_Subtype_PAM50)) %>% 
   ggplot(aes(x = paper_BRCA_Subtype_PAM50, y = fpkm_uq, fill = paper_BRCA_Subtype_PAM50)) + 
@@ -332,7 +266,7 @@ Again, this all makes perfect sense as *Luminal A* and *Luminal B* are *ER-posit
 So, are the Pam50 subtypes are major source of variation in our data? The `tidybulk` package allows us to run dimensionality reduction techniques such as PCA to look at this issue. The `reduce_dimensions` function computes the Principal Components and these can be added to our data ready for visualisation. Normally `tidybulk` would require a `scale_abundance` step here to correct for differences in sequencing depth between samples, but since we are using values that are already normalised to some extent this is not needed on this ocassion.
 
 ```{r pca_dryrun, cache=TRUE}
-brca_gene_filtered |>
+brca_fpkm_uq_unstrand |>
   reduce_dimensions(method = "PCA") %>% 
   ## not needed here: scale_abundance() |>
   pivot_sample() %>% 
@@ -343,7 +277,7 @@ It is now straightforward to plot, and also colour according to the PAM50 subtyp
 
 ```{r PAM50PCA}
 
-brca_gene_filtered %>% 
+brca_fpkm_uq_unstrand %>% 
   reduce_dimensions(method = "PCA") %>% 
   pivot_sample() %>% 
   filter(!is.na(paper_BRCA_Subtype_PAM50)) %>% 
@@ -370,7 +304,7 @@ pam50_genes <- read.table("PAM50_genes.txt")[,1]
 
 library(tidyHeatmap)
 
- brca_gene_filtered[rowData(brca_gene_filtered)$gene_name %in% pam50_genes,] %>% 
+ brca_fpkm_uq_unstrand[rowData(brca_fpkm_uq_unstrand)$gene_name %in% pam50_genes,] %>% 
   ## once filtered, make a "tidy" version
   tidybulk() %>% 
   mutate(logcount = log2(fpkm_uq + 1)) %>% 
@@ -406,7 +340,7 @@ The clinical data we have needs modifying slightly to run the analysis. In parti
 ```{r prepareKM}
 library(survminer)
 library(survival)
-clin_data_corrected <- colData(brca_gene_filtered) %>% 
+clin_data_corrected <- colData(brca_fpkm_uq_unstrand) %>% 
   data.frame() %>% 
   dplyr::filter(classification_of_tumor == "primary") %>% 
   #Define Time (Coalesce death date and follow-up date)
@@ -438,8 +372,105 @@ ggsurvplot(
 )
 ```
 
-There are *plenty* more examples on the [survminer](https://github.com/kassambara/survminer) website on how to customise this further.
+There are *plenty* more examples on the [survminer](https://github.com/kassambara/survminer) website on how to customise this further
+
+## Preparing the data for Machine Learning
+
+The machine learning tasks we have planned require a slightly different strategy for processing. Firstly, whist FPKM are an easy way to compare expression across different gene lengths and library sizes for visualization, it's not a statistically robust input for advanced modeling tasks.
+
+```{r getRawCounts}
+library(tidymodels)
+library(DESeq2)
+
+set.seed(42)
+
+brca.data_full <- readRDS("brca.data_full.rds")
+
+tcga_brca.clin <- readr::read_tsv("tcga_brca.clin.tsv", show_col_types = FALSE)
+# get the rowData (gene information) and colData (sample information)
+# These components are used directly from the original object
+gene_info <- rowData(brca.data_full)
+sample_info <- colData(brca.data_full) |>
+  data.frame() |>
+  dplyr::left_join(tcga_brca.clin, by = c("patient"="bcr_patient_barcode")) %>% 
+  filter(er_status_by_ihc %in% c("Positive","Negative")) %>% 
+  tibble::column_to_rownames("barcode")
+
+raw_assay <- assay(brca.data_full, "unstranded")[,rownames(sample_info)] 
+rownames(raw_assay) <- gene_info$gene_name
+
+```
+
+
+
+
+```{r makeTrainingTestSets}
+library(tidymodels)
+library(DESeq2)
+rm(brca_fpkm_uq_unstrand)
+set.seed(42)
+
+data_split <- data.frame(Sample = rownames(sample_info), ER = sample_info$er_status_by_ihc) %>% 
+  initial_split(prop = 0.8, strata  = "ER")
+
+training_samples <- training(data_split) %>% pull(Sample)
+testing_samples <- testing(data_split) %>% pull(Sample)
+
+brca_training <- DESeqDataSetFromMatrix(raw_assay[,training_samples],
+                                        sample_info[training_samples,],
+                                        design = ~er_status_by_ihc)
+
+brca_testing <- DESeqDataSetFromMatrix(raw_assay[,testing_samples],
+                                        sample_info[testing_samples,],
+                                        design = ~er_status_by_ihc)
+
+
+```
+
+
+
+```{r prepareTrainingSet, cache=TRUE}
+
+brca_training <- estimateSizeFactors(brca_training)
+brca_training <- estimateDispersions(brca_training)
+
+normalised_counts <- log2(counts(brca_training, normalized = TRUE) + 1)
+
+most_var_genes <- rownames(normalised_counts)[order(rowVars(normalised_counts),decreasing = TRUE)[1:250]]
+
+brca_testing <- estimateSizeFactors(brca_testing)
+dispersionFunction(brca_testing) <- dispersionFunction(brca_training)
+
+```
+
+
+
+
+```{r finaliseTrainingAndTest}
+
+vsd_train <- varianceStabilizingTransformation(brca_training, blind = FALSE)
+vsd_test <- varianceStabilizingTransformation(brca_testing, blind = FALSE)
+
+brca_train_tidy <- assay(vsd_train)[most_var_genes,] %>% 
+  t() %>% 
+  data.frame() %>% 
+  tibble::rownames_to_column("barcode") %>% 
+  left_join(tibble::rownames_to_column(sample_info, "barcode"))
+
+brca_test_tidy <- assay(vsd_test)[most_var_genes,] %>% 
+  t() %>% 
+  data.frame() %>% 
+  tibble::rownames_to_column("barcode") %>% 
+  left_join(tibble::rownames_to_column(sample_info, "barcode"))
+
+saveRDS(brca_train_tidy, "brca_train_tidy.rds")
+saveRDS(brca_test_tidy, "brca_test_tidy.rds")
+
+```
 
 # Next time
 
 Make sure the gene filtered object `brca_gene_filtered` is saved for next time and we will start some machine learning tasks.
+
+
+
