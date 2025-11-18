@@ -376,7 +376,12 @@ There are *plenty* more examples on the [survminer](https://github.com/kassambar
 
 ## Preparing the data for Machine Learning
 
-The machine learning tasks we have planned require a slightly different strategy for processing. Firstly, whist FPKM are an easy way to compare expression across different gene lengths and library sizes for visualization, it's not a statistically robust input for advanced modeling tasks.
+The machine learning tasks we have planned require a slightly different strategy for processing. Firstly, whist FPKM are an easy way to compare expression across different gene lengths and library sizes for visualization, it's not a statistically robust input for advanced modeling tasks. For the most reliable and highest-performing model(s), particularly when using linear methods the input data must adhere to statistical assumptions (such as a stable variance across the whole range of counts). Furthermore, FPKM incorporates cohort-level information during calibration. A central tenent of Machine Learning is that data are dividing into training and testing sets that crucially are processed completely independently such that no information from the testing set is used during training. The cohort-level nature of FPKM violates this assumption and potentially leads to an issue called "**data leakage**" which could compromise the validity of our models and lead to overly-optimistic predictions.
+
+
+We will therefore take the raw counts from TCGA as our stating point. Our approach will be to first split the data into independent training and testing sets, and then process the training data. Our training data will be transformed using parameters learnt from the training data. Finally, we will state our intentions of modeling the Estrogen Receptor (ER) status and therefore include only samples where we have a `Positive` or `Negative` observations for this variable.
+
+First we will create a matrix of raw counts of all available samples.
 
 ```{r getRawCounts}
 library(tidymodels)
@@ -384,12 +389,18 @@ library(DESeq2)
 
 set.seed(42)
 
+## Load the full dataset we created previously
+
 brca.data_full <- readRDS("brca.data_full.rds")
 
 tcga_brca.clin <- readr::read_tsv("tcga_brca.clin.tsv", show_col_types = FALSE)
-# get the rowData (gene information) and colData (sample information)
-# These components are used directly from the original object
+
+# get the gene annotations stored in the full data
 gene_info <- rowData(brca.data_full)
+
+## Join the sample information extra clinical variables
+## Add the barcode as rownames, which will make subsetting easier
+
 sample_info <- colData(brca.data_full) |>
   data.frame() |>
   dplyr::left_join(tcga_brca.clin, by = c("patient"="bcr_patient_barcode")) %>% 
@@ -402,12 +413,14 @@ rownames(raw_assay) <- gene_info$gene_name
 ```
 
 
+It is possible to use the `sample` function from R to pick rows from our dataset, or even the `slice_sample` from `dplyr`, but the most straightforward way of splitting the data into training and testing is using the `tidymodels` package. We will learn lots about this package in due course. The same way that tidyverse is a collection of packages with a common philosophy for data manipulation and visualisaton, `tidymodels` is a ecosystem of packages for all steps of machine learning. The first task is often to split data into training and testing sets, which is performed by the `initial_split` function after loading `tidymodels`. During the split it is common to use the majority (say 80%) of the data for training. You can also make sure that the your outcome of interest has roughly the same proportion in training and testing. 
 
+Once a split is created with `initial_split` you can extract the training and testing data. We actually just want the *barcodes* of the training and testing sets, and we can use these to create `DESeq2` objects from the raw counts.
 
 ```{r makeTrainingTestSets}
 library(tidymodels)
 library(DESeq2)
-rm(brca_fpkm_uq_unstrand)
+
 set.seed(42)
 
 data_split <- data.frame(Sample = rownames(sample_info), ER = sample_info$er_status_by_ihc) %>% 
@@ -427,7 +440,13 @@ brca_testing <- DESeqDataSetFromMatrix(raw_assay[,testing_samples],
 
 ```
 
+We now perform the statistical normalization, variance stabilization, and feature selection steps, **ensuring that all parameters are calculated solely from the training data** before being applied consistently to both sets.
 
+The `DESeq2` function `estimateSizeFactors()` calculates a normalization factor for each sample (a column) in the training set. This accounts for differences in sequencing depth (library size). This must be calculated first, as it is needed for the subsequent steps. The `estimateDispersions()` function then calculates the gene-wise biological variability. Critically, it fits a function that models the relationship between a gene's mean expression and its variance across the entire training cohort. Once estimated, this function can be added directly to the testing data to ensure both training and testing data are processed the same.
+
+We convert the normalized counts to a log$_2$ scale (adding the essential $+1$ pseudo-count to handle zeros). This transformation helps stabilize the variance but, more importantly here, makes the variance calculation reflective of biological fold change rather than raw magnitude. We choose the Top 250 Most Variable Genes for two reasons to combat the "Curse of Dimensionality" by reducing the feature space. This step calculates the variability only on the training data, preventing "leakage". The resulting list, `most_var_genes`, is the filter to be used for both sets.
+
+`estimateSizeFactors()` is run independently on the test data, which is fine because size factors are a sample-specific property (based on that sample's own depth) and do not leak cohort information.
 
 ```{r prepareTrainingSet, cache=TRUE}
 
@@ -444,7 +463,7 @@ dispersionFunction(brca_testing) <- dispersionFunction(brca_training)
 ```
 
 
-
+Finally we perform the VST step to calibrate both datasets, and then convert to a "tidy" format that we will need for machine learning. 
 
 ```{r finaliseTrainingAndTest}
 
@@ -466,11 +485,12 @@ brca_test_tidy <- assay(vsd_test)[most_var_genes,] %>%
 saveRDS(brca_train_tidy, "brca_train_tidy.rds")
 saveRDS(brca_test_tidy, "brca_test_tidy.rds")
 
+
 ```
 
 # Next time
 
-Make sure the gene filtered object `brca_gene_filtered` is saved for next time and we will start some machine learning tasks.
+Make sure the tidy filtered objects `brca_train_tidy.rds` and `brca_test_tidy.rds` are saved for next time and we will start some machine learning tasks.
 
 
 
