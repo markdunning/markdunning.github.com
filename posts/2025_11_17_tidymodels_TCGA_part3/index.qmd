@@ -1,10 +1,10 @@
 ---
-title: "Tidymodels for omics data: Part 3"
+title: "Tidymodels for omics data: Part 3a"
 author: Mark Dunning
 date: 2025-11-19
 theme: darkly
 image: preview.png
-description: "Machine Learning with glmnet and random forests in R"
+description: "Machine Learning with glmnet and random forests in R using many features (genes)"
 ---
 
 ```{r silentLoad}
@@ -22,7 +22,7 @@ library(ggplot2)
 library(tidymodels)
 ```
 
-# Pre-amble
+## Pre-amble
 
 In the previous section we described how to download TCGA data for breast cancers and manipulated them using a combination of `tidybulk` and `dplyr` to retain a set of expressed, variable genes plus a set of known cancer genes.
 
@@ -71,7 +71,8 @@ brca_train_tidy %>%
   cor() %>% 
   data.frame() %>% 
   tibble::rownames_to_column("Cor_with_Gene") %>% 
-  select(ESR1, Cor_with_Gene) %>% arrange(desc(abs(ESR1))) 
+  select(ESR1, Cor_with_Gene) %>% 
+  slice_max(ESR1, n = 10) 
 ```
 
 Let's proceed by picking genes with an *absolute* correlation < 0.7 with ESR1 as our possible predictors.
