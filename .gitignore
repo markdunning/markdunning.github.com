@@ -3,3 +3,9 @@
 posts/2025_11_06_tidymodels_TCGA_part1/GDCdata/
 posts/2025_11_06_tidymodels_TCGA_part1/brca.data_full.rds
 posts/2025_11_06_tidymodels_TCGA_part1/brca_fpkm_uq_unstrand.rds
+posts/2025_10_23_10X_spatial_from_GEO/GSE230207
+posts/2025_10_23_10X_spatial_from_GEO/TME_cold
+posts/2025_10_23_10X_spatial_from_GEO/TME_hot
+posts/2025_10_23_10X_spatial_from_GEO/TME_IME
+posts/2025_10_23_10X_spatial_from_GEO/TME_IMS
+posts/2025_10_23_10X_spatial_from_GEO/GSM*
