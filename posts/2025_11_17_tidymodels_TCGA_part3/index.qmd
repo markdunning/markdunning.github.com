@@ -100,7 +100,7 @@ er_test <- brca_test_tidy %>%
   mutate(ER = as.factor(ER))
 ```
 
-## GLMNet
+## Introducing glmnet
 
 With the number of features (genes) we have in our dataset, even after filtering, there is still the potential for us to suffer from the "curse of dimensionality" and overfit our data. In other words, we could build a model so specific that it is of little use beyond the dataset that it was trained upon.
 
@@ -130,7 +130,9 @@ lasso_spec_fixed <- logistic_reg(
 
 ```
 
-As before we are using data that have already been processed using domain-specific tools, so there is no need for much in our "recipe" (sometimes you will see removing small variances and filtering here). However, we need to introduce a step that will normalize (or standardise) our features (genes) by subtracting the mean and dividing by the standard deviation. In other words to create a "z-score" that will make all the features comparable and stop any one feature from dominating the model or obscuring the contribution from other features. Features with a higher mean or variance could also be unfairly shrunken by lasso.
+As before we are using data that have already been processed using domain-specific tools, so there is no need for much in our "recipe" (sometimes you will see removing small variances and filtering here). However, we need to change the formula from using a single gene to predict to using all available features. The syntax for this is `ER ~.`, which avoids having to type all the feature names.
+
+However, we need to introduce a step that will normalize (or standardise) our features (genes) by subtracting the mean and dividing by the standard deviation. In other words to create a "z-score" that will make all the features comparable and stop any one feature from dominating the model or obscuring the contribution from other features. Features with a higher mean or variance could also be unfairly shrunken by lasso.
 
 ```{r glm_recipe}
 er_recipe_multigene <- recipe(ER ~ ., data = er_train)  %>% 
@@ -174,7 +176,7 @@ tidy(fixed_lasso_fit) %>% arrange(estimate)
 
 Or as a plot. The magnitude and sign of the coefficient (`estimate`) tell us something about the influence of that gene on the model, which larger (in absolute terms) estimates being more predictive.
 
-```{r fig.height=8}
+```{r all_lasso_coef, fig.height=8}
 tidy(fixed_lasso_fit) %>% 
   filter(term != "(Intercept)", estimate != 0) %>% 
   ggplot(aes(y = forcats::fct_reorder(term, estimate),x = estimate, fill = estimate > 0)) + geom_col() + xlab("Model Coefficient") + ylab("Gene")
@@ -182,7 +184,7 @@ tidy(fixed_lasso_fit) %>%
 
 Just to make sure that we understand we can plot the most positive coefficients against `ER` and see these genes are all higher expressed in ER `Positive` tumours.
 
-```{r}
+```{r lasso_pos_coef}
 max_coefs <- tidy(fixed_lasso_fit) %>% 
   filter(term != "(Intercept)") %>% 
   slice_max(estimate, n = 5) %>% 
@@ -196,7 +198,7 @@ ggplot(aes(x = ER, y = count)) + geom_boxplot() + facet_wrap(~Gene)
 ```
 Conversely, genes where a negative coefficient was predicted are all higher in ER `Negative` (or equivalently lower in ER `Positive`)
 
-```{r}
+```{r lasso_neg_coef}
 min_coefs <- tidy(fixed_lasso_fit) %>% 
   filter(term != "(Intercept)") %>% 
   slice_min(estimate, n = 5) %>% 
@@ -209,7 +211,7 @@ ggplot(aes(x = ER, y = count)) + geom_boxplot() + facet_wrap(~Gene)
 ```
 And the next step is of course to see how the model performs on *un-seen* or new data, and we created the `er_test` dataset for this purpose. The `tidymodels` eco-system uses `yardstick` to efficiently compile metrics and we will use accuracy, specificity and sensitivity as defined in the previous section.
 
-```{r}
+```{r lasso_metrics}
 class_metrics <- metric_set(accuracy, specificity, sensitivity)
 
 fixed_lasso_fit |>
@@ -224,18 +226,18 @@ Overall the model is doing quite well even though we didn't use `ESR1`. The spec
 
 ## Clinical context
 
-In a clinical context, the high specificity is good as you wouldn't progress too many patients to potentially aggressive treatment they wouldn't benefit from. On the other hand, some patients may miss the opportunity to take a potentially life-changing or life-extending treatment.
+In a clinical context, the high specificity is encouraging as you wouldn't progress too many patients to potentially aggressive treatment they wouldn't benefit from. On the other hand, some patients may miss the opportunity to take a potentially life-changing or life-extending treatment.
 
 :::
 
 
 There is clearly an opportunity for some improvement, and possible that could be achieved by better choice of *hyper-parameters*. For now though lets see how other methods perform starting with the decision tree.
 
-## Decision Trees to "Random Forests"
+## Decision Trees revisited
 
 Thanks for the `tidymodels` philosophy, we can actually *reuse* quite a lot of the code from before. We first need a specification.
 
-```{r}
+```{r decision_tree_spec}
 decision_tree_spec <- decision_tree() %>% 
   set_engine("rpart") %>%       
   set_mode("classification")
@@ -243,7 +245,7 @@ decision_tree_spec <- decision_tree() %>%
 
 The workflow then combines the specifiction with the same recipe from above.
 
-```{r}
+```{r decision_tree_fit}
 decision_tree_workflow_fixed <- workflow() %>%
   add_model(decision_tree_spec) %>%
   add_recipe(er_recipe_multigene)
@@ -257,7 +259,7 @@ decision_tree_fit
 The fit looks quite complex, but let's plot it out.
 
 
-```{r}
+```{r decision_tree_plot} 
 library(rpart.plot)
 rpart.plot(extract_fit_engine(decision_tree_fit))
 
@@ -269,7 +271,7 @@ Furthermore, unlike the initial `ESR1`-based tree (seen in the previous section)
 Nevertheless, we can see how the model performs:-
 
 
-```{r}
+```{r decision_tree_predict}
 decision_tree_fit |>
   predict(new_data = er_test) |>
   bind_cols(er_test) |>
@@ -282,62 +284,96 @@ The specificity is roughly the same as our Lasso from above, but the sensitivity
 
 The random forest is a natural extension of a decision tree, as it harnesses the power of many different decision tree and uses the predictions from each individual tree to form a consensus or majority vote for each sample to be classified.
 
+The method constructs many decision trees (as above), each using a "bootstrap sample" (a random sample with replacement) of the data. Therefore, each tree is a bit different and makes its own predictions without relying on others. Moreover, when tree is built it doesn’t look at all the features (genes in our case) at once. It picks a few at random to decide how to split the data. Whilst some trees might not work very well individually, the crowd-voting step of taking predictions from a large number of trees should lead to accurate predictions overall and negate concerns over individual trees overfitting data.
 
-```{r}
-set.seed(42)
+It's specification is similar to models we have used before. We can set `ranger` as the method used to build the model, and this package is included as part of `tidymodels`. Setting `importance = "permutation"` is useful for biological interpretation as it will allow us to see which features (genes) are contributing most to the model
 
+
+```{r random_forest_spec+}
 random_forest_spec <- rand_forest(
     mode = "classification", 
     trees = 1000 # Using 1000 trees for robustness
   ) %>%
-  set_engine("ranger", importance = "none")
+  set_engine("ranger", importance = "permutation")
 
-# 2. Create the Random Forest Workflow
-# We reuse the existing recipe (er_recipe_multigene)
+```
+
+Due to the random nature of the method, we need to set a seed to ensure reproducibility before we conduct the fit
+
+```{r randomForest_run}
+set.seed(42)
+
 random_forest_workflow <- workflow() %>%
   add_model(random_forest_spec) %>%
   add_recipe(er_recipe_multigene)
 
-# 3. Fit the model to the training data
-# This step trains 1000 trees on your ESR1-free data.
 random_forest_fit <- random_forest_workflow %>%
   fit(data = er_train)
 
 random_forest_fit
 ```
+Whilst the decision tree was quite intuitive to visualise, the random forest is unfortunately less so. But let's make some predictions and see how it performs:-
 
-```{r}
-  random_forest_fit %>% 
+
+```{r random_forest_predict}
+random_forest_fit %>% 
   predict(new_data = er_test) |>
   bind_cols(er_test) |>
   class_metrics(truth = ER, estimate = .pred_class)
 ```
+So the sensitivity has improved from the decision tree, and also beats the glmnet model, with no difference in specificity. As with the Lasso output, we can get a sense of what features are most powerful using an "importance" score that is calculated (setting `importance = "permutation"` in the specification allows us to do this). The ranking of these scores is important, and reflects **how much more or how much less this gene contributes** compared to all others in your model. A positive score means a model benefits from having that gene includes, whereas a negative score means the gene actually makes a model perform worse. 
 
-```{r}
-rf_importance_spec <- rand_forest(
-    mode = "classification", 
-    trees = 1000 
-  ) %>%
-  set_engine("ranger", importance = "permutation") # <--- CRITICAL CHANGE
+Extracting this information can be done as follows
 
-# 2. Re-fit the workflow
-rf_importance_workflow <- random_forest_workflow %>%
-  update_model(rf_importance_spec) # Update the model engine setting
-  
-rf_importance_fit <- rf_importance_workflow %>%
-  fit(data = er_train)
+```{r make_importance_df}
 
-# 3. Extract the importance scores
-# The scores are typically accessed via the pull_workflow_fit() function
-importance_df <- pull_workflow_fit(rf_importance_fit)$fit$variable.importance %>%
-  enframe(name = "Gene", value = "Importance") %>%
+importance_df <- pull_workflow_fit(random_forest_fit)$fit$variable.importance %>%
+  enframe(name = "term", value = "Importance") %>%
   arrange(desc(Importance))
-
-# Display the top 10 most important genes
-head(importance_df, 10)
+importance_df
 ```
 
-## Other models: SVM
+The genes with negative "importance" are in fact only very slightly so, and there only a handful/
+
+```{r randomforest_ranking}
+importance_df %>% 
+  filter(Importance < 0)
+```
+
+We can combine these results with the Lasso output from above to compare how the two methods are considering genes as important. Reassuring, those with negative importance in the random forest, with the exception of **GSTM1** all had a coefficient of 0 (i.e. were removed by Lasso).
+
+```{r nonimportant_randomforest}
+tidy(fixed_lasso_fit) %>% 
+  filter(term != "(Intercept)") %>% 
+  select(-penalty) %>% 
+  left_join(importance_df) %>% 
+  filter(Importance < 0 )
+```
+
+We can plot both together on the bar plot below. This seems to show there are some genes with high importance from the random forest and higher coefficient in Lasso. Although surprisingly we also get some important genes according to random forest that were removed by Lasso.
+
+I don't think I'm going to get too concerned about this just yet as these are not our **final** Lasso and random forest models.
 
 
-## Other models: KNN
+```{r importance_vs_lasso, fig.height=12}
+
+## N.B. Haven't quite figured out the best visualisation for this yet
+
+tidy(fixed_lasso_fit) %>% 
+  filter(term != "(Intercept)") %>% 
+  select(-penalty) %>% 
+  left_join(importance_df) %>% 
+  filter(Importance > 0 ) %>% 
+  ggplot(aes(y = forcats::fct_reorder(term, Importance), x = estimate, fill = estimate)) + geom_col()
+
+```
+
+## Summary
+
+In this section, we built powerful classification models by taking advantage of many gene features while aiming to prevent overfitting. We employed two fundamentally different approaches:
+
+- The **Lasso** approach (using glmnet), which identifies features with a strong linear relationship to the outcome by driving the coefficients of less useful features to zero.
+
+- The **Random Forest**, which builds a consensus prediction from many random decision trees, allowing it to capture complex, non-linear interactions and threshold effects.
+
+Whilst both these methods achieved good performance and provided complementary insights into gene importance, they typically need some tuning to discover the best 'hyper-parameters.' This will be discussed in a later part. Before that, we will explore some other classification methods, like K-Nearest Neighbors (KNN) and Support Vector Machines (SVM), and learn how to incorporate other types of predictors (such as clinical variables like age and tumor grade) into our models.
