@@ -1,0 +1,13 @@
+ttservice
+tidybulk
+matrixStats
+MatrixGenerics
+generics
+BiocGenerics
+S4Vectors
+IRanges
+GenomeInfoDb
+GenomicRanges
+Biobase
+SummarizedExperiment
+ggplot2
