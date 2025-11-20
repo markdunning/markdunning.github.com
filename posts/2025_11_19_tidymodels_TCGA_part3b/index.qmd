@@ -1,0 +1,420 @@
+---
+title: "Tidymodels for omics data: Part 3b"
+author: Mark Dunning
+date: 2025-11-19
+theme: darkly
+image: preview.png
+description: "Machine Learning with KNN and SVM from RNA-seq"
+---
+
+```{r silentLoad}
+#| echo: false
+#| message: false
+#| warning: false
+
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+
+library(dplyr)
+library(ggplot2)
+library(tidymodels)
+```
+
+## Pre-amble
+
+In the [first section](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/index.html) we described how to download TCGA data for breast cancers and manipulated them using a combination of `tidybulk` and `dplyr` to retain a set of expressed, variable genes plus a set of known cancer genes.
+
+There is a *very extensive* set of clinical information recorded for each sample / patient, but to keep things simple we will start with a task for being able to predict **Estrogen Receptor status** from the expression data, which can be used as an indicator of whether a patient will respond to certain treatments. This is clearly not going to get us a Nature paper or a Nobel prize, but it should work well and introduce some of the key concepts of machine learning. There are a set of packages that we will need:-
+
+```{r installIfNeeded, eval=FALSE}
+if(!require(tidymodels)) install.packages("tidymodels")
+
+
+if(!require(dplyr)) install.packages("dplyr")
+if(!require(ggplot2)) install.packages("ggplot2")
+
+```
+
+You also need the processed data from the [first section](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/) and the code to download this is:-
+
+```{r downloadIfNeeded, eval=FALSE}
+### get the saved RDS
+dir.create("raw_data", showWarnings = FALSE)
+if(!file.exists("raw_data/brca_train_tidy.rds")) download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_train_tidy.rds", destfile = "raw_data/brca_train_tidy.rds")
+if(!file.exists("raw_data/brca_test_tidy.rds")) download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_test_tidy.rds", destfile = "raw_data/brca_test_tidy.rds")
+
+```
+
+Now load the pre-prepared tidy data
+
+```{r loadTidy}
+brca_train_tidy <- readRDS("raw_data/brca_train_tidy.rds")
+brca_test_tidy <- readRDS("raw_data/brca_test_tidy.rds")
+```
+
+
+## K- Nearest Neighbours (KNN)
+
+The KNN method is fairly intuitive to understand in a two-dimensional space (i.e. when using two features for prediction), so we will pick two genes for illustrative purposes to predict ER status. The first is our favourite `ESR1` followed by `TFF1` which we saw gave good predictions.
+
+```{r create_simple_datasets}
+er_train_simple <- dplyr::select(brca_train_tidy, ER  = er_status_by_ihc, ESR1, TFF1) |> 
+  dplyr::mutate(ER  = forcats::fct_rev(ER))
+
+er_test_simple <- dplyr::select(brca_test_tidy, ER  = er_status_by_ihc, ESR1, TFF1) |> 
+  dplyr::mutate(ER  = forcats::fct_rev(ER))
+```
+
+
+### Intuition
+
+We can start by plotting `ESR1` against `TFF1` and colouring according the ER status of each patient. These genes have been chosen **deliberately** to give separation into ER classes. i.e. higher `ESR1` and `TFF1` for a patient *generally* means and ER positive tumour.
+
+```{r knn_training}
+ggplot(er_train_simple, aes(x = ESR1, y = TFF1, col = ER)) + geom_point()
+```
+
+The main goal of machine learning is to try and make predictions on unseen data given the information in our training dataset. So let's consider the first such sample in our test dataset. We will ignore the existing ER classification for this sample for now.
+
+```{r new_sample}
+new_sample <- er_test_simple |>
+  slice_head() |>
+  select(-ER, -ER_Numeric)
+new_sample
+```
+
+In order to decide what ER status this sample we might be we can simply plot it on the same axes as our training data.
+
+```{r knn_training_with_new}
+ggplot(er_train_simple, aes(x = ESR1, y = TFF1, col = ER)) + geom_point() + geom_point(data=(new_sample), shape = 2,col="black", size=2)
+```
+It looks like most of the training set points surrounding our new sample are `Positive`, therefore it makes sense to declare the new sample as `Positive` too. This is essentially how KNN works. It determines the "k" nearest points in the training set closest to the point to be classified and takes the majority of the classifications of the closest points.
+
+A typical starting point is `k = 5` and finding the five closest point can be achieved by calculating the difference of each observation in training data to our new sample. The distance is this case is the "euclidean" distance - that is the square root of the sum of the difference from each `ESR1` and `TFF1` from the new observation. All distances are then ordered from largest to smallest. The code is given below for a k of 5 but feel free to experiment with different values!
+
+```{r manualknn_plot}
+### Set k to 5  but change it if you like to see how the plot alters
+k <- 5
+
+nearest_training_samples <- er_train_simple |>
+  mutate(distance = sqrt((ESR1 - new_sample$ESR1)^2 + (TFF1 - new_sample$TFF1)^2)) |>
+  arrange(distance) |>
+  slice_min(distance, n = k)
+
+
+ggplot(er_train_simple, aes(x = ESR1, y = TFF1, col = ER)) + geom_point() + 
+  geom_point(data=(new_sample), shape = 2,col="black") +
+  geom_point(data=(nearest_training_samples), shape =4,col="black", size=2)
+```
+The method would now look at the `ER` label of the nearest points and calculates a proportion of `Positive` cases. In this instances the proportion is 1 which exceeded a default threshold of 0.5 so the new point is classified as `Positive`.
+
+Now let's look at a more difficult example:-
+
+```{r edge_case, echo=FALSE}
+edge_case <- er_test_simple |>
+  slice(183) |>
+  select(-ER)
+edge_case
+```
+
+When we plot this on the plot it seems to fall within a grey area between `Positive` and `Negative` cases
+
+```{r edge_case_scatter}
+k <- 5
+
+nearest_training_samples <- er_train_simple |>
+  mutate(distance = sqrt((ESR1 - new_sample$ESR1)^2 + (TFF1 - new_sample$TFF1)^2)) |>
+  arrange(distance) |>
+  slice_min(distance, n = k)
+
+
+ggplot(er_train_simple, aes(x = ESR1, y = TFF1, col = ER)) + geom_point() + 
+  geom_point(data=(edge_case), shape = 2,col="black") +
+  geom_point(data=(nearest_training_samples), shape =4,col="black", size=2) 
+```
+
+In this case, two of the five nearest samples are `Positive` so the predicted probability of `Positive` would be $2/5 = 0.4$. Since this does not exceed a threshold of 0.5 (which can be changed if we want) the sample would get a `Negative` class.
+
+
+```{r edge_case_nearest}
+nearest_training_samples
+```
+
+Now we have a feeling for the method lets create a KNN model in `tidymodels`. This follows a hopefully familiar pattern starting with the model specification. The `kknn` package is the default engine for nearest neighbour classification.
+
+There are actually various methods for calculating the class probabilities rather than the majority vote described above. To use this scheme, we set the `weight_func` argument to `nearest_neighbour` function to `rectangular`.
+
+```{r knn_spec}
+## Create a specification
+knn_spec <- 
+  nearest_neighbor(neighbors = 5, weight_func =  "rectangular") |> 
+  ## a rectangular function is the majority vote discussed here
+  set_mode("classification") |>
+  set_engine("kknn")
+```
+
+We now put everything together.
+
+```{r knn_recipe_and_fit}
+
+## Make the recipe to predict ER from ESR1 and TFF1
+
+er_recipe_simple <- recipe(ER ~ ESR1 + TFF1, data = er_train_simple) %>% 
+  step_normalize(all_predictors())
+
+## Construct the workflow
+
+knn_workflow <- 
+  workflow() %>%
+  add_recipe(er_recipe_simple) %>% 
+  add_model(knn_spec)
+
+knn_fit <- fit(knn_workflow, data = er_train_simple)
+knn_fit
+```
+And for predictions we'll do this in two steps to get the probability, and the chosen class.
+
+```{r}
+er_predictions_knn <- 
+  predict(knn_fit, new_data = er_test_simple, type = "class") |>
+  bind_cols(predict(knn_fit, new_data = er_test_simple, type = "prob")) |>
+  bind_cols(er_test_simple) 
+
+er_predictions_knn |>
+  slice_head(n=5)
+```
+
+We can use the accuracy and specificity and sensitivity as metrics to assess the fit, but we shouldn't be surprised to see how well it performs on all counts.
+
+```{r}
+class_metrics <- metric_set(accuracy, specificity, sensitivity)
+
+er_predictions_knn |>
+  class_metrics(truth = ER, estimate = .pred_class)
+```
+
+We can also take a look at the probabilities. Due to the way we created the model (i.e. taking a majority vote) there are only a few possibilities, as out of the five nearest neighbours only 0, 1, 2, 3, 4 (which doesn't seem to be the case in our example) or 5 can be `Positive` leading to the probabilities we see. Choosing a different `weight_fun` will change this behaviour and is indeed something that can be tuned to achieve the best performance. The value of `k` itself can also be altered. 
+
+```{r}
+count(er_predictions_knn, .pred_Positive)
+```
+
+Finally, here is a reminder of how to construct the "ROC" curve and we are looking for a curve that is close to the top left.
+
+
+```{r}
+roc_curve(er_predictions_knn, ER, .pred_Positive) |>
+  autoplot()
+```
+
+
+## Support Vector Machines (SVM)
+
+If we revisit the plot we saw earlier of `ESR1` vs `TFF1` we can attempt to draw a straight line where points on either side roughly fall into the `Positive` or `Negative` class. Shown here for **illustrative purposes** in purple is where such a line might lie.
+
+```{r exampleBoundary, echo=FALSE}
+
+ggplot(er_train_simple, aes(x = ESR1, y = TFF1, col = ER)) + geom_point() +  geom_abline(
+    intercept = 49, # The intercept
+    slope = -3.5,  # The slope
+    color = "purple",
+    linetype = "dashed",
+    linewidth = 1
+  ) 
+```
+The main principle of an Support Vector Machine (SVM) is that it defines such a line that can be used to separate the data, and furthermore **maxmises** the distance between the line and the closest data points of either class. This maximum distance is known as the **margin** and a *theoretical* margin added to our data as follows:-
+
+```{r exampleBoundaryAndMargin, echo=FALSE}
+ggplot(er_train_simple, aes(x = ESR1, y = TFF1, col = ER)) + geom_point() +  geom_abline(
+    intercept = 49, # The intercept
+    slope = -3.5,  # The slope
+    color = "purple",
+    linetype = "dashed",
+    linewidth = 1
+  ) +   geom_abline(
+    intercept = 54,
+    slope = -3.5,
+    color = "purple",
+    linetype = "dotted",
+    linewidth = 0.7
+  ) +
+  # Lower Margin: TFF1 = -3.5 * ESR1 + 44 (Intercept 49 - 5)
+  geom_abline(
+    intercept = 44,
+    slope = -3.5,
+    color = "purple",
+    linetype = "dotted",
+    linewidth = 0.7
+  )
+```
+
+
+### Setting the specification for SVM
+
+```{r}
+svm_spec_fixed <- svm_linear(cost = 10, margin = 3) %>% 
+  set_mode("classification") %>%
+  set_engine("kernlab")
+
+```
+
+### Fitting the SVM
+
+```{r}
+svm_workflow <- 
+  workflow() %>%
+  add_recipe(er_recipe_simple) %>%
+  add_model(svm_spec_fixed)
+
+
+svm_fit <- fit(svm_workflow, data = er_train_simple)
+svm_fit
+
+```
+
+```{r}
+
+grid <- expand.grid(
+  ESR1 = seq(min(er_train_simple$ESR1) - 0.5, max(er_train_simple$ESR1) + 0.5, length.out = 100),
+  TFF1 = seq(min(er_train_simple$TFF1) - 0.5, max(er_train_simple$TFF1) + 0.5, length.out = 100)
+)
+
+# Predict class probabilities for the grid
+grid$pred <- predict(svm_fit, new_data = grid, type = "class")$.pred_class
+
+# Plot decision boundary + training points
+ggplot() +
+  geom_tile(data = grid, aes(x = ESR1, y = TFF1, fill = pred), alpha = 0.3) +
+  geom_point(data = er_train_simple, aes(x = ESR1, y = TFF1, color = ER), size = 2) +
+  scale_fill_manual(values = c("Positive" = "lightblue", "Negative" = "lightpink")) +
+  scale_color_manual(values = c("Positive" = "blue", "Negative" = "red")) +
+  labs(title = "SVM Decision Boundary (tidymodels)",
+       fill = "Predicted Class", color = "Actual Class") +
+  theme_minimal()
+```
+
+### SVM predictions
+
+```{r}
+er_predictions_svm <- 
+  predict(svm_fit, new_data = er_test_simple, type = "class") %>%
+  bind_cols(predict(svm_fit, new_data = er_test_simple, type = "prob")) %>%
+  bind_cols(er_test_simple %>% select(ER))
+
+
+
+```
+
+
+
+
+## Other kinds of predictor - PROOF OF CONCEPT
+
+```{r}
+clin_train <- select(brca_train_tidy, paper_pathologic_stage, 
+       paper_age_at_initial_pathologic_diagnosis, 
+       pr_status_by_ihc,
+       ER=er_status_by_ihc,
+       her2_status_by_ihc)
+clin_test <- select(brca_test_tidy, paper_pathologic_stage, 
+       paper_age_at_initial_pathologic_diagnosis, 
+       pr_status_by_ihc,
+       ER=er_status_by_ihc,
+       her2_status_by_ihc)
+
+
+
+
+```
+
+
+
+```{r}
+library(tidymodels)
+
+clin_train <- select(brca_train_tidy, paper_pathologic_stage, 
+       paper_age_at_initial_pathologic_diagnosis, 
+       pr_status_by_ihc,
+       ER=er_status_by_ihc,
+       her2_status_by_ihc) %>% 
+  filter(!is.na(paper_age_at_initial_pathologic_diagnosis)) %>% 
+  mutate(ER = as.factor(ER))
+
+clin_test <- select(brca_test_tidy, paper_pathologic_stage, 
+       paper_age_at_initial_pathologic_diagnosis, 
+       pr_status_by_ihc,
+       ER=er_status_by_ihc,
+       her2_status_by_ihc) %>% 
+  filter(!is.na(paper_age_at_initial_pathologic_diagnosis)) %>% 
+  mutate(ER = as.factor(ER))
+
+lasso_spec_fixed <- logistic_reg(
+  penalty = 0.01,  # Fixed penalty (lambda)
+  mixture = 1 # set alpha = 1 for lasso      
+) %>%
+  set_engine("glmnet") %>%
+  set_mode("classification")
+
+
+clin_recipe <- recipe(ER ~ ., data = clin_train)  %>% 
+  step_normalize(all_numeric_predictors()) %>% 
+  step_unknown() %>% 
+  step_dummy(all_nominal_predictors())
+
+
+clin_workflow <- workflow() %>%
+  add_model(lasso_spec_fixed) %>%
+  add_recipe(clin_recipe)
+
+# Fit the model directly to your training data
+clin_lasso_fit <- clin_workflow %>%
+  fit(data = clin_train)
+
+tidy(clin_lasso_fit)
+
+```
+
+
+```{r}
+class_metrics <- metric_set(accuracy, specificity, sensitivity)
+
+clin_lasso_fit |>
+  predict(new_data = clin_test) |>
+  bind_cols(clin_test) |>
+  class_metrics(truth = ER, estimate = .pred_class)
+```
+
+
+
+```{r}
+random_forest_spec <- rand_forest(
+    mode = "classification", 
+    trees = 1000 # Using 1000 trees for robustness
+  ) %>%
+  set_engine("ranger", importance = "permutation")
+
+
+set.seed(42)
+
+random_forest_workflow <- workflow() %>%
+  add_model(random_forest_spec) %>%
+  add_recipe(clin_recipe)
+
+random_forest_fit <- random_forest_workflow %>%
+  fit(data = clin_train)
+
+random_forest_fit
+
+random_forest_fit |>
+  predict(new_data = clin_test) |>
+  bind_cols(clin_test) |>
+  class_metrics(truth = ER, estimate = .pred_class)
+
+importance_df <- pull_workflow_fit(random_forest_fit)$fit$variable.importance %>%
+  enframe(name = "term", value = "Importance") %>%
+  arrange(desc(Importance))
+importance_df
+
+```
