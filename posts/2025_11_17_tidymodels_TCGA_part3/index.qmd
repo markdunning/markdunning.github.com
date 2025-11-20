@@ -24,18 +24,12 @@ library(tidymodels)
 
 ## Pre-amble
 
-In the previous section we described how to download TCGA data for breast cancers and manipulated them using a combination of `tidybulk` and `dplyr` to retain a set of expressed, variable genes plus a set of known cancer genes.
+In the first section in this series we described how to download TCGA data for breast cancers and manipulated them using a combination of `tidybulk` and `dplyr` to retain a set of expressed, variable genes plus a set of known cancer genes.
 
 There is a *very extensive* set of clinical information recorded for each sample / patient, but to keep things simple we will start with a task for being able to predict **Estrogen Receptor status** from the expression data, which can be used as an indicator of whether a patient will respond to certain treatments. This is clearly not going to get us a Nature paper or a Nobel prize, but it should work well and introduce some of the key concepts of machine learning. There are a set of packages that we will need:-
 
 ```{r installIfNeeded, eval=FALSE}
 if(!require(tidymodels)) install.packages("tidymodels")
-
-## install BiocManager to install Bioconductor packages
-if(!require(BiocManager)) install.packages("BiocManager")
-
-if(!require(tidybulk)) BiocManager::install("tidybulk")
-if(!require(SummarizedExperiment)) BiocManager::install("SummarizedExperiment")
 
 if(!require(dplyr)) install.packages("dplyr")
 if(!require(ggplot2)) install.packages("ggplot2")
@@ -109,9 +103,9 @@ With the number of features (genes) we have in our dataset, even after filtering
 Methods that provide regularization are very appealing for this reason because they constrain the model, helping it find the optimal combination of features. One such method that implements these concepts in `tidymodels` is called "glmnet".
 
 
-The amount to which the contribution of less-informative features is "shrunk" is controlled by two arguments: `penalty` (known as $\mathbf{\lambda}$ in the literature) and `mixture` (known as $\mathbf{\alpha}$). $\mathbf{\lambda}$ is a single, non-negative numerical value that controls the strength of the regularization (shrinkage) applied to the model. If $\mathbf{\lambda = 0}$, no penalty is applied, and the model reverts to standard, unregularized Logistic Regression. If $\mathbf{\lambda > 0}$, coefficients are shrunk towards zero to prevent overfitting.$\mathbf{\alpha}$ controls how the features are shrunk and defines the characteristics of the resulting model, ranging between 0 and 1.
+The amount to which the contribution of less-informative features is "shrunk" is controlled by two arguments: `penalty` (known as $\mathbf{\lambda}$ in the literature) and `mixture` (known as $\mathbf{\alpha}$). $\mathbf{\lambda}$ is a single, non-negative numerical value that controls the strength of the regularization (shrinkage) applied to the model. If $\mathbf{\lambda = 0}$, no penalty is applied, and the model reverts to standard, unregularized Logistic Regression. If $\mathbf{\lambda > 0}$, coefficients are shrunk towards zero to prevent overfitting. 
 
-**Lasso** ($\mathbf{\alpha = 1}$) forces the coefficients of less important genes exactly to zero, resulting in a sparse model (automatic feature selection). **Ridge** ($\mathbf{\alpha = 0}$) shrinks all coefficients towards zero but never removes any gene completely. Any value between $\mathbf{0 < \alpha < 1}$ is known as the **Elastic Net** penalty. This blend ensures the model benefits from Lasso's feature selection while retaining the stability that Ridge provides when dealing with highly correlated features (a common characteristic in RNA-seq data).
+$\mathbf{\alpha}$ controls how the features are shrunk and defines the characteristics of the resulting model, ranging between 0 and 1. **Lasso** ($\mathbf{\alpha = 1}$) forces the coefficients of less important genes exactly to zero, resulting in a sparse model (automatic feature selection). **Ridge** ($\mathbf{\alpha = 0}$) shrinks all coefficients towards zero but never removes any gene completely. Any value between $\mathbf{0 < \alpha < 1}$ is known as the **Elastic Net** penalty. This blend ensures the model benefits from Lasso's feature selection while retaining the stability that Ridge provides when dealing with highly correlated features (a common characteristic in RNA-seq data).
 
 Values such as these, that can take a range of values and affect the fitting of the model, are known as **Hyperparameters**. This is a distinct concept from a parameter, which is a quantity that is estimated during the model fit, such as the coefficients ($\beta$ values) of a regression model. 
 
@@ -131,7 +125,7 @@ lasso_spec_fixed <- logistic_reg(
 
 ```
 
-As before we are using data that have already been processed using domain-specific tools, so there is no need for much in our "recipe" (sometimes you will see removing small variances and filtering here). However, we need to change the formula from using a single gene to predict to using all available features. The syntax for this is `ER ~.`, which avoids having to type all the feature names.
+As before we are using data that have already been processed using domain-specific tools, so there is no need for much in our "recipe" (sometimes you will see steps to features with remove small or zero variances and here). However, we need to change the formula from using a single gene to predict to using all available features. The syntax for this is `ER ~.`, which avoids having to type all the feature names.
 
 However, we need to introduce a step that will normalize (or standardise) our features (genes) by subtracting the mean and dividing by the standard deviation. In other words to create a "z-score" that will make all the features comparable and stop any one feature from dominating the model or obscuring the contribution from other features. Features with a higher mean or variance could also be unfairly shrunken by lasso.
 
@@ -167,15 +161,14 @@ Printing the model gives us some insight into the modeling process. After printi
 ```{r glm_fit_look}
 fixed_lasso_fit
 ```
-Even though we have told the model what value of $\lambda$ we want to use it is trying out different values of $\lambda$ and assessing the model fit at each point. In practical terms, this would allow us to tune the behaviour of the model but that is beyond the scope of this particular section. By printing the coefficients of the model we can see what genes it has shruken to zero and effectively discarded from the model
+Even though we have told the model what value of $\lambda$ we want to use, it is trying out different values of $\lambda$ and assessing the model fit at each point. In practical terms, this would allow us to tune the behaviour of the model but that is beyond the scope of this particular section and shouldn't be performed directly on the training data. By printing the coefficients of the model we can see what genes it has "shrunken" to zero and effectively discarded from the model.
 
 
 ```{r glm_coef}
-# View the coefficients to see the shrinkage/zeroing effect
 tidy(fixed_lasso_fit) %>% arrange(estimate)
 ```
 
-Or as a plot. The magnitude and sign of the coefficient (`estimate`) tell us something about the influence of that gene on the model, which larger (in absolute terms) estimates being more predictive.
+This can also be shown on a plot. The magnitude and sign of the coefficient (`estimate`) tell us something about the influence of that gene on the model, with larger (in absolute terms) estimates being more predictive.
 
 ```{r all_lasso_coef, fig.height=8}
 tidy(fixed_lasso_fit) %>% 
@@ -232,7 +225,7 @@ In a clinical context, the high specificity is encouraging as you wouldn't progr
 :::
 
 
-There is clearly an opportunity for some improvement, and possible that could be achieved by better choice of *hyper-parameters*. For now though lets see how other methods perform starting with the decision tree.
+There is clearly an opportunity for some improvement, and that could be achieved by better choice of *hyper-parameters*. For now though lets see how other methods perform starting with the decision tree.
 
 ## Decision Trees revisited
 
@@ -334,7 +327,7 @@ importance_df <- pull_workflow_fit(random_forest_fit)$fit$variable.importance %>
 importance_df
 ```
 
-The genes with negative "importance" are in fact only very slightly so, and there only a handful/
+The genes with negative "importance" are in fact only very slightly so, and there only a handful of them.
 
 ```{r randomforest_ranking}
 importance_df %>% 

@@ -81,7 +81,7 @@ The main goal of machine learning is to try and make predictions on unseen data 
 ```{r new_sample}
 new_sample <- er_test_simple |>
   slice_head() |>
-  select(-ER, -ER_Numeric)
+  select(-ER)
 new_sample
 ```
 
@@ -208,7 +208,6 @@ Finally, here is a reminder of how to construct the "ROC" curve and we are looki
 roc_curve(er_predictions_knn, ER, .pred_Positive) |>
   autoplot()
 ```
-
 
 ## Support Vector Machines (SVM)
 

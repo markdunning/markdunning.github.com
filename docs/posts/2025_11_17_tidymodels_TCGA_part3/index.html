@@ -246,19 +246,13 @@ window.Quarto = {
 
 <section id="pre-amble" class="level2">
 <h2 class="anchored" data-anchor-id="pre-amble">Pre-amble</h2>
-<p>In the previous section we described how to download TCGA data for breast cancers and manipulated them using a combination of <code>tidybulk</code> and <code>dplyr</code> to retain a set of expressed, variable genes plus a set of known cancer genes.</p>
+<p>In the first section in this series we described how to download TCGA data for breast cancers and manipulated them using a combination of <code>tidybulk</code> and <code>dplyr</code> to retain a set of expressed, variable genes plus a set of known cancer genes.</p>
 <p>There is a <em>very extensive</em> set of clinical information recorded for each sample / patient, but to keep things simple we will start with a task for being able to predict <strong>Estrogen Receptor status</strong> from the expression data, which can be used as an indicator of whether a patient will respond to certain treatments. This is clearly not going to get us a Nature paper or a Nobel prize, but it should work well and introduce some of the key concepts of machine learning. There are a set of packages that we will need:-</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(tidymodels)) <span class="fu">install.packages</span>(<span class="st">"tidymodels"</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="do">## install BiocManager to install Bioconductor packages</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(BiocManager)) <span class="fu">install.packages</span>(<span class="st">"BiocManager"</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(tidybulk)) BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"tidybulk"</span>)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(SummarizedExperiment)) BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">"SummarizedExperiment"</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(dplyr)) <span class="fu">install.packages</span>(<span class="st">"dplyr"</span>)</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(ggplot2)) <span class="fu">install.packages</span>(<span class="st">"ggplot2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(dplyr)) <span class="fu">install.packages</span>(<span class="st">"dplyr"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(ggplot2)) <span class="fu">install.packages</span>(<span class="st">"ggplot2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>You also need the processed data from the <a href="https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/">first section</a> and the code to download this is:-</p>
 <div class="cell">
@@ -322,8 +316,8 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="introducing-glmnet">Introducing glmnet</h2>
 <p>With the number of features (genes) we have in our dataset, even after filtering, there is still the potential for us to suffer from the “curse of dimensionality” and overfit our data. In other words, we could build a model so specific that it is of little use beyond the dataset that it was trained upon.</p>
 <p>Methods that provide regularization are very appealing for this reason because they constrain the model, helping it find the optimal combination of features. One such method that implements these concepts in <code>tidymodels</code> is called “glmnet”.</p>
-<p>The amount to which the contribution of less-informative features is “shrunk” is controlled by two arguments: <code>penalty</code> (known as <span class="math inline">\(\mathbf{\lambda}\)</span> in the literature) and <code>mixture</code> (known as <span class="math inline">\(\mathbf{\alpha}\)</span>). <span class="math inline">\(\mathbf{\lambda}\)</span> is a single, non-negative numerical value that controls the strength of the regularization (shrinkage) applied to the model. If <span class="math inline">\(\mathbf{\lambda = 0}\)</span>, no penalty is applied, and the model reverts to standard, unregularized Logistic Regression. If <span class="math inline">\(\mathbf{\lambda &gt; 0}\)</span>, coefficients are shrunk towards zero to prevent overfitting.<span class="math inline">\(\mathbf{\alpha}\)</span> controls how the features are shrunk and defines the characteristics of the resulting model, ranging between 0 and 1.</p>
-<p><strong>Lasso</strong> (<span class="math inline">\(\mathbf{\alpha = 1}\)</span>) forces the coefficients of less important genes exactly to zero, resulting in a sparse model (automatic feature selection). <strong>Ridge</strong> (<span class="math inline">\(\mathbf{\alpha = 0}\)</span>) shrinks all coefficients towards zero but never removes any gene completely. Any value between <span class="math inline">\(\mathbf{0 &lt; \alpha &lt; 1}\)</span> is known as the <strong>Elastic Net</strong> penalty. This blend ensures the model benefits from Lasso’s feature selection while retaining the stability that Ridge provides when dealing with highly correlated features (a common characteristic in RNA-seq data).</p>
+<p>The amount to which the contribution of less-informative features is “shrunk” is controlled by two arguments: <code>penalty</code> (known as <span class="math inline">\(\mathbf{\lambda}\)</span> in the literature) and <code>mixture</code> (known as <span class="math inline">\(\mathbf{\alpha}\)</span>). <span class="math inline">\(\mathbf{\lambda}\)</span> is a single, non-negative numerical value that controls the strength of the regularization (shrinkage) applied to the model. If <span class="math inline">\(\mathbf{\lambda = 0}\)</span>, no penalty is applied, and the model reverts to standard, unregularized Logistic Regression. If <span class="math inline">\(\mathbf{\lambda &gt; 0}\)</span>, coefficients are shrunk towards zero to prevent overfitting.</p>
+<p><span class="math inline">\(\mathbf{\alpha}\)</span> controls how the features are shrunk and defines the characteristics of the resulting model, ranging between 0 and 1. <strong>Lasso</strong> (<span class="math inline">\(\mathbf{\alpha = 1}\)</span>) forces the coefficients of less important genes exactly to zero, resulting in a sparse model (automatic feature selection). <strong>Ridge</strong> (<span class="math inline">\(\mathbf{\alpha = 0}\)</span>) shrinks all coefficients towards zero but never removes any gene completely. Any value between <span class="math inline">\(\mathbf{0 &lt; \alpha &lt; 1}\)</span> is known as the <strong>Elastic Net</strong> penalty. This blend ensures the model benefits from Lasso’s feature selection while retaining the stability that Ridge provides when dealing with highly correlated features (a common characteristic in RNA-seq data).</p>
 <p>Values such as these, that can take a range of values and affect the fitting of the model, are known as <strong>Hyperparameters</strong>. This is a distinct concept from a parameter, which is a quantity that is estimated during the model fit, such as the coefficients (<span class="math inline">\(\beta\)</span> values) of a regression model.</p>
 <p>We will pick some values of penalty and mixture to see how the model works. In practice, we would want to use a range of values and tune our model to find the best combination, which will be a topic for another time though.</p>
 <p>As with other models we have used, the first stage is to create a model specification.</p>
@@ -337,7 +331,7 @@ window.Quarto = {
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"glmnet"</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>As before we are using data that have already been processed using domain-specific tools, so there is no need for much in our “recipe” (sometimes you will see removing small variances and filtering here). However, we need to change the formula from using a single gene to predict to using all available features. The syntax for this is <code>ER ~.</code>, which avoids having to type all the feature names.</p>
+<p>As before we are using data that have already been processed using domain-specific tools, so there is no need for much in our “recipe” (sometimes you will see steps to features with remove small or zero variances and here). However, we need to change the formula from using a single gene to predict to using all available features. The syntax for this is <code>ER ~.</code>, which avoids having to type all the feature names.</p>
 <p>However, we need to introduce a step that will normalize (or standardise) our features (genes) by subtracting the mean and dividing by the standard deviation. In other words to create a “z-score” that will make all the features comparable and stop any one feature from dominating the model or obscuring the contribution from other features. Features with a higher mean or variance could also be unfairly shrunken by lasso.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>er_recipe_multigene <span class="ot">&lt;-</span> <span class="fu">recipe</span>(ER <span class="sc">~</span> ., <span class="at">data =</span> er_train)  <span class="sc">%&gt;%</span> </span>
@@ -428,10 +422,9 @@ Call:  glmnet::glmnet(x = maybe_matrix(x), y = y, family = "binomial",      alph
 and 54 more lines.</code></pre>
 </div>
 </div>
-<p>Even though we have told the model what value of <span class="math inline">\(\lambda\)</span> we want to use it is trying out different values of <span class="math inline">\(\lambda\)</span> and assessing the model fit at each point. In practical terms, this would allow us to tune the behaviour of the model but that is beyond the scope of this particular section. By printing the coefficients of the model we can see what genes it has shruken to zero and effectively discarded from the model</p>
+<p>Even though we have told the model what value of <span class="math inline">\(\lambda\)</span> we want to use, it is trying out different values of <span class="math inline">\(\lambda\)</span> and assessing the model fit at each point. In practical terms, this would allow us to tune the behaviour of the model but that is beyond the scope of this particular section and shouldn’t be performed directly on the training data. By printing the coefficients of the model we can see what genes it has “shrunken” to zero and effectively discarded from the model.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># View the coefficients to see the shrinkage/zeroing effect</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(fixed_lasso_fit) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(estimate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(fixed_lasso_fit) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(estimate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 246 × 3
    term     estimate penalty
@@ -449,7 +442,7 @@ and 54 more lines.</code></pre>
 # ℹ 236 more rows</code></pre>
 </div>
 </div>
-<p>Or as a plot. The magnitude and sign of the coefficient (<code>estimate</code>) tell us something about the influence of that gene on the model, which larger (in absolute terms) estimates being more predictive.</p>
+<p>This can also be shown on a plot. The magnitude and sign of the coefficient (<code>estimate</code>) tell us something about the influence of that gene on the model, with larger (in absolute terms) estimates being more predictive.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(fixed_lasso_fit) <span class="sc">%&gt;%</span> </span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">!=</span> <span class="st">"(Intercept)"</span>, estimate <span class="sc">!=</span> <span class="dv">0</span>) <span class="sc">%&gt;%</span> </span>
@@ -531,7 +524,7 @@ Clinical context
 <p>In a clinical context, the high specificity is encouraging as you wouldn’t progress too many patients to potentially aggressive treatment they wouldn’t benefit from. On the other hand, some patients may miss the opportunity to take a potentially life-changing or life-extending treatment.</p>
 </div>
 </div>
-<p>There is clearly an opportunity for some improvement, and possible that could be achieved by better choice of <em>hyper-parameters</em>. For now though lets see how other methods perform starting with the decision tree.</p>
+<p>There is clearly an opportunity for some improvement, and that could be achieved by better choice of <em>hyper-parameters</em>. For now though lets see how other methods perform starting with the decision tree.</p>
 </section>
 <section id="decision-trees-revisited" class="level2">
 <h2 class="anchored" data-anchor-id="decision-trees-revisited">Decision Trees revisited</h2>
@@ -710,7 +703,7 @@ OOB prediction error (Brier s.):  0.05419088 </code></pre>
 # ℹ 235 more rows</code></pre>
 </div>
 </div>
-<p>The genes with negative “importance” are in fact only very slightly so, and there only a handful/</p>
+<p>The genes with negative “importance” are in fact only very slightly so, and there only a handful of them.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>importance_df <span class="sc">%&gt;%</span> </span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Importance <span class="sc">&lt;</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>

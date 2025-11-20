@@ -31,11 +31,6 @@ There is a *very extensive* set of clinical information recorded for each sample
 ```{r installIfNeeded, eval=FALSE}
 if(!require(tidymodels)) install.packages("tidymodels")
 
-## install BiocManager to install Bioconductor packages
-if(!require(BiocManager)) install.packages("BiocManager")
-
-if(!require(tidybulk)) BiocManager::install("tidybulk")
-if(!require(SummarizedExperiment)) BiocManager::install("SummarizedExperiment")
 
 if(!require(dplyr)) install.packages("dplyr")
 if(!require(ggplot2)) install.packages("ggplot2")
