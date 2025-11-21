@@ -8,7 +8,7 @@
 
 <meta name="author" content="Mark Dunning">
 <meta name="dcterms.date" content="2025-11-19">
-<meta name="description" content="Machine Learning with glmnet and random forests in R using many features (genes)">
+<meta name="description" content="Identifying predictive markers for ER status from high-dimensional gene expression data. We compare the performance of penalized regression (GLMNet) and ensemble learning (Random Forests) for feature selection and classification">
 
 <title>Tidymodels for omics data: Part 3a – Dr.&nbsp;Mark Dunning - Bioinformatician / Data Scientist</title>
 <style>
@@ -215,7 +215,7 @@ window.Quarto = {
 
 <div>
   <div class="description">
-    Machine Learning with glmnet and random forests in R using many features (genes)
+    Identifying predictive markers for ER status from high-dimensional gene expression data. We compare the performance of penalized regression (GLMNet) and ensemble learning (Random Forests) for feature selection and classification
   </div>
 </div>
 
@@ -246,15 +246,14 @@ window.Quarto = {
 
 <section id="pre-amble" class="level2">
 <h2 class="anchored" data-anchor-id="pre-amble">Pre-amble</h2>
-<p>In the first section in this series we described how to download TCGA data for breast cancers and manipulated them using a combination of <code>tidybulk</code> and <code>dplyr</code> to retain a set of expressed, variable genes plus a set of known cancer genes.</p>
-<p>There is a <em>very extensive</em> set of clinical information recorded for each sample / patient, but to keep things simple we will start with a task for being able to predict <strong>Estrogen Receptor status</strong> from the expression data, which can be used as an indicator of whether a patient will respond to certain treatments. This is clearly not going to get us a Nature paper or a Nobel prize, but it should work well and introduce some of the key concepts of machine learning. There are a set of packages that we will need:-</p>
+<p>In <a href="https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/">Part 1 of this series</a> we described how to download TCGA data for breast cancers and manipulated them using a combination of <code>tidybulk</code> and <code>dplyr</code> to retain a set of expressed, variable genes. There are a set of packages that we will need for this Part:-</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(tidymodels)) <span class="fu">install.packages</span>(<span class="st">"tidymodels"</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(dplyr)) <span class="fu">install.packages</span>(<span class="st">"dplyr"</span>)</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(ggplot2)) <span class="fu">install.packages</span>(<span class="st">"ggplot2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>You also need the processed data from the <a href="https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/">first section</a> and the code to download this is:-</p>
+<p>You also need the processed data from Part 1 and the code to download this is:-</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="do">### get the saved RDS</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"raw_data"</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
@@ -266,7 +265,7 @@ window.Quarto = {
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>brca_train_tidy <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"raw_data/brca_train_tidy.rds"</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>brca_test_tidy <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"raw_data/brca_test_tidy.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>The previous section was hopefully a gentle introduction to Machine Learning, and we didn’t set the bar too high for what for our task. The simple models we built using <code>ESR1</code> to classify breast cancer patients into Estrogen Receptor <code>Positive</code> or <code>Negative</code> were extremely effective (as measured by accuracy, sensitivity and specificity). In reality, faced with this problem there wouldn’t be much be much justification in exploring other models when simple models, that are easily explainable perform very well.</p>
+<p><a href="https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part2/">Part 2</a> was hopefully a gentle introduction to Machine Learning, and we didn’t set the bar too high for our task. The simple models we built using <code>ESR1</code> to classify breast cancer patients into Estrogen Receptor <code>Positive</code> or <code>Negative</code> were extremely effective (as measured by accuracy, sensitivity and specificity). Faced with this task in reality there wouldn’t be much justification in exploring other models when simple models, that are easily explainable, perform very well.</p>
 <p>Rather than congratulating ourselves lets see how we can cope without ESR1 in our dataset, or any genes that correlate highly with it.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>brca_train_tidy <span class="sc">%&gt;%</span> </span>
@@ -331,8 +330,8 @@ window.Quarto = {
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"glmnet"</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>As before we are using data that have already been processed using domain-specific tools, so there is no need for much in our “recipe” (sometimes you will see steps to features with remove small or zero variances and here). However, we need to change the formula from using a single gene to predict to using all available features. The syntax for this is <code>ER ~.</code>, which avoids having to type all the feature names.</p>
-<p>However, we need to introduce a step that will normalize (or standardise) our features (genes) by subtracting the mean and dividing by the standard deviation. In other words to create a “z-score” that will make all the features comparable and stop any one feature from dominating the model or obscuring the contribution from other features. Features with a higher mean or variance could also be unfairly shrunken by lasso.</p>
+<p>As before we are using data that have already been processed using domain-specific tools, so there is no need for much in our “recipe” (sometimes you will see steps to remove features with zero or small variances for example). However, we need to change the formula from using a single gene to predict to using all available features. The syntax for this is <code>ER ~.</code>, which avoids having to type all the feature names.</p>
+<p>We also need to introduce a step that will normalize (or standardise) our features (genes) by subtracting the mean and dividing by the standard deviation. In other words to create a “z-score” that will make all the features comparable and stop any one feature from dominating the model or obscuring the contribution from other features. Features with a higher mean or variance could also be unfairly shrunken by lasso.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>er_recipe_multigene <span class="ot">&lt;-</span> <span class="fu">recipe</span>(ER <span class="sc">~</span> ., <span class="at">data =</span> er_train)  <span class="sc">%&gt;%</span> </span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_normalize</span>(<span class="fu">all_predictors</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -617,7 +616,7 @@ node), split, n, loss, yval, (yprob)
 <h2 class="anchored" data-anchor-id="introducing-the-random-forest">Introducing the Random Forest</h2>
 <p>The random forest is a natural extension of a decision tree, as it harnesses the power of many different decision tree and uses the predictions from each individual tree to form a consensus or majority vote for each sample to be classified.</p>
 <p>The method constructs many decision trees (as above), each using a “bootstrap sample” (a random sample with replacement) of the data. Therefore, each tree is a bit different and makes its own predictions without relying on others. Moreover, when tree is built it doesn’t look at all the features (genes in our case) at once. It picks a few at random to decide how to split the data. Whilst some trees might not work very well individually, the crowd-voting step of taking predictions from a large number of trees should lead to accurate predictions overall and negate concerns over individual trees overfitting data.</p>
-<p>It’s specification is similar to models we have used before. We can set <code>ranger</code> as the method used to build the model, and this package is included as part of <code>tidymodels</code>. Setting <code>importance = "permutation"</code> is useful for biological interpretation as it will allow us to see which features (genes) are contributing most to the model</p>
+<p>It’s specification is similar to models we have used before. We can set <code>ranger</code> as the method used to build the model, and this package is included as part of <code>tidymodels</code>. Setting <code>importance = "permutation"</code> is useful for biological interpretation as it will allow us to see which features (genes) are contributing most to the model. An arbitrary value of 1000 trees is being used, and in practice we would seek to find the optimal value (which we will discuss at a later point).</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>random_forest_spec <span class="ot">&lt;-</span> <span class="fu">rand_forest</span>(</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">mode =</span> <span class="st">"classification"</span>, </span>
@@ -680,7 +679,7 @@ OOB prediction error (Brier s.):  0.05419088 </code></pre>
 </div>
 </div>
 <p>So the sensitivity has improved from the decision tree, and also beats the glmnet model, with no difference in specificity. As with the Lasso output, we can get a sense of what features are most powerful using an “importance” score that is calculated (setting <code>importance = "permutation"</code> in the specification allows us to do this). The ranking of these scores is important, and reflects <strong>how much more or how much less this gene contributes</strong> compared to all others in your model. A positive score means a model benefits from having that gene includes, whereas a negative score means the gene actually makes a model perform worse.</p>
-<p>Extracting this information can be done as follows</p>
+<p>Extracting this information can be done as follows. We see that <strong>TFF1</strong> is the most important which connects with the decision tree we built above.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>importance_df <span class="ot">&lt;-</span> <span class="fu">pull_workflow_fit</span>(random_forest_fit)<span class="sc">$</span>fit<span class="sc">$</span>variable.importance <span class="sc">%&gt;%</span></span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enframe</span>(<span class="at">name =</span> <span class="st">"term"</span>, <span class="at">value =</span> <span class="st">"Importance"</span>) <span class="sc">%&gt;%</span></span>
@@ -703,32 +702,13 @@ OOB prediction error (Brier s.):  0.05419088 </code></pre>
 # ℹ 235 more rows</code></pre>
 </div>
 </div>
-<p>The genes with negative “importance” are in fact only very slightly so, and there only a handful of them.</p>
+<p>The genes with negative “importance” are in fact only very slightly so, and there only a handful of them. Moreover, we can combine these importance metrics with the Lasso output from above to compare how the two methods are considering genes as important. Reassuring, those with negative importance in the random forest, with the exception of <strong>GSTM1</strong> all had a coefficient of 0 (i.e.&nbsp;were removed by Lasso).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>importance_df <span class="sc">%&gt;%</span> </span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Importance <span class="sc">&lt;</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 9 × 2
-  term       Importance
-  &lt;chr&gt;           &lt;dbl&gt;
-1 TCN1      -0.00000626
-2 LINC01291 -0.00000743
-3 BRINP2    -0.0000202 
-4 SCGB2A1   -0.0000214 
-5 ARHGAP36  -0.0000214 
-6 LEP       -0.0000225 
-7 RPSAP53   -0.0000341 
-8 ADIPOQ    -0.0000399 
-9 GSTM1     -0.0000572 </code></pre>
-</div>
-</div>
-<p>We can combine these results with the Lasso output from above to compare how the two methods are considering genes as important. Reassuring, those with negative importance in the random forest, with the exception of <strong>GSTM1</strong> all had a coefficient of 0 (i.e.&nbsp;were removed by Lasso).</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(fixed_lasso_fit) <span class="sc">%&gt;%</span> </span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">!=</span> <span class="st">"(Intercept)"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>penalty) <span class="sc">%&gt;%</span> </span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(importance_df) <span class="sc">%&gt;%</span> </span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Importance <span class="sc">&lt;</span> <span class="dv">0</span> )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(fixed_lasso_fit) <span class="sc">%&gt;%</span> </span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">!=</span> <span class="st">"(Intercept)"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>penalty) <span class="sc">%&gt;%</span> </span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(importance_df) <span class="sc">%&gt;%</span> </span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Importance <span class="sc">&lt;</span> <span class="dv">0</span> )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 9 × 3
   term      estimate  Importance
@@ -747,14 +727,14 @@ OOB prediction error (Brier s.):  0.05419088 </code></pre>
 <p>We can plot both together on the bar plot below. This seems to show there are some genes with high importance from the random forest and higher coefficient in Lasso. Although surprisingly we also get some important genes according to random forest that were removed by Lasso.</p>
 <p>I don’t think I’m going to get too concerned about this just yet as these are not our <strong>final</strong> Lasso and random forest models.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="do">## N.B. Haven't quite figured out the best visualisation for this yet</span></span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(fixed_lasso_fit) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">!=</span> <span class="st">"(Intercept)"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>penalty) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(importance_df) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Importance <span class="sc">&gt;</span> <span class="dv">0</span> ) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> forcats<span class="sc">::</span><span class="fu">fct_reorder</span>(term, Importance), <span class="at">x =</span> estimate, <span class="at">fill =</span> estimate)) <span class="sc">+</span> <span class="fu">geom_col</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="do">## N.B. Haven't quite figured out the best visualisation for this yet</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(fixed_lasso_fit) <span class="sc">%&gt;%</span> </span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">!=</span> <span class="st">"(Intercept)"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>penalty) <span class="sc">%&gt;%</span> </span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(importance_df) <span class="sc">%&gt;%</span> </span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Importance <span class="sc">&gt;</span> <span class="dv">0</span> ) <span class="sc">%&gt;%</span> </span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> forcats<span class="sc">::</span><span class="fu">fct_reorder</span>(term, Importance), <span class="at">x =</span> estimate, <span class="at">fill =</span> estimate)) <span class="sc">+</span> <span class="fu">geom_col</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -771,7 +751,7 @@ OOB prediction error (Brier s.):  0.05419088 </code></pre>
 <li><p>The <strong>Lasso</strong> approach (using glmnet), which identifies features with a strong linear relationship to the outcome by driving the coefficients of less useful features to zero.</p></li>
 <li><p>The <strong>Random Forest</strong>, which builds a consensus prediction from many random decision trees, allowing it to capture complex, non-linear interactions and threshold effects.</p></li>
 </ul>
-<p>Whilst both these methods achieved good performance and provided complementary insights into gene importance, they typically need some tuning to discover the best ‘hyper-parameters.’ This will be discussed in a later part. Before that, we will explore some other classification methods, like K-Nearest Neighbors (KNN) and Support Vector Machines (SVM), and learn how to incorporate other types of predictors (such as clinical variables like age and tumor grade) into our models.</p>
+<p>Whilst both these methods achieved good performance and provided complementary insights into gene importance, they typically need some tuning to discover the best ‘hyper-parameters.’ This will be discussed in a later part. Before that, in <a href="https://mdbioinformatics.com/posts/2025_11_19_tidymodels_TCGA_part3b/index.html">Part 3b</a>, we will explore some other classification methods, like K-Nearest Neighbors (KNN) and Support Vector Machines (SVM), and learn how to incorporate other types of predictors (such as clinical variables like age and tumor grade) into our models.</p>
 
 
 </section>

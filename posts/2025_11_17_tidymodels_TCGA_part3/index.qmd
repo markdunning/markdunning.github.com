@@ -4,7 +4,7 @@ author: Mark Dunning
 date: 2025-11-19
 theme: darkly
 image: preview.png
-description: "Machine Learning with glmnet and random forests in R using many features (genes)"
+description: "Identifying predictive markers for ER status from high-dimensional gene expression data. We compare the performance of penalized regression (GLMNet) and ensemble learning (Random Forests) for feature selection and classification"
 ---
 
 ```{r silentLoad}
@@ -24,9 +24,7 @@ library(tidymodels)
 
 ## Pre-amble
 
-In the first section in this series we described how to download TCGA data for breast cancers and manipulated them using a combination of `tidybulk` and `dplyr` to retain a set of expressed, variable genes plus a set of known cancer genes.
-
-There is a *very extensive* set of clinical information recorded for each sample / patient, but to keep things simple we will start with a task for being able to predict **Estrogen Receptor status** from the expression data, which can be used as an indicator of whether a patient will respond to certain treatments. This is clearly not going to get us a Nature paper or a Nobel prize, but it should work well and introduce some of the key concepts of machine learning. There are a set of packages that we will need:-
+In [Part 1 of this series](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/) we described how to download TCGA data for breast cancers and manipulated them using a combination of `tidybulk` and `dplyr` to retain a set of expressed, variable genes. There are a set of packages that we will need for this Part:-
 
 ```{r installIfNeeded, eval=FALSE}
 if(!require(tidymodels)) install.packages("tidymodels")
@@ -36,7 +34,7 @@ if(!require(ggplot2)) install.packages("ggplot2")
 
 ```
 
-You also need the processed data from the [first section](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/) and the code to download this is:-
+You also need the processed data from Part 1 and the code to download this is:-
 
 ```{r downloadIfNeeded, eval=FALSE}
 ### get the saved RDS
@@ -46,7 +44,6 @@ if(!file.exists("raw_data/brca_test_tidy.rds")) download.file("https://github.co
 
 ```
 
-
 Load the pre-prepared tidy data
 
 ```{r loadTidy}
@@ -54,8 +51,7 @@ brca_train_tidy <- readRDS("raw_data/brca_train_tidy.rds")
 brca_test_tidy <- readRDS("raw_data/brca_test_tidy.rds")
 ```
 
-
-The previous section was hopefully a gentle introduction to Machine Learning, and we didn't set the bar too high for what for our task. The simple models we built using `ESR1` to classify breast cancer patients into Estrogen Receptor `Positive` or `Negative` were extremely effective (as measured by accuracy, sensitivity and specificity). In reality, faced with this problem there wouldn't be much be much justification in exploring other models when simple models, that are easily explainable perform very well.
+[Part 2](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part2/) was hopefully a gentle introduction to Machine Learning, and we didn't set the bar too high for our task. The simple models we built using `ESR1` to classify breast cancer patients into Estrogen Receptor `Positive` or `Negative` were extremely effective (as measured by accuracy, sensitivity and specificity). Faced with this task in reality there wouldn't be much justification in exploring other models when simple models, that are easily explainable, perform very well.
 
 Rather than congratulating ourselves lets see how we can cope without ESR1 in our dataset, or any genes that correlate highly with it.
 
@@ -69,7 +65,7 @@ brca_train_tidy %>%
   slice_max(ESR1, n = 10) 
 ```
 
-Let's proceed by picking genes with an *absolute* correlation < 0.7 with ESR1 as our possible predictors.
+Let's proceed by picking genes with an *absolute* correlation \< 0.7 with ESR1 as our possible predictors.
 
 ```{r keep_genes}
 kept_genes <- brca_train_tidy %>% 
@@ -99,15 +95,13 @@ er_test <- brca_test_tidy %>%
 
 With the number of features (genes) we have in our dataset, even after filtering, there is still the potential for us to suffer from the "curse of dimensionality" and overfit our data. In other words, we could build a model so specific that it is of little use beyond the dataset that it was trained upon.
 
-
 Methods that provide regularization are very appealing for this reason because they constrain the model, helping it find the optimal combination of features. One such method that implements these concepts in `tidymodels` is called "glmnet".
 
-
-The amount to which the contribution of less-informative features is "shrunk" is controlled by two arguments: `penalty` (known as $\mathbf{\lambda}$ in the literature) and `mixture` (known as $\mathbf{\alpha}$). $\mathbf{\lambda}$ is a single, non-negative numerical value that controls the strength of the regularization (shrinkage) applied to the model. If $\mathbf{\lambda = 0}$, no penalty is applied, and the model reverts to standard, unregularized Logistic Regression. If $\mathbf{\lambda > 0}$, coefficients are shrunk towards zero to prevent overfitting. 
+The amount to which the contribution of less-informative features is "shrunk" is controlled by two arguments: `penalty` (known as $\mathbf{\lambda}$ in the literature) and `mixture` (known as $\mathbf{\alpha}$). $\mathbf{\lambda}$ is a single, non-negative numerical value that controls the strength of the regularization (shrinkage) applied to the model. If $\mathbf{\lambda = 0}$, no penalty is applied, and the model reverts to standard, unregularized Logistic Regression. If $\mathbf{\lambda > 0}$, coefficients are shrunk towards zero to prevent overfitting.
 
 $\mathbf{\alpha}$ controls how the features are shrunk and defines the characteristics of the resulting model, ranging between 0 and 1. **Lasso** ($\mathbf{\alpha = 1}$) forces the coefficients of less important genes exactly to zero, resulting in a sparse model (automatic feature selection). **Ridge** ($\mathbf{\alpha = 0}$) shrinks all coefficients towards zero but never removes any gene completely. Any value between $\mathbf{0 < \alpha < 1}$ is known as the **Elastic Net** penalty. This blend ensures the model benefits from Lasso's feature selection while retaining the stability that Ridge provides when dealing with highly correlated features (a common characteristic in RNA-seq data).
 
-Values such as these, that can take a range of values and affect the fitting of the model, are known as **Hyperparameters**. This is a distinct concept from a parameter, which is a quantity that is estimated during the model fit, such as the coefficients ($\beta$ values) of a regression model. 
+Values such as these, that can take a range of values and affect the fitting of the model, are known as **Hyperparameters**. This is a distinct concept from a parameter, which is a quantity that is estimated during the model fit, such as the coefficients ($\beta$ values) of a regression model.
 
 We will pick some values of penalty and mixture to see how the model works. In practice, we would want to use a range of values and tune our model to find the best combination, which will be a topic for another time though.
 
@@ -125,9 +119,9 @@ lasso_spec_fixed <- logistic_reg(
 
 ```
 
-As before we are using data that have already been processed using domain-specific tools, so there is no need for much in our "recipe" (sometimes you will see steps to features with remove small or zero variances and here). However, we need to change the formula from using a single gene to predict to using all available features. The syntax for this is `ER ~.`, which avoids having to type all the feature names.
+As before we are using data that have already been processed using domain-specific tools, so there is no need for much in our "recipe" (sometimes you will see steps to remove features with zero or small variances for example). However, we need to change the formula from using a single gene to predict to using all available features. The syntax for this is `ER ~.`, which avoids having to type all the feature names.
 
-However, we need to introduce a step that will normalize (or standardise) our features (genes) by subtracting the mean and dividing by the standard deviation. In other words to create a "z-score" that will make all the features comparable and stop any one feature from dominating the model or obscuring the contribution from other features. Features with a higher mean or variance could also be unfairly shrunken by lasso.
+We also need to introduce a step that will normalize (or standardise) our features (genes) by subtracting the mean and dividing by the standard deviation. In other words to create a "z-score" that will make all the features comparable and stop any one feature from dominating the model or obscuring the contribution from other features. Features with a higher mean or variance could also be unfairly shrunken by lasso.
 
 ```{r glm_recipe}
 er_recipe_multigene <- recipe(ER ~ ., data = er_train)  %>% 
@@ -148,21 +142,19 @@ fixed_lasso_fit <- lasso_workflow_fixed %>%
   fit(data = er_train)
 ```
 
-Printing the model gives us some insight into the modeling process. After printing the recipe and model specification, we see how the model is learning from the data. 
+Printing the model gives us some insight into the modeling process. After printing the recipe and model specification, we see how the model is learning from the data.
 
-- Lambda ($\lambda$) "**Penalty Strength**". This is the $\lambda$ value applied at that specific step. It decreases as you move down the table.
+-   Lambda ($\lambda$) "**Penalty Strength**". This is the $\lambda$ value applied at that specific step. It decreases as you move down the table.
 
-- Df (Degrees of Freedom) This is the count of genes whose coefficients are non-zero at that $\lambda$ value.
+-   Df (Degrees of Freedom) This is the count of genes whose coefficients are non-zero at that $\lambda$ value.
 
-- \%Dev (% Deviance Explained) - **Model Fit on Training Data**.  This is the percentage of deviance (a measure of error, similar to $R^2$) that is explained by the model. A higher value is better.
-
-
+-   %Dev (% Deviance Explained) - **Model Fit on Training Data**. This is the percentage of deviance (a measure of error, similar to $R^2$) that is explained by the model. A higher value is better.
 
 ```{r glm_fit_look}
 fixed_lasso_fit
 ```
-Even though we have told the model what value of $\lambda$ we want to use, it is trying out different values of $\lambda$ and assessing the model fit at each point. In practical terms, this would allow us to tune the behaviour of the model but that is beyond the scope of this particular section and shouldn't be performed directly on the training data. By printing the coefficients of the model we can see what genes it has "shrunken" to zero and effectively discarded from the model.
 
+Even though we have told the model what value of $\lambda$ we want to use, it is trying out different values of $\lambda$ and assessing the model fit at each point. In practical terms, this would allow us to tune the behaviour of the model but that is beyond the scope of this particular section and shouldn't be performed directly on the training data. By printing the coefficients of the model we can see what genes it has "shrunken" to zero and effectively discarded from the model.
 
 ```{r glm_coef}
 tidy(fixed_lasso_fit) %>% arrange(estimate)
@@ -190,6 +182,7 @@ er_train %>%
 ggplot(aes(x = ER, y = count)) + geom_boxplot() + facet_wrap(~Gene)
 
 ```
+
 Conversely, genes where a negative coefficient was predicted are all higher in ER `Negative` (or equivalently lower in ER `Positive`)
 
 ```{r lasso_neg_coef}
@@ -203,6 +196,7 @@ er_train %>%
   pivot_longer(-ER,names_to = "Gene", values_to = "count") %>% 
 ggplot(aes(x = ER, y = count)) + geom_boxplot() + facet_wrap(~Gene)
 ```
+
 And the next step is of course to see how the model performs on *un-seen* or new data, and we created the `er_test` dataset for this purpose. The `tidymodels` eco-system uses `yardstick` to efficiently compile metrics and we will use accuracy, specificity and sensitivity as defined in the previous section.
 
 ```{r lasso_metrics}
@@ -214,16 +208,13 @@ fixed_lasso_fit |>
   class_metrics(truth = ER, estimate = .pred_class)
 ```
 
-Overall the model is doing quite well even though we didn't use `ESR1`. The specificity is quite high, meaning that it doesn't pick too many false positives. On the other hand, the lower sensitivity means that some samples that are truly `Positive` are being missed. 
+Overall the model is doing quite well even though we didn't use `ESR1`. The specificity is quite high, meaning that it doesn't pick too many false positives. On the other hand, the lower sensitivity means that some samples that are truly `Positive` are being missed.
 
-::: {.callout-important}
-
+::: callout-important
 ## Clinical context
 
 In a clinical context, the high specificity is encouraging as you wouldn't progress too many patients to potentially aggressive treatment they wouldn't benefit from. On the other hand, some patients may miss the opportunity to take a potentially life-changing or life-extending treatment.
-
 :::
-
 
 There is clearly an opportunity for some improvement, and that could be achieved by better choice of *hyper-parameters*. For now though lets see how other methods perform starting with the decision tree.
 
@@ -250,20 +241,20 @@ decision_tree_fit <- decision_tree_workflow_fixed %>%
 
 decision_tree_fit
 ```
+
 The fit looks quite complex, but let's plot it out.
 
-
-```{r decision_tree_plot} 
+```{r decision_tree_plot}
 library(rpart.plot)
 rpart.plot(extract_fit_engine(decision_tree_fit))
 
 ```
+
 Now that the decision tree doesn't have `ESR1` to rely on,the model found the next strongest predictor available: **TFF1**, splitting at a scaled value of $-0.86$. Although TFF1 is strongly correlated with ER status, it is not powerful enough to separate the classes cleanly on its own.
 
 Furthermore, unlike the initial `ESR1`-based tree (seen in the previous section), this tree is very deep and involves splits on numerous secondary genes (**GRPR**, **KIF1A**, **YP2B7P**, **HOTAIR**, etc.). The model is relying on the cumulative effect of many weak, complex, and potentially non-linear interactions among many genes to achieve classification. There is a danger that we might be over-fitting.
 
 Nevertheless, we can see how the model performs:-
-
 
 ```{r decision_tree_predict}
 decision_tree_fit |>
@@ -280,8 +271,7 @@ The random forest is a natural extension of a decision tree, as it harnesses the
 
 The method constructs many decision trees (as above), each using a "bootstrap sample" (a random sample with replacement) of the data. Therefore, each tree is a bit different and makes its own predictions without relying on others. Moreover, when tree is built it doesn’t look at all the features (genes in our case) at once. It picks a few at random to decide how to split the data. Whilst some trees might not work very well individually, the crowd-voting step of taking predictions from a large number of trees should lead to accurate predictions overall and negate concerns over individual trees overfitting data.
 
-It's specification is similar to models we have used before. We can set `ranger` as the method used to build the model, and this package is included as part of `tidymodels`. Setting `importance = "permutation"` is useful for biological interpretation as it will allow us to see which features (genes) are contributing most to the model
-
+It's specification is similar to models we have used before. We can set `ranger` as the method used to build the model, and this package is included as part of `tidymodels`. Setting `importance = "permutation"` is useful for biological interpretation as it will allow us to see which features (genes) are contributing most to the model. An arbitrary value of 1000 trees is being used, and in practice we would seek to find the optimal value (which we will discuss at a later point).
 
 ```{r random_forest_spec+}
 random_forest_spec <- rand_forest(
@@ -306,8 +296,8 @@ random_forest_fit <- random_forest_workflow %>%
 
 random_forest_fit
 ```
-Whilst the decision tree was quite intuitive to visualise, the random forest is unfortunately less so. But let's make some predictions and see how it performs:-
 
+Whilst the decision tree was quite intuitive to visualise, the random forest is unfortunately less so. But let's make some predictions and see how it performs:-
 
 ```{r random_forest_predict}
 random_forest_fit %>% 
@@ -315,9 +305,10 @@ random_forest_fit %>%
   bind_cols(er_test) |>
   class_metrics(truth = ER, estimate = .pred_class)
 ```
-So the sensitivity has improved from the decision tree, and also beats the glmnet model, with no difference in specificity. As with the Lasso output, we can get a sense of what features are most powerful using an "importance" score that is calculated (setting `importance = "permutation"` in the specification allows us to do this). The ranking of these scores is important, and reflects **how much more or how much less this gene contributes** compared to all others in your model. A positive score means a model benefits from having that gene includes, whereas a negative score means the gene actually makes a model perform worse. 
 
-Extracting this information can be done as follows
+So the sensitivity has improved from the decision tree, and also beats the glmnet model, with no difference in specificity. As with the Lasso output, we can get a sense of what features are most powerful using an "importance" score that is calculated (setting `importance = "permutation"` in the specification allows us to do this). The ranking of these scores is important, and reflects **how much more or how much less this gene contributes** compared to all others in your model. A positive score means a model benefits from having that gene includes, whereas a negative score means the gene actually makes a model perform worse.
+
+Extracting this information can be done as follows. We see that **TFF1** is the most important which connects with the decision tree we built above.
 
 ```{r make_importance_df}
 
@@ -327,14 +318,7 @@ importance_df <- pull_workflow_fit(random_forest_fit)$fit$variable.importance %>
 importance_df
 ```
 
-The genes with negative "importance" are in fact only very slightly so, and there only a handful of them.
-
-```{r randomforest_ranking}
-importance_df %>% 
-  filter(Importance < 0)
-```
-
-We can combine these results with the Lasso output from above to compare how the two methods are considering genes as important. Reassuring, those with negative importance in the random forest, with the exception of **GSTM1** all had a coefficient of 0 (i.e. were removed by Lasso).
+The genes with negative "importance" are in fact only very slightly so, and there only a handful of them. Moreover, we can combine these importance metrics with the Lasso output from above to compare how the two methods are considering genes as important. Reassuring, those with negative importance in the random forest, with the exception of **GSTM1** all had a coefficient of 0 (i.e. were removed by Lasso).
 
 ```{r nonimportant_randomforest}
 tidy(fixed_lasso_fit) %>% 
@@ -347,7 +331,6 @@ tidy(fixed_lasso_fit) %>%
 We can plot both together on the bar plot below. This seems to show there are some genes with high importance from the random forest and higher coefficient in Lasso. Although surprisingly we also get some important genes according to random forest that were removed by Lasso.
 
 I don't think I'm going to get too concerned about this just yet as these are not our **final** Lasso and random forest models.
-
 
 ```{r importance_vs_lasso, fig.height=12}
 
@@ -366,8 +349,8 @@ tidy(fixed_lasso_fit) %>%
 
 In this section, we built powerful classification models by taking advantage of many gene features while aiming to prevent overfitting. We employed two fundamentally different approaches:
 
-- The **Lasso** approach (using glmnet), which identifies features with a strong linear relationship to the outcome by driving the coefficients of less useful features to zero.
+-   The **Lasso** approach (using glmnet), which identifies features with a strong linear relationship to the outcome by driving the coefficients of less useful features to zero.
 
-- The **Random Forest**, which builds a consensus prediction from many random decision trees, allowing it to capture complex, non-linear interactions and threshold effects.
+-   The **Random Forest**, which builds a consensus prediction from many random decision trees, allowing it to capture complex, non-linear interactions and threshold effects.
 
-Whilst both these methods achieved good performance and provided complementary insights into gene importance, they typically need some tuning to discover the best 'hyper-parameters.' This will be discussed in a later part. Before that, we will explore some other classification methods, like K-Nearest Neighbors (KNN) and Support Vector Machines (SVM), and learn how to incorporate other types of predictors (such as clinical variables like age and tumor grade) into our models.
+Whilst both these methods achieved good performance and provided complementary insights into gene importance, they typically need some tuning to discover the best 'hyper-parameters.' This will be discussed in a later part. Before that, in [Part 3b](https://mdbioinformatics.com/posts/2025_11_19_tidymodels_TCGA_part3b/index.html), we will explore some other classification methods, like K-Nearest Neighbors (KNN) and Support Vector Machines (SVM), and learn how to incorporate other types of predictors (such as clinical variables like age and tumor grade) into our models.
