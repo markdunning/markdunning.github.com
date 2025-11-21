@@ -1,7 +1,7 @@
 ---
 title: "Tidymodels for omics data: Part 3b"
 author: Mark Dunning
-date: 2025-11-19
+date: 2025-11-21
 theme: darkly
 image: preview.png
 description: "Two further methods for Machine Learning in R using tidymodels: K Nearest Neighbours (KNN) and Support Vector Machines (SVM)"

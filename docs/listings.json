@@ -13,8 +13,8 @@
   {
     "listing": "/posts.html",
     "items": [
-      "/posts/2025_11_17_tidymodels_TCGA_part3/index.html",
       "/posts/2025_11_19_tidymodels_TCGA_part3b/index.html",
+      "/posts/2025_11_17_tidymodels_TCGA_part3/index.html",
       "/posts/2025_11_10_tidymodels_TCGA_part2/index.html",
       "/posts/2025_11_06_tidymodels_TCGA_part1/index.html",
       "/posts/2025_10_30_tidybulk/index.html",
