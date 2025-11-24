@@ -65,7 +65,7 @@ kept_genes <- brca_train_tidy %>%
 
 ```
 
-Now we restrict our data to just these genes, and the Estrogen Receptor status (renamed to `ER` for convenience).
+Now we restrict our data to just these genes, and the Estrogen Receptor status (renamed to `ER` for convenience). We will also create some ID rows in the data, which will be helpful in a short while.
 
 ```{r make_train_and_test}
 er_train <- brca_train_tidy %>% 
@@ -76,24 +76,145 @@ er_train <- brca_train_tidy %>%
 
 er_test <- brca_test_tidy %>% 
   select(all_of(kept_genes), ER = er_status_by_ihc) %>% 
-  mutate(ER = as.factor(ER))
+  mutate(ER = as.factor(ER)) %>% 
+  mutate(ID = paste0("Training_", row_number())) %>% 
+  relocate(ID)
 ```
+
+In [Part 3a](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/#introducing-glmnet) we introduced some machine learning methods that relied on hyperparameters in order to be run. This included logistic regression using glmnet that can "shrink" the influence of features in our data. The amount of shrinkage is controlled by the arguments `penalty` ($\lambda$) and `mixture` ($\alpha$) in the tidymodels specification.
+
+We just set these to some arbitrary, fixed values. So, the question is: How can we choose the "best" values for these parameters without endless trial and error, and what data should we base that decision on?
+
+Way back in [Part 1](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/#preparing-the-data-for-machine-learning) we split a TCGA breast cancer dataset into training and testing portions that were completely independent. The roles of these two portions are strictly defined:
+
+- Training Dataset: Used only to estimate the internal coefficients of our model and create the final fit. In our example of a logsitic regression this would be the amount to which each gene affects the log-odds of a particular sample being ER `Positive`.
+
+- Testing Dataset: Used only for the final, independent validation of the model's performance on completely unseen data.
+
+Neither of these is appropriate for tuning. You might think the training data would be a good choice, but using it directly to pick the hyperparameters would make our model overfit. It would be optimised for the training data and potentially perform poorly on the test set or other data.
+
+So the solution is to create some new, temporary validation sets, based on our original training data, solely for the purpose of identifying (or "tuning") the best hyperparameters. This technique is known as Cross-Validation (CV).
+
+
 
 ## Cross-Validation
 
-```{r}
+K-fold cross-validation (which `tidymodels` refers to as V-fold cross-validation) splits data into **v** equally-sized partitions to be used to tune hyper-parameters.
+
+```{r setup_v_folds}
+set.seed(42)
+
 er_folds <- er_train %>%
   vfold_cv(v = 10, 
            strata = ER)
 
-er_folds
 ```
-```{r}
+
+Each of our `v` splits comprises a training and testing set
+
+```{r show_training_split}
 er_folds$splits[[1]]
 er_folds$splits[[1]] %>% training()
 ```
 
-```{r}
+```{r show_split_testing}
 er_folds$splits[[1]] %>% testing()
+```
+
+
+```{r check_training_testing_rows}
+nrow(training(er_folds$splits[[1]])) + nrow(testing(er_folds$splits[[1]]))
+nrow(er_train)
+```
+
+With the same reasoning as creating our initial training and testing set, none of the samples included in the training set at each split is found in the corresponding testing set.
+
+```{r training_testing_intersect}
+intersect(training(er_folds$splits[[1]])$ID, testing(er_folds$splits[[1]])$ID)
+```
+
+
+
+
+## Model specifiction and recipe
+
+
+```{r}
+lasso_spec_tune <- logistic_reg(
+  # 1. Penalty (lambda): Use tune() to test different shrinkage strengths.
+  penalty = tune(),
+  # 2. Mixture (alpha): Use tune() to test the balance between 
+  #    Lasso (1) and Ridge (0) regularization, defining the Elastic Net.
+  mixture = tune() 
+) %>%
+  set_engine("glmnet") %>%
+  set_mode("classification")
+
+er_recipe_multigene <- recipe(ER ~ ., data = er_train)  %>% 
+  step_normalize(all_predictors()) %>% 
+  update_role(ID, new_role = "ID")
+
+
+```
+
+Make a grid
+
+
+```{r}
+penalty_range <- penalty(range = c(-5, 0)) %>%
+  # Helper to transform the search space from log10 back to normal units
+  finalize(clin_train)
+
+# 1b. Define Mixture (Alpha) Search Space
+# Mixture goes from 0 (pure Ridge) to 1 (pure Lasso).
+mixture_range <- mixture() %>%
+  finalize(clin_train)
+
+# --- 2. Create the Grid (Two Methods) ---
+
+# METHOD A: Structured Grid Search (grid_regular)
+# This creates a rectangular grid: all combinations of specified levels.
+# We will test 5 different penalty values and 3 different mixture values.
+
+elastic_net_grid_regular <- grid_regular(
+  penalty_range, 
+  mixture_range,
+  levels = c(penalty = 5, mixture = 3) # Test 5 penalty values x 3 mixture values = 15 combinations
+)
+
+```
+
+Define the workflow
+
+```{r}
+elastic_net_wflow <- workflow() %>%
+  add_recipe(er_recipe_multigene) %>%
+  add_model(lasso_spec_tune)
+```
+
+
+Do the tuning
+
+```{r}
+elastic_net_tune_res <- tune_grid(
+  elastic_net_wflow, 
+  resamples = er_folds, 
+  grid = elastic_net_grid_regular,
+  metrics = metric_set(accuracy, specificity, sensitivity) # Add ROC AUC for better assessment
+)
+```
+Look at results
+
+```{r}
+elastic_net_tune_res$.metrics[[2]]
+```
+
+```{r}
+show_best(elastic_net_tune_res, metric = "accuracy", n = 5)
+
+```
+
+```{r}
+show_best(elastic_net_tune_res, metric = "sensitivity", n=5)
 ```
 
