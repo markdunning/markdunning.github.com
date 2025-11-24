@@ -85,7 +85,7 @@ new_sample
 In order to decide what ER status this sample we might be we can simply plot it on the same axes as our training data.
 
 ```{r knn_training_with_new}
-ggplot(er_train_simple, aes(x = ESR1, y = TFF1, col = ER)) + geom_point() + geom_point(data=(new_sample), shape = 2,col="black", size=2)
+ggplot(er_train_simple, aes(x = ESR1, y = TFF1, col = ER)) + geom_point() + geom_point(data=(new_sample), col="black", size=3, stroke = 2)
 ```
 
 It looks like most of the training set points surrounding our new sample are `Positive`, therefore it makes sense to declare the new sample as `Positive` too. This is essentially how KNN works. It determines the "k" nearest points in the training set closest to the point to be classified and takes the majority of the classifications of the closest points.
@@ -103,8 +103,8 @@ nearest_training_samples <- er_train_simple |>
 
 
 ggplot(er_train_simple, aes(x = ESR1, y = TFF1, col = ER)) + geom_point() + 
-  geom_point(data=(new_sample), shape = 2,col="black") +
-  geom_point(data=(nearest_training_samples), shape =4,col="black", size=2)
+  geom_point(data=(new_sample),col="black", size=3, stroke = 2) +
+  geom_point(data=(nearest_training_samples), shape =4,col="steelblue", size=4, stroke = 2,alpha=0.6)
 ```
 
 The method would now look at the `ER` label of the nearest points and calculates a proportion of `Positive` cases. In this instances the proportion is 1 which exceeded a default threshold of 0.5 so the new point is classified as `Positive`.
@@ -130,8 +130,8 @@ nearest_training_samples <- er_train_simple |>
 
 
 ggplot(er_train_simple, aes(x = ESR1, y = TFF1, col = ER)) + geom_point() + 
-  geom_point(data=(edge_case), shape = 2,col="black") +
-  geom_point(data=(nearest_training_samples), shape =4,col="black", size=2) 
+  geom_point(data=(edge_case), size = 3,col="black") +
+  geom_point(data=(nearest_training_samples), shape =4,col="steelblue", size=4,stroke=2,alpha=0.6) 
 ```
 
 In this case, two of the five nearest samples are `Positive` so the predicted probability of `Positive` would be $2/5 = 0.4$. Since this does not exceed a threshold of 0.5 (which can be changed if we want) the sample would get a `Negative` class.
@@ -223,23 +223,15 @@ ggplot(er_train_simple, aes(x = ESR1, y = TFF1, col = ER)) + geom_point() +  geo
 
 The main principle of an Support Vector Machine (SVM) is that it defines such a line that can be used to separate the data, and furthermore **maxmises** the distance between the line and the closest data points of either class. This maximum distance is known as the **margin**.
 
-::: {.callout-note}
-
+::: callout-note
 ## An analogy for SVM
 
 A popular analogy for a Support Vector Machine (SVM) is that of a construction company trying to construct a road between two groups of data (in this case, our Positive and Negative samples). The centre line of the road is the SVM's Decision Boundary; the place where the classification switches from one class to the other. The surrounding land defined by the widest possible empty gap is the margin. The primary goal of the SVM is to maximize this margin (the width of the road's shoulders). The data points that sit exactly on the edge of this maximum margin are called the "Support Vectors", because they are the only points that define and "support" the position of the boundary.
-
 :::
 
 ### Setting the specification for SVM
 
-
 If all that sounds a bit abstract, thankfully it is fairly straightforward to implement in `tidymodels`. Since our classification task is quite straightforward due to the features we have chosen, a linear boundary should work. This is specified using `svm_linear`. Other more complex and non-linear alternatives are availble. Like some of the other models we have seen there are some hyperparameters that can either be supplied as arguments to `svm_linear` and / or be decided by tuning. For now we will accept the defaults.
-
-
-
-
-
 
 ```{r svm_spec}
 svm_spec_fixed <- svm_linear() %>% 
@@ -247,8 +239,6 @@ svm_spec_fixed <- svm_linear() %>%
   set_engine("kernlab")
 
 ```
-
-
 
 We can now fit the model and re-use the same recipe from above that will scale our features.
 
@@ -264,7 +254,7 @@ svm_fit
 
 ```
 
-Before we do any predictions on our test data we can see the boundary in action by first creating a large grid of **theoretical** values from our dataset. We can then predict the probability of belonging to either the class (`Positive` or `Negative`) for each point in the grid according to the model, and plot using a `geom_tile` in `ggplot2`. This should show the approximate location of the boundary. 
+Before we do any predictions on our test data we can see the boundary in action by first creating a large grid of **theoretical** values from our dataset. We can then predict the probability of belonging to either the class (`Positive` or `Negative`) for each point in the grid according to the model, and plot using a `geom_tile` in `ggplot2`. This should show the approximate location of the boundary.
 
 ```{r show_SVM_boundary}
 
@@ -304,14 +294,12 @@ er_predictions_svm <-
 class_metrics(er_predictions_svm, truth = ER, estimate = .pred_class)
 ```
 
-
-::: {.callout-note}
-
+::: callout-note
 ### An aside - other types of SVM
 
 SVM can be applied to other classification problems where data cannot be easily separated in a linear (i.e. by a straight line). Here is an example from elsewhere online
 
-- https://emilhvitfeldt.github.io/ISLR-tidymodels-labs/09-support-vector-machines.html
+-   https://emilhvitfeldt.github.io/ISLR-tidymodels-labs/09-support-vector-machines.html
 
 ```{r svm_radial_eg, echo=FALSE}
 
@@ -339,23 +327,19 @@ svm_rbf_fit %>%
   extract_fit_engine() %>%
   kernlab::plot()
 ```
-
-
 :::
 
 ## Other kinds of predictor - PROOF OF CONCEPT
 
-So far we have only looked at using RNA-seq expression data to classify our patients into ER status which are numeric quantities. For completeness it is worth mentioning that machine learning can use other information such as columns comprising text labels that can take a limited range of values; or in other words **categorical variables** (e.g. `Yes`/`No`, `Grade 1`, `Grade 2`). The methods we have seen so far as equally happy with categorical predictors as they are with numerical, or even a dataset containing a mixture of the two. 
+So far we have only looked at using RNA-seq expression data to classify our patients into ER status which are numeric quantities. For completeness it is worth mentioning that machine learning can use other information such as columns comprising text labels that can take a limited range of values; or in other words **categorical variables** (e.g. `Yes`/`No`, `Grade 1`, `Grade 2`). The methods we have seen so far as equally happy with categorical predictors as they are with numerical, or even a dataset containing a mixture of the two.
 
 We will use the tumour *stage*, *age of the patient at diagnosis*, *presence of progesterone receptor* and *ethnicity*.
 
-::: {.callout-important}
-
-Please just take this example as a proof of concept to show that using categorical data can be used for classification. 
-
+::: callout-important
+Please just take this example as a proof of concept to show that using categorical data can be used for classification.
 :::
 
-```{r prepare_clin} 
+```{r prepare_clin}
 clin_train <- select(brca_train_tidy, Stage = paper_pathologic_stage, 
        Age= paper_age_at_initial_pathologic_diagnosis, 
        PR=pr_status_by_ihc,
@@ -370,10 +354,9 @@ clin_test <- select(brca_test_tidy, Stage = paper_pathologic_stage,
 
 ```
 
-
 Although KNN and SVM will work, we'll try logistic regression and random forest as they will be a bit easier to interpret. The actual specification of the logistic regression model isn't too different from before when we used the [Lasso feature selection](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/#introducing-glmnet).
 
-```{r clin_lasso_spec} 
+```{r clin_lasso_spec}
 lasso_spec_fixed <- logistic_reg(
   penalty = 0.01,  # Fixed penalty (lambda)
   mixture = 1 # set alpha = 1 for lasso      
@@ -383,13 +366,13 @@ lasso_spec_fixed <- logistic_reg(
 
 ```
 
-
 When dealing with our RNA-seq data we performed some filtering and normalisation outside of `tidymodels` to remove uninformative features. Similar steps are required with the data we are using now, and clinical variables are notorious for containing missing values and inconsistent labels (as they may have been entered manually). One way of checking our data is using the `skimr` package.
 
 ```{r skim_clin}
 library(skimr)
 skim(clin_train)
 ```
+
 The `Age`, `PR` and `Ethnicity` columns all seem to have missing values, but this doesn't always tell the whole story as the way in which missing values are recorded can be inconsistent itself.
 
 ```{r clin_col_tables}
@@ -397,6 +380,7 @@ clin_train |>
   select(-Age) |>
   purrr::map(table)
 ```
+
 In the `PR` column we have `[Not Evaluated]` and `Indeterminate`, which is effectively the same as `NA`, and the `Ethnicity` column has `not reported`. Also in `Ethnicity` we have a category with a single observation, and for the sake of practicality we will set this to `NA`. The `Stage` column has an `NA` string rather than R's official `NA` value. `skimr` seemed to cope with, but to be on the safe we set it to `NA`.
 
 There are steps we can use as part of our `tidymodels` recipe that will "impute" entries with missing information.
@@ -422,6 +406,7 @@ clin_test |>
   mutate_all(as.factor) |>
   purrr::map(levels)
 ```
+
 `tidymodels` has a variety of methods for imputing (or if you like make an educated guess at) the missing values. For numeric variables such as `Age` we can simply replace with the average (median in this case). Similarly, missing categorical variables can be replaced with the most common, or mode, value. I'm happy to replace `Stage` and `ER` in this way as there were not too many missing values, but `Ethnicity` had rather a lot more. Instead, we can add a step to include an "unknown". This gives the model gives the model the ability to test the importance of the "missingness", which would be useful if the values were not missing at random.
 
 If we keep `Age` as a numeric value the model will try and assess the impact of each increasing year on the ER status, which is probably not what we want. Instead, we can categorise the `Age` into four equal groups.
@@ -438,8 +423,7 @@ clin_recipe <- recipe(ER ~ ., data = clin_train) |>
   step_dummy(all_nominal_predictors())
 ```
 
-If we want to see the effect of these transformation we run a two-step process of `prep` followed by `bake`. `prep()` estimates or trains the recipe steps. For example, it calculates the median of Age, the mode of Stage, the cutoff points for the four Age bins, and the complete dictionary (schema) for the dummy variables.	
-`bake()` then applies the rules to a data set. That is, it takes the `clin_train data`, and performs the steps of the recipe.
+If we want to see the effect of these transformation we run a two-step process of `prep` followed by `bake`. `prep()` estimates or trains the recipe steps. For example, it calculates the median of Age, the mode of Stage, the cutoff points for the four Age bins, and the complete dictionary (schema) for the dummy variables. `bake()` then applies the rules to a data set. That is, it takes the `clin_train data`, and performs the steps of the recipe.
 
 ```{r clin_baked}
 clin_recipe |>
@@ -449,7 +433,6 @@ clin_recipe |>
 ```
 
 With everything in place, we can now fit the model and look at the resulting coefficients.
-
 
 ```{r clin_lasso_fit}
 clin_workflow <- workflow() %>%
@@ -478,9 +461,7 @@ clin_lasso_fit |>
   class_metrics(truth = ER, estimate = .pred_class)
 ```
 
-
 They are actually not that bad. It shows high Accuracy with the overall rate of correct predictions and well-balanced with the Sensitivity ($\mathbf{87.8\%}$) and Specificity ($\mathbf{81.7\%}$) close to each other. This means the model is not cheating by always predicting one class. The slight edge in sensitivity means the model is slightly better at correctly identifying the Positive cases. Depending on the clinical goal, this is often desirable (i.e., prioritizing "catching" the ER `Positive` tumors).
-
 
 For good measure, let's try and *random forest* which we learnt about in [Part 3a](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/#introducing-the-random-forest) of this series.
 
@@ -517,13 +498,10 @@ importance_df
 
 ```
 
-The metrics look to be slightly better than the Lasso, and being `Positive` for **PR** comes out as the top predictor again. 
+The metrics look to be slightly better than the Lasso, and being `Positive` for **PR** comes out as the top predictor again.
 
 ## Summary
 
-We have now added KNN and SVM to our machine learning toolkit. Whilst we used simpler data (as seen in [Part 2](https://mdbioinformatics.com/posts/2025_11_10_tidymodels_TCGA_part2/)) to illustrate the methods, they could be applied seamlessly to datasets with many more features such as the data discussed in [Part 3a](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/). Furthermore, we saw that our models can also be applied to categorical data if the need arises.  This required critical pre-processing steps like One-Hot Encoding (`step_dummy()`) and careful handling of missing data; even using techniques like `step_unknown()` to test the predictive power of missingness itself.
-
-
-We have now added K-Nearest Neighbors (KNN) and Support Vector Machines (SVM) to our machine learning toolkit. Whilst we used simpler data (as seen in Part 2) to illustrate the methods, they could be applied seamlessly to datasets with many more features, such as the expression data discussed in Part 3a.
+We have now added KNN and SVM to our machine learning toolkit. Whilst we used simpler data (as seen in [Part 2](https://mdbioinformatics.com/posts/2025_11_10_tidymodels_TCGA_part2/)) to illustrate the methods, they could be applied seamlessly to datasets with many more features such as the data discussed in [Part 3a](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/). Furthermore, we saw that our models can also be applied to categorical data if the need arises. This required critical pre-processing steps like One-Hot Encoding (`step_dummy()`) and careful handling of missing data; even using techniques like `step_unknown()` to test the predictive power of missingness itself.
 
 Whilst our models are working well, we have often relied on arbitrary decisions about some "hyper-parameters" such as the number of trees comprising the random forest or the degree of shrinkage in glmnet. In the next part, we will move past these manual choices and see how to systematically tune our models to find the optimal settings, ensuring the highest possible performance and generalization to new, unseen data.
