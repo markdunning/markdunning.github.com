@@ -134,47 +134,45 @@ intersect(training(er_folds$splits[[1]])$ID, testing(er_folds$splits[[1]])$ID)
 ```
 
 
-
-
 ## Model specifiction and recipe
 
+Now when we create our model specification we declare that `penalty` and `mixture` are going to be tuned. Our "recipe" uses the same formula as before, but need to be careful as we introduce an ID column into the data. The workflow is also created at this stage.
 
 ```{r}
 lasso_spec_tune <- logistic_reg(
-  # 1. Penalty (lambda): Use tune() to test different shrinkage strengths.
-  penalty = tune(),
-  # 2. Mixture (alpha): Use tune() to test the balance between 
-  #    Lasso (1) and Ridge (0) regularization, defining the Elastic Net.
+  penalty = tune(), #Penalty (lambda): Use tune() to test different shrinkage strengths.
+     # Mixture (alpha): Use tune() to test the balance between Lasso (1) and Ridge (0) regularization, defining the Elastic Net.
   mixture = tune() 
 ) %>%
   set_engine("glmnet") %>%
   set_mode("classification")
 
 er_recipe_multigene <- recipe(ER ~ ., data = er_train)  %>% 
-  step_normalize(all_predictors()) %>% 
-  update_role(ID, new_role = "ID")
+  update_role(ID, new_role = "ID") %>% 
+  step_normalize(all_numeric_predictors())  
+   ## Need to say that our ID column is an identifier - not something to be included in the model
 
 
+elastic_net_wflow <- workflow() %>%
+  add_recipe(er_recipe_multigene) %>%
+  add_model(lasso_spec_tune)
 ```
 
-Make a grid
 
+Unfortunately there are an *infinite* number of possibilities that both these arguments can take and we clearly cannot test them all. What we do instead is try and explore the full range of values, and find roughly the region where the optimal values are located. In practical terms this is often perfectly adequate. 
+
+Infrastructure for tuning parameters is support by `dials` and `tune` which are both part of the `tidymodels` eco-system. i.e. they get installed and loaded when you install and load `tidymodels`.
+
+- [https://dials.tidymodels.org/](https://dials.tidymodels.org/)
+- [https://tune.tidymodels.org/](https://tune.tidymodels.org/)
+
+There are a couple of convenient helper functions `penalty` and `mixture` that will create templates for choosing values for tuning. We then have to create a *grid* of values that we want to test. This is simply a data frame (/tibble) containing combinations of `penalty` and `mixture` and can be created with the `grid_regular` function. This function will ensure that the full range of values is tested. In other words that the maximum and minimum values are included in the search. With the `levels` argument we can control how finely we split the ranges.
+
+Another option is to use `grid_random` to create a *random* set of combinations of the parameters. Instead of `levels` we say how many combinations we want in total using `size`.
 
 ```{r}
-penalty_range <- penalty(range = c(-5, 0)) %>%
-  # Helper to transform the search space from log10 back to normal units
-  finalize(clin_train)
-
-# 1b. Define Mixture (Alpha) Search Space
-# Mixture goes from 0 (pure Ridge) to 1 (pure Lasso).
-mixture_range <- mixture() %>%
-  finalize(clin_train)
-
-# --- 2. Create the Grid (Two Methods) ---
-
-# METHOD A: Structured Grid Search (grid_regular)
-# This creates a rectangular grid: all combinations of specified levels.
-# We will test 5 different penalty values and 3 different mixture values.
+penalty_range <- penalty(range = c(-5, 0)) # use helper function to define range of penalty values
+mixture_range <- mixture() # use helper function to define a range of mixture values
 
 elastic_net_grid_regular <- grid_regular(
   penalty_range, 
@@ -182,35 +180,32 @@ elastic_net_grid_regular <- grid_regular(
   levels = c(penalty = 5, mixture = 3) # Test 5 penalty values x 3 mixture values = 15 combinations
 )
 
+elastic_net_grid_random <- grid_random(
+  penalty_range, 
+  mixture_range,
+  size = 15
+)
+
 ```
 
-Define the workflow
-
-```{r}
-elastic_net_wflow <- workflow() %>%
-  add_recipe(er_recipe_multigene) %>%
-  add_model(lasso_spec_tune)
-```
-
-
-Do the tuning
+With the setup we have just created there are 15 different models to be fit (one model for each combination in our grid), and the 10-fold strategy we defined with `vfolds_cv` means we have to fit each of these 15 models 10 times. In total we have 150 models, and for each we want to assess the performance. This is quite a lot of work! Fortunately we can do this quite efficiently with `tidymodels` and get an output that we can assess. The `tune_grid` function will use the cross-validation strategy defined with `vfolds_cv`, a grid structure and compute performance metrics for your workflow. 
 
 ```{r}
 elastic_net_tune_res <- tune_grid(
   elastic_net_wflow, 
   resamples = er_folds, 
   grid = elastic_net_grid_regular,
-  metrics = metric_set(accuracy, specificity, sensitivity) # Add ROC AUC for better assessment
+  metrics = metric_set(accuracy, specificity, sensitivity, roc_auc)
 )
 ```
-Look at results
+
 
 ```{r}
-elastic_net_tune_res$.metrics[[2]]
+elastic_net_tune_res
 ```
 
 ```{r}
-show_best(elastic_net_tune_res, metric = "accuracy", n = 5)
+show_best(elastic_net_tune_res, metric = "roc_auc", n = 5)
 
 ```
 
