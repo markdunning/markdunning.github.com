@@ -87,15 +87,23 @@ We just set these to some arbitrary, fixed values. So, the question is: How can 
 
 Way back in [Part 1](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/#preparing-the-data-for-machine-learning) we split a TCGA breast cancer dataset into training and testing portions that were completely independent. The roles of these two portions are strictly defined:
 
-- Training Dataset: Used only to estimate the internal coefficients of our model and create the final fit. In our example of a logsitic regression this would be the amount to which each gene affects the log-odds of a particular sample being ER `Positive`.
+-   Training Dataset: Used only to estimate the internal coefficients of our model and create the final fit. In our example of a logsitic regression this would be the amount to which each gene affects the log-odds of a particular sample being ER `Positive`.
 
-- Testing Dataset: Used only for the final, independent validation of the model's performance on completely unseen data.
+-   Testing Dataset: Used only for the final, independent validation of the model's performance on completely unseen data.
 
 Neither of these is appropriate for tuning. You might think the training data would be a good choice, but using it directly to pick the hyperparameters would make our model overfit. It would be optimised for the training data and potentially perform poorly on the test set or other data.
 
 So the solution is to create some new, temporary validation sets, based on our original training data, solely for the purpose of identifying (or "tuning") the best hyperparameters. This technique is known as Cross-Validation (CV).
 
+::: callout-important
+## Expectation setting
 
+The purpose of tuning our models is really just that—fine-tuning to get the absolute best performance. It will not suddenly elevate performance metrics (like $\text{ROC AUC}$ or Accuracy) from around $0.6$ to $0.9$. Tuning should only be used in circumstances where you are already satisfied with the fundamental performance of your model and just require some minor, incremental adjustments. The performance gains from tuning are typically small (e.g. ).
+
+That is to say that you should consider other choices of model, and even the fundamental data processing and feature engineering first, before trying to "tune" a model that is performing sub-par.
+
+**The greatest performance gains come from better data and model choice; tuning only optimizes the model you already have.**
+:::
 
 ## Cross-Validation
 
@@ -110,7 +118,7 @@ er_folds <- er_train %>%
 
 ```
 
-Each of our `v` splits comprises a training and testing set
+Each of our `v` splits comprises a training and testing set, which can be accessed using the same `training` and `testing` functions from before.
 
 ```{r show_training_split}
 er_folds$splits[[1]]
@@ -121,18 +129,11 @@ er_folds$splits[[1]] %>% training()
 er_folds$splits[[1]] %>% testing()
 ```
 
-
-```{r check_training_testing_rows}
-nrow(training(er_folds$splits[[1]])) + nrow(testing(er_folds$splits[[1]]))
-nrow(er_train)
-```
-
 With the same reasoning as creating our initial training and testing set, none of the samples included in the training set at each split is found in the corresponding testing set.
 
 ```{r training_testing_intersect}
 intersect(training(er_folds$splits[[1]])$ID, testing(er_folds$splits[[1]])$ID)
 ```
-
 
 ## Model specifiction and recipe
 
@@ -158,19 +159,20 @@ elastic_net_wflow <- workflow() %>%
   add_model(lasso_spec_tune)
 ```
 
+## Setup a grid for tuning
 
-Unfortunately there are an *infinite* number of possibilities that both these arguments can take and we clearly cannot test them all. What we do instead is try and explore the full range of values, and find roughly the region where the optimal values are located. In practical terms this is often perfectly adequate. 
+Unfortunately there are an *infinite* number of possibilities that both these arguments can take and we clearly cannot test them all. What we do instead is try and explore the full range of values, and find roughly the region where the optimal values are located. In practical terms this is often perfectly adequate.
 
 Infrastructure for tuning parameters is support by `dials` and `tune` which are both part of the `tidymodels` eco-system. i.e. they get installed and loaded when you install and load `tidymodels`.
 
-- [https://dials.tidymodels.org/](https://dials.tidymodels.org/)
-- [https://tune.tidymodels.org/](https://tune.tidymodels.org/)
+-   <https://dials.tidymodels.org/>
+-   <https://tune.tidymodels.org/>
 
 There are a couple of convenient helper functions `penalty` and `mixture` that will create templates for choosing values for tuning. We then have to create a *grid* of values that we want to test. This is simply a data frame (/tibble) containing combinations of `penalty` and `mixture` and can be created with the `grid_regular` function. This function will ensure that the full range of values is tested. In other words that the maximum and minimum values are included in the search. With the `levels` argument we can control how finely we split the ranges.
 
 Another option is to use `grid_random` to create a *random* set of combinations of the parameters. Instead of `levels` we say how many combinations we want in total using `size`.
 
-```{r}
+```{r setup_grids}
 penalty_range <- penalty(range = c(-5, 0)) # use helper function to define range of penalty values
 mixture_range <- mixture() # use helper function to define a range of mixture values
 
@@ -188,9 +190,11 @@ elastic_net_grid_random <- grid_random(
 
 ```
 
-With the setup we have just created there are 15 different models to be fit (one model for each combination in our grid), and the 10-fold strategy we defined with `vfolds_cv` means we have to fit each of these 15 models 10 times. In total we have 150 models, and for each we want to assess the performance. This is quite a lot of work! Fortunately we can do this quite efficiently with `tidymodels` and get an output that we can assess. The `tune_grid` function will use the cross-validation strategy defined with `vfolds_cv`, a grid structure and compute performance metrics for your workflow. 
+With the setup we have just created there are 15 different models to be fit (one model for each combination in our grid), and the 10-fold strategy we defined with `vfolds_cv` means we have to fit each of these 15 models 10 times. In total we have 150 models, and for each we want to assess the performance. This is quite a lot of work! Fortunately we can do this quite efficiently with `tidymodels` and get an output that we can assess. The `tune_grid` function will use the cross-validation strategy defined with `vfolds_cv`, a grid structure and compute performance metrics for your workflow.
 
-```{r}
+## Inspect tuning results
+
+```{r tune_grid}
 elastic_net_tune_res <- tune_grid(
   elastic_net_wflow, 
   resamples = er_folds, 
@@ -199,17 +203,135 @@ elastic_net_tune_res <- tune_grid(
 )
 ```
 
+The actual object itself is not particularly informative when printed:-
 
-```{r}
-elastic_net_tune_res
+```{r print_tune_res}
+elastic_net_tune_res 
 ```
 
-```{r}
+There is however a handy plotting method that will give a quick overview of the metrics achieved for different runs of the model. On the whole, it looks like a mixture of 0 is best with little difference as the penalty (amount of regularization) changes. Recall that a mixture of 0 corresponds to *Ridge*, as opposed to *Lasso* meaning that the final model that we fit will not set any coefficients to zero.
+
+```{r plot_tune_res}
+elastic_net_tune_res %>% autoplot
+```
+
+We can also request details of the "best" models according to a particular metric. ROC AUC is generally a good idea as it balances the specificity and sensitivity. The metrics shown in the table are averaged over the v-folds, which is 10 in our case.
+
+```{r best_auc}
 show_best(elastic_net_tune_res, metric = "roc_auc", n = 5)
 
 ```
 
-```{r}
+If we want to concentrate on a specific measure (such as sensitivity), we can look at that too.
+
+```{r best_sens}
 show_best(elastic_net_tune_res, metric = "sensitivity", n=5)
+```
+
+## Create final model and fit
+
+Once we are happy, we can save the details of the best model.
+
+```{r get_best_params}
+best_params <- select_best(elastic_net_tune_res, metric = "roc_auc")
+best_params
+```
+
+And the choice of parameters can be fed back to our workflow. Our workflow up to this point only has placeholders for the `mixture` and `penalty`.
+
+```{r workflow_before_tuning}
+elastic_net_wflow
+```
+
+With `finalize_workflow` these values get updated according to our final choices.
+
+```{r finalise_wflow}
+
+final_wflow <- elastic_net_wflow %>%
+  finalize_workflow(best_params)
+final_wflow
+```
+
+Remember that the purpose of tuning was to find an optimal set of hyperparameters, and we did that using a newly-created set of cross-validation subsets. We still need to fit, our create, the final model using those paramaters that we chose. This still needs to be performed on our entire training dataset.
+
+```{r final_fit}
+final_model_fit <- fit(final_wflow, data = er_train)
+final_model_fit %>% tidy
+```
+
+Finally we can make predictions using our testing data **which hasn't been used in any of the previous steps** and assess the metrics
+
+```{r}
+class_metrics <- metric_set(accuracy, sensitivity, specificity)
+select(er_test ,ER) %>% 
+  bind_cols(predict(final_model_fit, new_data = er_test)) %>% 
+  class_metrics(truth = ER, estimate = .pred_class)
+```
+
+The accuracy, sensitivity and specificity from our previous logistic regression were 0.920, 0.857 and 0.939 respectively so it looks like we are improving our sensitivity at the cost of a slight decrease in specificity. After tuning we have ended up with a model that is doing better at predicting both positive and negative cases .🎉
+
+## Training for Random Forests
+
+We'll now walk through an example of tuning a random forest, and hopefully you will see that the process is roughly the same. A useful starting point is the `show_model_info` function that will give us plenty of information about using a particular machine learning methods, the "engines" that can be used and what arguments can be set.
+
+```{r recall_random_forest}
+show_model_info("rand_forest")
+```
+
+
+In the output it lists `mtry`, `trees` and `min_n` all as arguments that can be tuned.
+
+
+```{r create_rf_spec}
+rf_spec_tune <- rand_forest(
+  mtry = tune(),min_n = tune()) %>%
+  set_engine("ranger") %>%
+  set_mode("classification")
+```
+
+and now create the workflow
+
+```{r create_rf_workflow}
+rf_workflow <- workflow() %>% 
+  add_model(rf_spec_tune) %>% 
+  add_recipe(er_recipe_multigene)
+  
+```
+
+
+```{r make_rf_grid}
+mtry_range <- mtry(range = c(5, 50)) 
+
+min_n_range <- min_n(range = c(5, 40))
+
+trees_range <- trees(range = c(500, 2000))
+
+set.seed(42) # Set seed for reproducibility of random sampling
+rf_grid_random <- grid_random(
+  mtry_range, 
+  min_n_range, 
+#  trees_range,
+  size = 5 # Test 15 random combinations of the three hyperparameters
+)
+
+rf_grid_random
+
+```
+
+```{r tune_rf_params}
+elastic_net_tune_res <- tune_grid(
+  rf_workflow, 
+  resamples = er_folds, 
+  grid = rf_grid_random,
+  metrics = metric_set(accuracy, specificity, sensitivity)
+)
+```
+
+```{r}
+elastic_net_tune_res %>% autoplot()
+```
+
+```{r}
+show_best(elastic_net_tune_res)
 ```
 
