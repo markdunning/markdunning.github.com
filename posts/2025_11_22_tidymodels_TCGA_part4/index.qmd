@@ -1,7 +1,7 @@
 ---
 title: "Tidymodels for omics data: Part 4"
 author: Mark Dunning
-date: 2025-11-22
+date: 2025-11-27
 theme: darkly
 image: preview.png
 description: "Optimising Machine Leaerning Performance by cross-validation and tuning"
@@ -279,13 +279,15 @@ show_model_info("rand_forest")
 ```
 
 
-In the output it lists `mtry`, `trees` and `min_n` all as arguments that can be tuned.
+In the output it lists `mtry`, `trees` and `min_n` all as arguments that can be tuned. These arguments control the diversity (`mtry`), complexity (`min_n`) and number of trees used for consensus voting (`trees`). The purpose of tuning these parameters is to give a selection of tree with enough complexity and diversity in our training data without overfitting. The particular optimal combination of these values with vary from dataset to dataset, and hence why they need to be tuned. A random forest specification with hyper-parameters to be tuned can be created as follows:-
 
 
 ```{r create_rf_spec}
 rf_spec_tune <- rand_forest(
-  mtry = tune(),min_n = tune()) %>%
-  set_engine("ranger") %>%
+  trees=tune(), 
+  mtry = tune(),
+  min_n = tune()) %>%
+  set_engine("ranger", importance = "permutation") %>%
   set_mode("classification")
 ```
 
@@ -298,40 +300,105 @@ rf_workflow <- workflow() %>%
   
 ```
 
+To define the grid for searching we can again make use of the `dials` package that had pre-defined notions of what values the `mtry`, `trees` and `min_n` should contain and stop us accidentally trying to create a model with invalid parameters values. This would be useful in situation where we were trying more advance methods of grid searching, or even using random grids.
 
 ```{r make_rf_grid}
-mtry_range <- mtry(range = c(5, 50)) 
 
-min_n_range <- min_n(range = c(5, 40))
+mtry_range <- mtry(range = c(5,50))
 
-trees_range <- trees(range = c(500, 2000))
+tree_range <- trees(range = c(500,2000))
 
-set.seed(42) # Set seed for reproducibility of random sampling
-rf_grid_random <- grid_random(
-  mtry_range, 
-  min_n_range, 
-#  trees_range,
-  size = 5 # Test 15 random combinations of the three hyperparameters
+minn_range <- min_n(range = c(5,50)) 
+
+rf_grid <- grid_regular(
+  mtry_range,
+  tree_range,
+  minn_range,
+  levels = c(mtry = 5, trees = 3, min_n = 3)
 )
 
-rf_grid_random
+rf_grid
 
 ```
 
-```{r tune_rf_params}
-elastic_net_tune_res <- tune_grid(
+
+We are now ready to do the tuning, which without any further modifications to the code would take a *lot* longer. Fortunately, I have Dr. Lewis Quayle to thank for some code on his [post on tidymodels](https://www.lewisdoesdata.com/2025/10/22/introduction-to-tidy-modelling-part-2.html) to configure `tidymodels` to use multiple CPU cores on your computer where available.
+
+::: {.callout-note}
+
+We can run the code in parallel because the tuning process is inherently an example of what was called "embarrassingly parallel" back in the day (people sometimes prefer "Pleasingly parallel" nowadays). In other words, the training / testing occurring at each fold in our workflow is completely independant and can therefore be run at the same time if possible rather than waiting for the previous fold to finish.
+
+:::
+
+```{r tune_rf_params, cache = TRUE}
+
+## setting a seed required for reproducibility
+set.seed(42)
+
+# register a parallel back-end
+future::plan(future::multisession(), workers = parallel::detectCores() - 1)
+
+
+rf_tune_res <- tune_grid(
   rf_workflow, 
   resamples = er_folds, 
-  grid = rf_grid_random,
-  metrics = metric_set(accuracy, specificity, sensitivity)
+  grid = rf_grid,
+  metrics = metric_set(accuracy, specificity, sensitivity, roc_auc)
 )
 ```
 
-```{r}
-elastic_net_tune_res %>% autoplot()
+As before, we can plot to get a quick overview.
+
+```{r rf_tuning_auto, fig.width=12}
+rf_tune_res %>% autoplot()
 ```
 
-```{r}
-show_best(elastic_net_tune_res)
+
+The plot chooses informative labels where "Minimal Node Size" = `min_n` and "# Randomly Selected Predictors" = `mtry`. If we wish to focus on Area Under the Curve (`roc_auc`) the best combination looks to be lower `min_n` and `mtry`. 
+
+```{r get_best_rf_fit}
+show_best(elastic_net_tune_res, metric = "roc_auc")
+best_params <- select_best(rf_tune_res, metric = "roc_auc")
 ```
 
+And now we can create the final model and check the importance of the features
+
+```{r rf_finalize}
+rf_final_workflow <- rf_workflow %>% 
+  finalize_workflow(best_params)
+
+
+rf_final_fit <- rf_final_workflow %>% 
+  fit(er_train)
+
+importance_df <- pull_workflow_fit(rf_final_fit)$fit$variable.importance %>%
+  enframe(name = "term", value = "Importance") %>%
+  arrange(desc(Importance))
+
+```
+
+and we can make a simple bar plot if we wish
+
+```{r plot_rf_importance}
+
+importance_df %>% 
+  ## pick the top 20 
+  slice_max(Importance, n = 20) %>% 
+  ggplot(aes(x = Importance, y = forcats::fct_reorder(term, Importance))) + geom_col(fill = "steelblue") + ylab("Gene") + xlab("Importance")
+
+```
+and the final predictions and evaluation follow a pattern that is hopefully familiar by now
+
+```{r}
+rf_final_fit %>% 
+  predict(new_data =  er_test) %>% 
+  bind_cols(select(er_test, ER)) %>% 
+  class_metrics(truth = ER, estimate = .pred_class)
+```
+
+## Summary
+
+This concludes the end of this little series on using `tidymodels` for classification of omics data. I hope that I have covered the main principles of the `tidymodels` eco-system. Just looking through the code I can see a lot of places where the code is reused, which is good for readability and extendability. Even though I have not covered all the possible classification methods, it *should* be possible with relative ease (that is relative to coding everything from scratch) to translate what we have covered here to other methods. This is real advantage of `tidymodels` in that most of our time should be spent interpreting and refining that having to code everything by-hand. I haven't even covered the use of regression vs classification (that is, predicting a *numeric* rather than categorical outcome) and again this should be within your reach now by using `set_mode("regression")` instead of `classification` in the models covered here. 
+
+
+Of course it would be remiss of me not to mention AI and deep learning methods that are increasingly being used in research. Whilst these are more complex methods, the core principles of training / testing and tuning are still highly applicable. Furthermore, these methods are still completely dependant on having appropriately filtered and cleaned data as a starting point. Although Python is probably the market leader for AI, R actually has interfaces to keras and tensorflow (two of the most popular implementations). There is no need to abandon R just yet.
