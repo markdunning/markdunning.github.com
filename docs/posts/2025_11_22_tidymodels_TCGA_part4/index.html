@@ -264,21 +264,23 @@ window.Quarto = {
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"raw_data/brca_train_tidy.rds"</span>)) <span class="fu">download.file</span>(<span class="st">"https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_train_tidy.rds"</span>, <span class="at">destfile =</span> <span class="st">"raw_data/brca_train_tidy.rds"</span>)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"raw_data/brca_test_tidy.rds"</span>)) <span class="fu">download.file</span>(<span class="st">"https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_test_tidy.rds"</span>, <span class="at">destfile =</span> <span class="st">"raw_data/brca_test_tidy.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>The main purpose of this Part of the series is to introduce some other classification methods before proceeding to more complex topics to as tuning our models. First we will load the pre-prepared tidy data</p>
+<p>The main purpose of this Part of the series is to learn how to optimise the models we created in [Part 3a](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/. First we will load the pre-prepared tidy data</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>brca_train_tidy <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"raw_data/brca_train_tidy.rds"</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>brca_test_tidy <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"raw_data/brca_test_tidy.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Let’s proceed by picking genes with an <em>absolute</em> correlation &lt; 0.7 with ESR1 as our possible predictors.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>kept_genes <span class="ot">&lt;-</span> brca_train_tidy <span class="sc">%&gt;%</span> </span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(CLEC3A<span class="sc">:</span>BRINP2) <span class="sc">%&gt;%</span> </span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  tibble<span class="sc">::</span><span class="fu">rownames_to_column</span>(<span class="st">"Cor_with_Gene"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(ESR1, Cor_with_Gene) <span class="sc">%&gt;%</span> <span class="co">#</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">abs</span>(ESR1) <span class="sc">&lt;</span><span class="fl">0.7</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(Cor_with_Gene)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>kept_genes <span class="ot">&lt;-</span> brca_train_tidy <span class="sc">%&gt;%</span> </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(CLEC3A<span class="sc">:</span>BRINP2) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  tibble<span class="sc">::</span><span class="fu">rownames_to_column</span>(<span class="st">"Cor_with_Gene"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(ESR1, Cor_with_Gene) <span class="sc">%&gt;%</span> <span class="co">#</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">abs</span>(ESR1) <span class="sc">&lt;</span><span class="fl">0.7</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(Cor_with_Gene)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now we restrict our data to just these genes, and the Estrogen Receptor status (renamed to <code>ER</code> for convenience). We will also create some ID rows in the data, which will be helpful in a short while.</p>
 <div class="cell">
@@ -313,7 +315,7 @@ Expectation setting
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The purpose of tuning our models is really just that—fine-tuning to get the absolute best performance. It will not suddenly elevate performance metrics (like <span class="math inline">\(\text{ROC AUC}\)</span> or Accuracy) from around <span class="math inline">\(0.6\)</span> to <span class="math inline">\(0.9\)</span>. Tuning should only be used in circumstances where you are already satisfied with the fundamental performance of your model and just require some minor, incremental adjustments. The performance gains from tuning are typically small (e.g.&nbsp;).</p>
+<p>The purpose of tuning our models is really just that—fine-tuning to get the absolute best performance. It will not suddenly elevate performance metrics (like <strong>ROC AUC</strong> or <strong>Accuracy</strong>) from around 0.6 to 0.9 for example. Tuning should only be used in circumstances where you are already satisfied with the fundamental performance of your model and just require some minor, incremental adjustments. The performance gains from tuning are typically small.</p>
 <p>That is to say that you should consider other choices of model, and even the fundamental data processing and feature engineering first, before trying to “tune” a model that is performing sub-par.</p>
 <p><strong>The greatest performance gains come from better data and model choice; tuning only optimizes the model you already have.</strong></p>
 </div>
@@ -321,13 +323,15 @@ Expectation setting
 </section>
 <section id="cross-validation" class="level2">
 <h2 class="anchored" data-anchor-id="cross-validation">Cross-Validation</h2>
-<p>K-fold cross-validation (which <code>tidymodels</code> refers to as V-fold cross-validation) splits data into <strong>v</strong> equally-sized partitions to be used to tune hyper-parameters.</p>
+<p>K-fold cross-validation (which <code>tidymodels</code> refers to as V-fold cross-validation) splits data into <strong>v</strong> equally-sized partitions to be used to tune hyper-parameters. As before, we need to make sure there is an equal representation of ER <code>Positive</code> and <code>Negative</code> as this is the variable we are trying to predict.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>er_folds <span class="ot">&lt;-</span> er_train <span class="sc">%&gt;%</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">vfold_cv</span>(<span class="at">v =</span> <span class="dv">10</span>, </span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>           <span class="at">strata =</span> ER)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidymodels)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="do">## set a seed for reproducibility</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>er_folds <span class="ot">&lt;-</span> er_train <span class="sc">%&gt;%</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">vfold_cv</span>(<span class="at">v =</span> <span class="dv">10</span>, </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">strata =</span> ER)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Each of our <code>v</code> splits comprises a training and testing set, which can be accessed using the same <code>training</code> and <code>testing</code> functions from before.</p>
 <div class="cell">
@@ -405,7 +409,7 @@ Expectation setting
 <section id="setup-a-grid-for-tuning" class="level2">
 <h2 class="anchored" data-anchor-id="setup-a-grid-for-tuning">Setup a grid for tuning</h2>
 <p>Unfortunately there are an <em>infinite</em> number of possibilities that both these arguments can take and we clearly cannot test them all. What we do instead is try and explore the full range of values, and find roughly the region where the optimal values are located. In practical terms this is often perfectly adequate.</p>
-<p>Infrastructure for tuning parameters is support by <code>dials</code> and <code>tune</code> which are both part of the <code>tidymodels</code> eco-system. i.e.&nbsp;they get installed and loaded when you install and load <code>tidymodels</code>.</p>
+<p>Infrastructure for tuning parameters is supporedt by the <code>dials</code> and <code>tune</code> packages which are both part of the <code>tidymodels</code> eco-system. i.e.&nbsp;they get installed and loaded when you install and load <code>tidymodels</code>.</p>
 <ul>
 <li><a href="https://dials.tidymodels.org/" class="uri">https://dials.tidymodels.org/</a></li>
 <li><a href="https://tune.tidymodels.org/" class="uri">https://tune.tidymodels.org/</a></li>

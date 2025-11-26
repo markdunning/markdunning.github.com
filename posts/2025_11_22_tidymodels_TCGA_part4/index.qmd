@@ -44,7 +44,7 @@ if(!file.exists("raw_data/brca_test_tidy.rds")) download.file("https://github.co
 
 ```
 
-The main purpose of this Part of the series is to introduce some other classification methods before proceeding to more complex topics to as tuning our models. First we will load the pre-prepared tidy data
+The main purpose of this Part of the series is to learn how to optimise the models we created in [Part 3a](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/.  First we will load the pre-prepared tidy data
 
 ```{r loadTidy}
 brca_train_tidy <- readRDS("raw_data/brca_train_tidy.rds")
@@ -54,6 +54,8 @@ brca_test_tidy <- readRDS("raw_data/brca_test_tidy.rds")
 Let's proceed by picking genes with an *absolute* correlation \< 0.7 with ESR1 as our possible predictors.
 
 ```{r keep_genes}
+library(dplyr)
+
 kept_genes <- brca_train_tidy %>% 
   select(CLEC3A:BRINP2) %>% 
   cor() %>% 
@@ -98,7 +100,7 @@ So the solution is to create some new, temporary validation sets, based on our o
 ::: callout-important
 ## Expectation setting
 
-The purpose of tuning our models is really just that—fine-tuning to get the absolute best performance. It will not suddenly elevate performance metrics (like $\text{ROC AUC}$ or Accuracy) from around $0.6$ to $0.9$. Tuning should only be used in circumstances where you are already satisfied with the fundamental performance of your model and just require some minor, incremental adjustments. The performance gains from tuning are typically small (e.g. ).
+The purpose of tuning our models is really just that—fine-tuning to get the absolute best performance. It will not suddenly elevate performance metrics (like **ROC AUC** or **Accuracy**) from around 0.6 to 0.9 for example. Tuning should only be used in circumstances where you are already satisfied with the fundamental performance of your model and just require some minor, incremental adjustments. The performance gains from tuning are typically small.
 
 That is to say that you should consider other choices of model, and even the fundamental data processing and feature engineering first, before trying to "tune" a model that is performing sub-par.
 
@@ -107,9 +109,11 @@ That is to say that you should consider other choices of model, and even the fun
 
 ## Cross-Validation
 
-K-fold cross-validation (which `tidymodels` refers to as V-fold cross-validation) splits data into **v** equally-sized partitions to be used to tune hyper-parameters.
+K-fold cross-validation (which `tidymodels` refers to as V-fold cross-validation) splits data into **v** equally-sized partitions to be used to tune hyper-parameters. As before, we need to make sure there is an equal representation of ER `Positive` and `Negative` as this is the variable we are trying to predict.
 
 ```{r setup_v_folds}
+library(tidymodels)
+## set a seed for reproducibility
 set.seed(42)
 
 er_folds <- er_train %>%
@@ -167,7 +171,7 @@ elastic_net_wflow <- workflow() %>%
 
 Unfortunately there are an *infinite* number of possibilities that both these arguments can take and we clearly cannot test them all. What we do instead is try and explore the full range of values, and find roughly the region where the optimal values are located. In practical terms this is often perfectly adequate.
 
-Infrastructure for tuning parameters is support by `dials` and `tune` which are both part of the `tidymodels` eco-system. i.e. they get installed and loaded when you install and load `tidymodels`.
+Infrastructure for tuning parameters is supporedt by the `dials` and `tune` packages which are both part of the `tidymodels` eco-system. i.e. they get installed and loaded when you install and load `tidymodels`.
 
 -   <https://dials.tidymodels.org/>
 -   <https://tune.tidymodels.org/>
