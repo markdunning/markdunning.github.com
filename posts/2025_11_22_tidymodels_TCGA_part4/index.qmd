@@ -122,11 +122,13 @@ Each of our `v` splits comprises a training and testing set, which can be access
 
 ```{r show_training_split}
 er_folds$splits[[1]]
-er_folds$splits[[1]] %>% training()
+er_folds$splits[[1]] %>% training() %>% 
+  slice_head(n = 10)
 ```
 
 ```{r show_split_testing}
-er_folds$splits[[1]] %>% testing()
+er_folds$splits[[1]] %>% testing() %>% 
+  slice_head(n = 10)
 ```
 
 With the same reasoning as creating our initial training and testing set, none of the samples included in the training set at each split is found in the corresponding testing set.
