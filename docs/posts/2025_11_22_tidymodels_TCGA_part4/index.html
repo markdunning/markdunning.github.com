@@ -249,7 +249,7 @@ window.Quarto = {
 
 <section id="pre-amble" class="level2">
 <h2 class="anchored" data-anchor-id="pre-amble">Pre-amble</h2>
-<p>In <a href="https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/index.html">Part 1 of this series</a> we described how to download TCGA data for breast cancers and manipulated them using a combination of <code>tidybulk</code> and <code>dplyr</code> to retain a set of expressed, variable genes. There are a set of packages that we will need for this Part 3b:-</p>
+<p>In <a href="https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/index.html">Part 1 of this series</a> we described how to download TCGA data for breast cancers and manipulated them using a combination of <code>tidybulk</code> and <code>dplyr</code> to retain a set of expressed, variable genes. There are a set of packages that we will need for this Part 4:-</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">require</span>(tidymodels)) <span class="fu">install.packages</span>(<span class="st">"tidymodels"</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -264,12 +264,12 @@ window.Quarto = {
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"raw_data/brca_train_tidy.rds"</span>)) <span class="fu">download.file</span>(<span class="st">"https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_train_tidy.rds"</span>, <span class="at">destfile =</span> <span class="st">"raw_data/brca_train_tidy.rds"</span>)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"raw_data/brca_test_tidy.rds"</span>)) <span class="fu">download.file</span>(<span class="st">"https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_06_tidymodels_TCGA_part1/brca_test_tidy.rds"</span>, <span class="at">destfile =</span> <span class="st">"raw_data/brca_test_tidy.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>The main purpose of this Part of the series is to learn how to optimise the models we created in [Part 3a](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/. First we will load the pre-prepared tidy data</p>
+<p>The main purpose of this Part of the series is to learn how to optimise the models we created in <a href="https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/">Part 3a</a> to predict Estrogen Receptor (ER) status from gene expression as measured by bulk RNA-seq. First we will load the pre-prepared tidy data.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>brca_train_tidy <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"raw_data/brca_train_tidy.rds"</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>brca_test_tidy <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"raw_data/brca_test_tidy.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Let’s proceed by picking genes with an <em>absolute</em> correlation &lt; 0.7 with ESR1 as our possible predictors.</p>
+<p>Let’s proceed by picking genes with an <em>absolute</em> correlation &lt; 0.7 with ESR1 as our possible predictors. This is because we found ESR1 was too strong a predictor so we only required simple models if this gene was included.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -296,15 +296,15 @@ window.Quarto = {
 <span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ID =</span> <span class="fu">paste0</span>(<span class="st">"Training_"</span>, <span class="fu">row_number</span>())) <span class="sc">%&gt;%</span> </span>
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate</span>(ID)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>In <a href="https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/#introducing-glmnet">Part 3a</a> we introduced some machine learning methods that relied on hyperparameters in order to be run. This included logistic regression using glmnet that can “shrink” the influence of features in our data. The amount of shrinkage is controlled by the arguments <code>penalty</code> (<span class="math inline">\(\lambda\)</span>) and <code>mixture</code> (<span class="math inline">\(\alpha\)</span>) in the tidymodels specification.</p>
-<p>We just set these to some arbitrary, fixed values. So, the question is: How can we choose the “best” values for these parameters without endless trial and error, and what data should we base that decision on?</p>
+<p>In <a href="https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/#introducing-glmnet">Part 3a</a> we introduced some machine learning methods that relied on hyperparameters in order to be run. This included logistic regression using glmnet that can “shrink” the influence of features in our data. The amount of shrinkage is controlled by the arguments <code>penalty</code> (also known as <span class="math inline">\(\lambda\)</span>) and <code>mixture</code> (aka <span class="math inline">\(\alpha\)</span>) in the tidymodels specification.</p>
+<p>We just set these to some arbitrary, fixed values. So, the questions are: How can we choose the “best” values for these parameters without endless trial and error, and what data should we base that decision on?</p>
 <p>Way back in <a href="https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/#preparing-the-data-for-machine-learning">Part 1</a> we split a TCGA breast cancer dataset into training and testing portions that were completely independent. The roles of these two portions are strictly defined:</p>
 <ul>
-<li><p>Training Dataset: Used only to estimate the internal coefficients of our model and create the final fit. In our example of a logsitic regression this would be the amount to which each gene affects the log-odds of a particular sample being ER <code>Positive</code>.</p></li>
+<li><p>Training Dataset: Used only to estimate the internal coefficients of our model and create the final fit. In our example of a logsitic regression, this would be the amount to which each gene affects the log-odds of a particular sample being ER <code>Positive</code>.</p></li>
 <li><p>Testing Dataset: Used only for the final, independent validation of the model’s performance on completely unseen data.</p></li>
 </ul>
-<p>Neither of these is appropriate for tuning. You might think the training data would be a good choice, but using it directly to pick the hyperparameters would make our model overfit. It would be optimised for the training data and potentially perform poorly on the test set or other data.</p>
-<p>So the solution is to create some new, temporary validation sets, based on our original training data, solely for the purpose of identifying (or “tuning”) the best hyperparameters. This technique is known as Cross-Validation (CV).</p>
+<p>Neither of these is appropriate for tuning. You might think the training data would be a good choice, but using it directly to pick the hyperparameters that would make our model overfit. It would be optimised for the training data and potentially perform poorly on the test set or other data.</p>
+<p>So the solution is to create some new, temporary validation sets, based on our original training data, solely for the purpose of identifying (or “tuning”) the best hyperparameters. This technique is known as <strong>Cross-Validation (CV)</strong>.</p>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -315,7 +315,7 @@ Expectation setting
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The purpose of tuning our models is really just that—fine-tuning to get the absolute best performance. It will not suddenly elevate performance metrics (like <strong>ROC AUC</strong> or <strong>Accuracy</strong>) from around 0.6 to 0.9 for example. Tuning should only be used in circumstances where you are already satisfied with the fundamental performance of your model and just require some minor, incremental adjustments. The performance gains from tuning are typically small.</p>
+<p>The purpose of tuning our models is really just that: fine-tuning to get the absolute best performance. It will not suddenly elevate performance metrics (like <strong>ROC AUC</strong> or <strong>Accuracy</strong>) from around 0.6 to 0.9 for example. Tuning should only be used in circumstances where you are already satisfied with the fundamental performance of your model and just require some minor, incremental adjustments. The performance gains from tuning are typically small.</p>
 <p>That is to say that you should consider other choices of model, and even the fundamental data processing and feature engineering first, before trying to “tune” a model that is performing sub-par.</p>
 <p><strong>The greatest performance gains come from better data and model choice; tuning only optimizes the model you already have.</strong></p>
 </div>
@@ -377,7 +377,10 @@ Expectation setting
 </div>
 <p>With the same reasoning as creating our initial training and testing set, none of the samples included in the training set at each split is found in the corresponding testing set.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">intersect</span>(<span class="fu">training</span>(er_folds<span class="sc">$</span>splits[[<span class="dv">1</span>]])<span class="sc">$</span>ID, <span class="fu">testing</span>(er_folds<span class="sc">$</span>splits[[<span class="dv">1</span>]])<span class="sc">$</span>ID)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="do">## intersect is a base R for function for finding elements in common between vectors</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="do">## intersect(c("A,"B","C"),c("B","D","E"))</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">intersect</span>(<span class="fu">training</span>(er_folds<span class="sc">$</span>splits[[<span class="dv">1</span>]])<span class="sc">$</span>ID, <span class="fu">testing</span>(er_folds<span class="sc">$</span>splits[[<span class="dv">1</span>]])<span class="sc">$</span>ID)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>character(0)</code></pre>
 </div>
@@ -432,7 +435,7 @@ Expectation setting
 <span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">size =</span> <span class="dv">15</span></span>
 <span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>With the setup we have just created there are 15 different models to be fit (one model for each combination in our grid), and the 10-fold strategy we defined with <code>vfolds_cv</code> means we have to fit each of these 15 models 10 times. In total we have 150 models, and for each we want to assess the performance. This is quite a lot of work! Fortunately we can do this quite efficiently with <code>tidymodels</code> and get an output that we can assess. The <code>tune_grid</code> function will use the cross-validation strategy defined with <code>vfolds_cv</code>, a grid structure and compute performance metrics for your workflow.</p>
+<p>With the setup we have just created there are 15 different models to be fit (one model for each combination in our grid), and the 10-fold strategy we defined with <code>vfolds_cv</code> means we have to fit each of these 15 models 10 times. In total we have 150 models, and for each we want to assess the performance of each. This is quite a lot of work! Fortunately we can do this quite efficiently with <code>tidymodels</code> and get an output that we can assess. The <code>tune_grid</code> function will use the cross-validation strategy defined with <code>vfolds_cv</code>, a grid structure and compute performance metrics for your workflow.</p>
 </section>
 <section id="inspect-tuning-results" class="level2">
 <h2 class="anchored" data-anchor-id="inspect-tuning-results">Inspect tuning results</h2>
@@ -566,7 +569,7 @@ Main Arguments:
 Computational engine: glmnet </code></pre>
 </div>
 </div>
-<p>Remember that the purpose of tuning was to find an optimal set of hyperparameters, and we did that using a newly-created set of cross-validation subsets. We still need to fit, our create, the final model using those paramaters that we chose. This still needs to be performed on our entire training dataset.</p>
+<p>Remember that the purpose of tuning was to find an optimal set of hyperparameters, and we did that using a newly-created set of cross-validation subsets. We still need to fit, and create, the final model using those paramaters that we chose. This still needs to be performed on our entire training dataset.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>final_model_fit <span class="ot">&lt;-</span> <span class="fu">fit</span>(final_wflow, <span class="at">data =</span> er_train)</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>final_model_fit <span class="sc">%&gt;%</span> tidy</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -667,7 +670,7 @@ Computational engine: glmnet </code></pre>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(rf_spec_tune) <span class="sc">%&gt;%</span> </span>
 <span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(er_recipe_multigene)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>To define the grid for searching we can again make use of the <code>dials</code> package that had pre-defined notions of what values the <code>mtry</code>, <code>trees</code> and <code>min_n</code> should contain and stop us accidentally trying to create a model with invalid parameters values. This would be useful in situation where we were trying more advance methods of grid searching, or even using random grids.</p>
+<p>To define the grid for searching we can again make use of the <code>dials</code> package that had pre-defined notions of what values the <code>mtry</code>, <code>trees</code> and <code>min_n</code> should contain and stop us accidentally trying to create a model with invalid parameters values. This would be useful in a situation where we were trying more advance methods of grid searching, or even using random grids.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>mtry_range <span class="ot">&lt;-</span> <span class="fu">mtry</span>(<span class="at">range =</span> <span class="fu">c</span>(<span class="dv">5</span>,<span class="dv">50</span>))</span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -727,11 +730,16 @@ Note
 <span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">resamples =</span> er_folds, </span>
 <span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">grid =</span> rf_grid,</span>
 <span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">metrics =</span> <span class="fu">metric_set</span>(accuracy, specificity, sensitivity, roc_auc)</span>
-<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(rf_tune_res, <span class="st">"rf_tune_res.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>If this takes too long you can download the resulting object with the following:-</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">"rf_tune_res.rds"</span>)) <span class="fu">download.file</span>(<span class="st">"https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_22_tidymodels_TCGA_part4/rf_tune_res.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>As before, we can plot to get a quick overview.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>rf_tune_res <span class="sc">%&gt;%</span> <span class="fu">autoplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>rf_tune_res <span class="sc">%&gt;%</span> <span class="fu">autoplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -742,7 +750,7 @@ Note
 </div>
 <p>The plot chooses informative labels where “Minimal Node Size” = <code>min_n</code> and “# Randomly Selected Predictors” = <code>mtry</code>. If we wish to focus on Area Under the Curve (<code>roc_auc</code>) the best combination looks to be lower <code>min_n</code> and <code>mtry</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">show_best</span>(elastic_net_tune_res, <span class="at">metric =</span> <span class="st">"roc_auc"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">show_best</span>(elastic_net_tune_res, <span class="at">metric =</span> <span class="st">"roc_auc"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 8
    penalty mixture .metric .estimator  mean     n std_err .config              
@@ -753,27 +761,27 @@ Note
 4 0.000178       0 roc_auc binary     0.956    10 0.0107  Preprocessor1_Model02
 5 0.00316        0 roc_auc binary     0.956    10 0.0107  Preprocessor1_Model03</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>best_params <span class="ot">&lt;-</span> <span class="fu">select_best</span>(rf_tune_res, <span class="at">metric =</span> <span class="st">"roc_auc"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>best_params <span class="ot">&lt;-</span> <span class="fu">select_best</span>(rf_tune_res, <span class="at">metric =</span> <span class="st">"roc_auc"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>And now we can create the final model and check the importance of the features</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>rf_final_workflow <span class="ot">&lt;-</span> rf_workflow <span class="sc">%&gt;%</span> </span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">finalize_workflow</span>(best_params)</span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>rf_final_fit <span class="ot">&lt;-</span> rf_final_workflow <span class="sc">%&gt;%</span> </span>
-<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(er_train)</span>
-<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>importance_df <span class="ot">&lt;-</span> <span class="fu">pull_workflow_fit</span>(rf_final_fit)<span class="sc">$</span>fit<span class="sc">$</span>variable.importance <span class="sc">%&gt;%</span></span>
-<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enframe</span>(<span class="at">name =</span> <span class="st">"term"</span>, <span class="at">value =</span> <span class="st">"Importance"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(Importance))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>rf_final_workflow <span class="ot">&lt;-</span> rf_workflow <span class="sc">%&gt;%</span> </span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">finalize_workflow</span>(best_params)</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>rf_final_fit <span class="ot">&lt;-</span> rf_final_workflow <span class="sc">%&gt;%</span> </span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(er_train)</span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>importance_df <span class="ot">&lt;-</span> <span class="fu">pull_workflow_fit</span>(rf_final_fit)<span class="sc">$</span>fit<span class="sc">$</span>variable.importance <span class="sc">%&gt;%</span></span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enframe</span>(<span class="at">name =</span> <span class="st">"term"</span>, <span class="at">value =</span> <span class="st">"Importance"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(Importance))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>and we can make a simple bar plot if we wish</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>importance_df <span class="sc">%&gt;%</span> </span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="do">## pick the top 20 </span></span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_max</span>(Importance, <span class="at">n =</span> <span class="dv">20</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Importance, <span class="at">y =</span> forcats<span class="sc">::</span><span class="fu">fct_reorder</span>(term, Importance))) <span class="sc">+</span> <span class="fu">geom_col</span>(<span class="at">fill =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span> <span class="fu">ylab</span>(<span class="st">"Gene"</span>) <span class="sc">+</span> <span class="fu">xlab</span>(<span class="st">"Importance"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>importance_df <span class="sc">%&gt;%</span> </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="do">## pick the top 20 </span></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_max</span>(Importance, <span class="at">n =</span> <span class="dv">20</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Importance, <span class="at">y =</span> forcats<span class="sc">::</span><span class="fu">fct_reorder</span>(term, Importance))) <span class="sc">+</span> <span class="fu">geom_col</span>(<span class="at">fill =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span> <span class="fu">ylab</span>(<span class="st">"Gene"</span>) <span class="sc">+</span> <span class="fu">xlab</span>(<span class="st">"Importance"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -784,10 +792,10 @@ Note
 </div>
 <p>and the final predictions and evaluation follow a pattern that is hopefully familiar by now</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>rf_final_fit <span class="sc">%&gt;%</span> </span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(<span class="at">new_data =</span>  er_test) <span class="sc">%&gt;%</span> </span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(<span class="fu">select</span>(er_test, ER)) <span class="sc">%&gt;%</span> </span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">class_metrics</span>(<span class="at">truth =</span> ER, <span class="at">estimate =</span> .pred_class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>rf_final_fit <span class="sc">%&gt;%</span> </span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(<span class="at">new_data =</span>  er_test) <span class="sc">%&gt;%</span> </span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(<span class="fu">select</span>(er_test, ER)) <span class="sc">%&gt;%</span> </span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">class_metrics</span>(<span class="at">truth =</span> ER, <span class="at">estimate =</span> .pred_class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 3
   .metric     .estimator .estimate
@@ -800,8 +808,23 @@ Note
 </section>
 <section id="summary" class="level2">
 <h2 class="anchored" data-anchor-id="summary">Summary</h2>
-<p>This concludes the end of this little series on using <code>tidymodels</code> for classification of omics data. I hope that I have covered the main principles of the <code>tidymodels</code> eco-system. Just looking through the code I can see a lot of places where the code is reused, which is good for readability and extendability. Even though I have not covered all the possible classification methods, it <em>should</em> be possible with relative ease (that is relative to coding everything from scratch) to translate what we have covered here to other methods. This is real advantage of <code>tidymodels</code> in that most of our time should be spent interpreting and refining that having to code everything by-hand. I haven’t even covered the use of regression vs classification (that is, predicting a <em>numeric</em> rather than categorical outcome) and again this should be within your reach now by using <code>set_mode("regression")</code> instead of <code>classification</code> in the models covered here.</p>
-<p>Of course it would be remiss of me not to mention AI and deep learning methods that are increasingly being used in research. Whilst these are more complex methods, the core principles of training / testing and tuning are still highly applicable. Furthermore, these methods are still completely dependant on having appropriately filtered and cleaned data as a starting point. Although Python is probably the market leader for AI, R actually has interfaces to keras and tensorflow (two of the most popular implementations). There is no need to abandon R just yet.</p>
+<p>This concludes the end of this little series on using <code>tidymodels</code> for classification of omics data. I hope that I have covered the main principles of the <code>tidymodels</code> eco-system. Just looking through the code I can see a lot of places where the code is reused, which is good for readability and extend-ability. Even though I have not covered all the possible classification methods, it <em>should</em> be possible with relative ease (that is relative to coding everything from scratch) to translate what we have covered here to other methods. This is real advantage of <code>tidymodels</code> in that most of our time should be spent interpreting and refining models than having to code everything by-hand. I haven’t even covered the use of regression vs classification (that is, predicting a <em>numeric</em> rather than categorical outcome) and again this should be within your reach now by using <code>set_mode("regression")</code> instead of <code>classification</code> in the models covered here. On the <code>parsnip</code> site (the part of <code>tidymodels</code> that it is responsible for model specification) you will searchable page index of supported models</p>
+<ul>
+<li><a href="https://www.tidymodels.org/find/parsnip/" class="uri">https://www.tidymodels.org/find/parsnip/</a></li>
+</ul>
+<p>If you are looking to practice your new machine learning skills, I also recommend Kaggle as a source of datasets and inspiration, as the notebooks to analyse the datasets are also made freely available. Once you find a dataset of interest, you can filter for notebooks that use R (or Python if you’re feeling adventurous). N.B. you will need to sign-up for a free account.</p>
+<ul>
+<li><a href="https://www.kaggle.com/datasets" class="uri">https://www.kaggle.com/datasets</a></li>
+</ul>
+<p>There is also a “Tidy Tuesday” project that releases an interesting, curated, dataset into the community every week. Although not all will be suitable for machine learning, you will be able to practice your data manipulation and visualistion skills.</p>
+<ul>
+<li><a href="https://github.com/rfordatascience/tidytuesday/tree/main"></a></li>
+</ul>
+<p>There is even an R package that will help with downloading</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"tidyTuesdayR"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Of course it would be remiss of me not to mention AI and deep learning methods that are increasingly being used in research. Whilst these are more complex methods, the core principles of training / testing and tuning are still highly applicable. Furthermore, these methods are still completely dependant on having appropriately filtered and cleaned data as a starting point. Although Python is probably the market leader for AI, R actually has interfaces to keras and tensorflow (two of the most popular implementations). There is no need to abandon R just yet 😉</p>
 
 
 </section>

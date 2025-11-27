@@ -24,7 +24,7 @@ library(tidymodels)
 
 ## Pre-amble
 
-In [Part 1 of this series](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/index.html) we described how to download TCGA data for breast cancers and manipulated them using a combination of `tidybulk` and `dplyr` to retain a set of expressed, variable genes. There are a set of packages that we will need for this Part 3b:-
+In [Part 1 of this series](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/index.html) we described how to download TCGA data for breast cancers and manipulated them using a combination of `tidybulk` and `dplyr` to retain a set of expressed, variable genes. There are a set of packages that we will need for this Part 4:-
 
 ```{r installIfNeeded, eval=FALSE}
 if(!require(tidymodels)) install.packages("tidymodels")
@@ -44,14 +44,14 @@ if(!file.exists("raw_data/brca_test_tidy.rds")) download.file("https://github.co
 
 ```
 
-The main purpose of this Part of the series is to learn how to optimise the models we created in [Part 3a](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/.  First we will load the pre-prepared tidy data
+The main purpose of this Part of the series is to learn how to optimise the models we created in [Part 3a](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/) to predict Estrogen Receptor (ER) status from gene expression as measured by bulk RNA-seq. First we will load the pre-prepared tidy data.
 
 ```{r loadTidy}
 brca_train_tidy <- readRDS("raw_data/brca_train_tidy.rds")
 brca_test_tidy <- readRDS("raw_data/brca_test_tidy.rds")
 ```
 
-Let's proceed by picking genes with an *absolute* correlation \< 0.7 with ESR1 as our possible predictors.
+Let's proceed by picking genes with an *absolute* correlation \< 0.7 with ESR1 as our possible predictors. This is because we found ESR1 was too strong a predictor so we only required simple models if this gene was included.
 
 ```{r keep_genes}
 library(dplyr)
@@ -83,24 +83,24 @@ er_test <- brca_test_tidy %>%
   relocate(ID)
 ```
 
-In [Part 3a](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/#introducing-glmnet) we introduced some machine learning methods that relied on hyperparameters in order to be run. This included logistic regression using glmnet that can "shrink" the influence of features in our data. The amount of shrinkage is controlled by the arguments `penalty` ($\lambda$) and `mixture` ($\alpha$) in the tidymodels specification.
+In [Part 3a](https://mdbioinformatics.com/posts/2025_11_17_tidymodels_TCGA_part3/#introducing-glmnet) we introduced some machine learning methods that relied on hyperparameters in order to be run. This included logistic regression using glmnet that can "shrink" the influence of features in our data. The amount of shrinkage is controlled by the arguments `penalty` (also known as $\lambda$) and `mixture` (aka $\alpha$) in the tidymodels specification.
 
-We just set these to some arbitrary, fixed values. So, the question is: How can we choose the "best" values for these parameters without endless trial and error, and what data should we base that decision on?
+We just set these to some arbitrary, fixed values. So, the questions are: How can we choose the "best" values for these parameters without endless trial and error, and what data should we base that decision on?
 
 Way back in [Part 1](https://mdbioinformatics.com/posts/2025_11_06_tidymodels_TCGA_part1/#preparing-the-data-for-machine-learning) we split a TCGA breast cancer dataset into training and testing portions that were completely independent. The roles of these two portions are strictly defined:
 
--   Training Dataset: Used only to estimate the internal coefficients of our model and create the final fit. In our example of a logsitic regression this would be the amount to which each gene affects the log-odds of a particular sample being ER `Positive`.
+-   Training Dataset: Used only to estimate the internal coefficients of our model and create the final fit. In our example of a logsitic regression, this would be the amount to which each gene affects the log-odds of a particular sample being ER `Positive`.
 
 -   Testing Dataset: Used only for the final, independent validation of the model's performance on completely unseen data.
 
-Neither of these is appropriate for tuning. You might think the training data would be a good choice, but using it directly to pick the hyperparameters would make our model overfit. It would be optimised for the training data and potentially perform poorly on the test set or other data.
+Neither of these is appropriate for tuning. You might think the training data would be a good choice, but using it directly to pick the hyperparameters that would make our model overfit. It would be optimised for the training data and potentially perform poorly on the test set or other data.
 
-So the solution is to create some new, temporary validation sets, based on our original training data, solely for the purpose of identifying (or "tuning") the best hyperparameters. This technique is known as Cross-Validation (CV).
+So the solution is to create some new, temporary validation sets, based on our original training data, solely for the purpose of identifying (or "tuning") the best hyperparameters. This technique is known as **Cross-Validation (CV)**.
 
 ::: callout-important
 ## Expectation setting
 
-The purpose of tuning our models is really just that—fine-tuning to get the absolute best performance. It will not suddenly elevate performance metrics (like **ROC AUC** or **Accuracy**) from around 0.6 to 0.9 for example. Tuning should only be used in circumstances where you are already satisfied with the fundamental performance of your model and just require some minor, incremental adjustments. The performance gains from tuning are typically small.
+The purpose of tuning our models is really just that: fine-tuning to get the absolute best performance. It will not suddenly elevate performance metrics (like **ROC AUC** or **Accuracy**) from around 0.6 to 0.9 for example. Tuning should only be used in circumstances where you are already satisfied with the fundamental performance of your model and just require some minor, incremental adjustments. The performance gains from tuning are typically small.
 
 That is to say that you should consider other choices of model, and even the fundamental data processing and feature engineering first, before trying to "tune" a model that is performing sub-par.
 
@@ -140,6 +140,9 @@ er_folds$splits[[1]] %>% testing() %>%
 With the same reasoning as creating our initial training and testing set, none of the samples included in the training set at each split is found in the corresponding testing set.
 
 ```{r training_testing_intersect}
+## intersect is a base R for function for finding elements in common between vectors
+## intersect(c("A,"B","C"),c("B","D","E"))
+
 intersect(training(er_folds$splits[[1]])$ID, testing(er_folds$splits[[1]])$ID)
 ```
 
@@ -198,7 +201,7 @@ elastic_net_grid_random <- grid_random(
 
 ```
 
-With the setup we have just created there are 15 different models to be fit (one model for each combination in our grid), and the 10-fold strategy we defined with `vfolds_cv` means we have to fit each of these 15 models 10 times. In total we have 150 models, and for each we want to assess the performance. This is quite a lot of work! Fortunately we can do this quite efficiently with `tidymodels` and get an output that we can assess. The `tune_grid` function will use the cross-validation strategy defined with `vfolds_cv`, a grid structure and compute performance metrics for your workflow.
+With the setup we have just created there are 15 different models to be fit (one model for each combination in our grid), and the 10-fold strategy we defined with `vfolds_cv` means we have to fit each of these 15 models 10 times. In total we have 150 models, and for each we want to assess the performance of each. This is quite a lot of work! Fortunately we can do this quite efficiently with `tidymodels` and get an output that we can assess. The `tune_grid` function will use the cross-validation strategy defined with `vfolds_cv`, a grid structure and compute performance metrics for your workflow.
 
 ## Inspect tuning results
 
@@ -260,7 +263,7 @@ final_wflow <- elastic_net_wflow %>%
 final_wflow
 ```
 
-Remember that the purpose of tuning was to find an optimal set of hyperparameters, and we did that using a newly-created set of cross-validation subsets. We still need to fit, our create, the final model using those paramaters that we chose. This still needs to be performed on our entire training dataset.
+Remember that the purpose of tuning was to find an optimal set of hyperparameters, and we did that using a newly-created set of cross-validation subsets. We still need to fit, and create, the final model using those paramaters that we chose. This still needs to be performed on our entire training dataset.
 
 ```{r final_fit}
 final_model_fit <- fit(final_wflow, data = er_train)
@@ -286,9 +289,7 @@ We'll now walk through an example of tuning a random forest, and hopefully you w
 show_model_info("rand_forest")
 ```
 
-
 In the output it lists `mtry`, `trees` and `min_n` all as arguments that can be tuned. These arguments control the diversity (`mtry`), complexity (`min_n`) and number of trees used for consensus voting (`trees`). The purpose of tuning these parameters is to give a selection of tree with enough complexity and diversity in our training data without overfitting. The particular optimal combination of these values with vary from dataset to dataset, and hence why they need to be tuned. A random forest specification with hyper-parameters to be tuned can be created as follows:-
-
 
 ```{r create_rf_spec}
 rf_spec_tune <- rand_forest(
@@ -308,7 +309,7 @@ rf_workflow <- workflow() %>%
   
 ```
 
-To define the grid for searching we can again make use of the `dials` package that had pre-defined notions of what values the `mtry`, `trees` and `min_n` should contain and stop us accidentally trying to create a model with invalid parameters values. This would be useful in situation where we were trying more advance methods of grid searching, or even using random grids.
+To define the grid for searching we can again make use of the `dials` package that had pre-defined notions of what values the `mtry`, `trees` and `min_n` should contain and stop us accidentally trying to create a model with invalid parameters values. This would be useful in a situation where we were trying more advance methods of grid searching, or even using random grids.
 
 ```{r make_rf_grid}
 
@@ -329,13 +330,10 @@ rf_grid
 
 ```
 
-
 We are now ready to do the tuning, which without any further modifications to the code would take a *lot* longer. Fortunately, I have Dr. Lewis Quayle to thank for some code on his [post on tidymodels](https://www.lewisdoesdata.com/2025/10/22/introduction-to-tidy-modelling-part-2.html) to configure `tidymodels` to use multiple CPU cores on your computer where available.
 
-::: {.callout-note}
-
+::: callout-note
 We can run the code in parallel because the tuning process is inherently an example of what was called "embarrassingly parallel" back in the day (people sometimes prefer "Pleasingly parallel" nowadays). In other words, the training / testing occurring at each fold in our workflow is completely independant and can therefore be run at the same time if possible rather than waiting for the previous fold to finish.
-
 :::
 
 ```{r tune_rf_params, cache = TRUE}
@@ -353,6 +351,13 @@ rf_tune_res <- tune_grid(
   grid = rf_grid,
   metrics = metric_set(accuracy, specificity, sensitivity, roc_auc)
 )
+saveRDS(rf_tune_res, "rf_tune_res.rds")
+```
+
+If this takes too long you can download the resulting object with the following:-
+
+```{r download_tune_res, eval=FALSE}
+if(!file.exists("rf_tune_res.rds")) download.file("https://github.com/markdunning/markdunning.github.com/raw/refs/heads/master/posts/2025_11_22_tidymodels_TCGA_part4/rf_tune_res.rds")
 ```
 
 As before, we can plot to get a quick overview.
@@ -361,8 +366,7 @@ As before, we can plot to get a quick overview.
 rf_tune_res %>% autoplot()
 ```
 
-
-The plot chooses informative labels where "Minimal Node Size" = `min_n` and "# Randomly Selected Predictors" = `mtry`. If we wish to focus on Area Under the Curve (`roc_auc`) the best combination looks to be lower `min_n` and `mtry`. 
+The plot chooses informative labels where "Minimal Node Size" = `min_n` and "\# Randomly Selected Predictors" = `mtry`. If we wish to focus on Area Under the Curve (`roc_auc`) the best combination looks to be lower `min_n` and `mtry`.
 
 ```{r get_best_rf_fit}
 show_best(elastic_net_tune_res, metric = "roc_auc")
@@ -395,6 +399,7 @@ importance_df %>%
   ggplot(aes(x = Importance, y = forcats::fct_reorder(term, Importance))) + geom_col(fill = "steelblue") + ylab("Gene") + xlab("Importance")
 
 ```
+
 and the final predictions and evaluation follow a pattern that is hopefully familiar by now
 
 ```{r}
@@ -406,7 +411,22 @@ rf_final_fit %>%
 
 ## Summary
 
-This concludes the end of this little series on using `tidymodels` for classification of omics data. I hope that I have covered the main principles of the `tidymodels` eco-system. Just looking through the code I can see a lot of places where the code is reused, which is good for readability and extendability. Even though I have not covered all the possible classification methods, it *should* be possible with relative ease (that is relative to coding everything from scratch) to translate what we have covered here to other methods. This is real advantage of `tidymodels` in that most of our time should be spent interpreting and refining that having to code everything by-hand. I haven't even covered the use of regression vs classification (that is, predicting a *numeric* rather than categorical outcome) and again this should be within your reach now by using `set_mode("regression")` instead of `classification` in the models covered here. 
+This concludes the end of this little series on using `tidymodels` for classification of omics data. I hope that I have covered the main principles of the `tidymodels` eco-system. Just looking through the code I can see a lot of places where the code is reused, which is good for readability and extend-ability. Even though I have not covered all the possible classification methods, it *should* be possible with relative ease (that is relative to coding everything from scratch) to translate what we have covered here to other methods. This is real advantage of `tidymodels` in that most of our time should be spent interpreting and refining models than having to code everything by-hand. I haven't even covered the use of regression vs classification (that is, predicting a *numeric* rather than categorical outcome) and again this should be within your reach now by using `set_mode("regression")` instead of `classification` in the models covered here. On the `parsnip` site (the part of `tidymodels` that it is responsible for model specification) you will searchable page index of supported models
 
+-   <https://www.tidymodels.org/find/parsnip/>
 
-Of course it would be remiss of me not to mention AI and deep learning methods that are increasingly being used in research. Whilst these are more complex methods, the core principles of training / testing and tuning are still highly applicable. Furthermore, these methods are still completely dependant on having appropriately filtered and cleaned data as a starting point. Although Python is probably the market leader for AI, R actually has interfaces to keras and tensorflow (two of the most popular implementations). There is no need to abandon R just yet.
+If you are looking to practice your new machine learning skills, I also recommend Kaggle as a source of datasets and inspiration, as the notebooks to analyse the datasets are also made freely available. Once you find a dataset of interest, you can filter for notebooks that use R (or Python if you're feeling adventurous). N.B. you will need to sign-up for a free account.
+
+-   <https://www.kaggle.com/datasets>
+
+There is also a "Tidy Tuesday" project that releases an interesting, curated, dataset into the community every week. Although not all will be suitable for machine learning, you will be able to practice your data manipulation and visualistion skills.
+
+-   [ ](https://github.com/rfordatascience/tidytuesday/tree/main)
+
+There is even an R package that will help with downloading
+
+```{r eval=FALSE}
+install.packages("tidyTuesdayR")
+```
+
+Of course it would be remiss of me not to mention AI and deep learning methods that are increasingly being used in research. Whilst these are more complex methods, the core principles of training / testing and tuning are still highly applicable. Furthermore, these methods are still completely dependant on having appropriately filtered and cleaned data as a starting point. Although Python is probably the market leader for AI, R actually has interfaces to keras and tensorflow (two of the most popular implementations). There is no need to abandon R just yet 😉
