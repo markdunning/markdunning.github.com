@@ -4,7 +4,7 @@ author: Mark Dunning
 date: 2025-11-27
 theme: darkly
 image: preview.png
-description: "Optimising Machine Leaerning Performance by cross-validation and tuning"
+description: "Optimising Machine Learning Performance by cross-validation and tuning"
 ---
 
 ```{r silentLoad}
