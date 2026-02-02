@@ -2,7 +2,7 @@ project:
   type: website
   output-dir: docs
 website:
-  title: "Dr. Mark Dunning - Bioinformatician / Data Scientist"
+  title: "Dr. Mark Dunning - Senior Teaching Fellow (Bioinformatics)"
   google-analytics: 
     tracking-id: "G-96TB60ETKS"
   navbar:
